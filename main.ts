@@ -32,7 +32,10 @@ export default class MyPlugin extends Plugin {
 		const create = (toc: TocItem, parentPath: string) => {
 			this.app.vault.create(
 				parentPath + ".md",
-				htmlToMarkdown(toc.getChapter())
+				htmlToMarkdown(toc.getChapter()).replace(
+					/\.\.\/images/g,
+					"images"
+				)
 			);
 
 			const filename = parentPath.split("\\").pop();
@@ -56,6 +59,18 @@ export default class MyPlugin extends Plugin {
 		}
 
 		this.app.vault.create(epubName + "//" + "toc.md", tocContent);
+
+		const fs = require("fs");
+
+		fs.cpSync(
+			path.join(path.dirname(this.parser.tocFile), "images"),
+			path.join(
+				//@ts-ignore
+				this.app.vault.adapter.basePath,
+				path.join(epubName, "images")
+			),
+			{ recursive: true }
+		);
 	}
 
 	onunload() {}

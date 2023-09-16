@@ -3,5 +3,5 @@
 ## RoudMap
 
 - [ ] convert name of char to a vaild windows file path, delete invalid characters.
-- [ ] image support.
+- [x] image support.
 - [ ] toc support.
