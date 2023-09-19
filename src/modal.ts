@@ -1,8 +1,20 @@
 import { App, Notice, SuggestModal } from "obsidian";
 
-function isValidEpubPath(string: string) {
-	const terms = string.split(".");
-	return terms[terms.length - 1] == "epub";
+function toValidEpubPath(string: string) {
+	try {
+		// if there is " char at the beginning ,try to delete the " chat at the beginning and end
+		if (string.startsWith('"')) {
+			string = string.slice(1, string.length - 1);
+		}
+		const terms = string.split(".");
+		if (terms[terms.length - 1] == "epub") {
+			return string;
+		} else {
+			return false;
+		}
+	} catch (e) {
+		return false;
+	}
 }
 
 export class EpubModal extends SuggestModal<void> {
@@ -20,9 +32,10 @@ export class EpubModal extends SuggestModal<void> {
 		this.onSubmit = onSubmit;
 		this.inputEl.addEventListener("keyup", ({ key }) => {
 			if (key === "Enter" && this.inputEl.value) {
-				if (isValidEpubPath(this.inputEl.value)) {
-					this.onSubmit(this.inputEl.value);
-					new Notice(`imported: ${this.inputEl.value}`);
+				const epubPath = toValidEpubPath(this.inputEl.value);
+				if (epubPath) {
+					this.onSubmit(epubPath);
+					new Notice(`imported: ${epubPath}`);
 					this.close();
 				} else {
 					new Notice("Invalid path.");
