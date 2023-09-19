@@ -5,6 +5,19 @@ import { Plugin, htmlToMarkdown } from "obsidian";
 import { TocItem, EpubParser } from "src/epubParser";
 import { EpubModal } from "src/modal";
 
+// convert a string to a vaild windows path
+function toValidWindowsPath(path: string) {
+	let newString = path.replace('?', '？');
+	newString = newString.replace(/[/|\\:*?"<>]/g, " ");
+	if (path != newString){
+		console.log("path",path);
+		console.log("-->");
+		console.log("newString",newString);
+	}
+	return newString;
+}
+
+
 export default class MyPlugin extends Plugin {
 	parser: EpubParser;
 	async onload() {
@@ -25,7 +38,7 @@ export default class MyPlugin extends Plugin {
 		const toc = this.parser.toc;
 		const path = require("path");
 		const epubName = path.basename(epubPath, path.extname(epubPath));
-		this.app.vault.createFolder(epubName);
+		// this.app.vault.createFolder(epubName);
 		let tocContent = "";
 		tocContent += `# ${epubName}\n\n`;
 
@@ -49,13 +62,13 @@ export default class MyPlugin extends Plugin {
 				this.app.vault.createFolder(parentPath);
 
 				toc.subItems.forEach((element: TocItem) => {
-					create(element, path.join(parentPath, element.name));
+					create(element, path.join(parentPath, toValidWindowsPath(element.name)));
 				});
 			}
 		};
 
 		for (let i = 0; i < toc.length; i++) {
-			create(toc[i], path.join(epubName, toc[i].name));
+			create(toc[i], path.join(epubName, toValidWindowsPath(toc[i].name)));
 		}
 
 		this.app.vault.create(epubName + "//" + "toc.md", tocContent);

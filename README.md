@@ -2,9 +2,10 @@
 
 ## RoudMap
 
-- [ ] convert name of char to a vaild windows file path, delete invalid characters.
+- [x] convert name of char to a vaild windows file path, delete invalid characters.
 - [x] image support.
 - [x] toc support.
+- [ ] inline link support.
 
 ## Working on Compatibility...
 
