@@ -7,6 +7,7 @@
 - [x] toc support.
 - [ ] inline link support.
 - [ ] only use longer paths for conflicting notes.
+- [ ] fix conflicting images bug.
 
 ## Working on Compatibility...
 
