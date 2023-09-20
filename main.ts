@@ -4,6 +4,7 @@
 import { Plugin, htmlToMarkdown } from "obsidian";
 import { TocItem, EpubParser } from "src/epubParser";
 import { EpubModal } from "src/modal";
+import { NoteParser } from "src/noteParser";
 
 // convert a string to a vaild windows path
 function toValidWindowsPath(path: string) {
@@ -45,14 +46,7 @@ export default class MyPlugin extends Plugin {
 		const create = (toc: TocItem, parentPath: string) => {
 			this.app.vault.create(
 				parentPath + ".md",
-				htmlToMarkdown(toc.getChapter())
-				.replace(
-					/\.\.\/images/g,
-					"images"
-				).replace(
-					"images",
-					`${epubName}/images`
-				)
+				NoteParser.getParseredNote(htmlToMarkdown(toc.getChapter()),epubName)
 			);
 
 			const filename = parentPath.split("\\").pop();
