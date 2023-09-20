@@ -8,7 +8,7 @@
 - [ ] inline link support.
 - [ ] only use longer paths for conflicting notes.
 - [x] fix conflicting images bug.
-- [ ] fix note duplication caused by href.
+- [x] fix note duplication caused by href.
 - [x] inline fontnote support.
 
 ## Working on Compatibility...

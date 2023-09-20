@@ -6,19 +6,6 @@ import { TocItem, EpubParser } from "src/epubParser";
 import { EpubModal } from "src/modal";
 import { NoteParser } from "src/noteParser";
 
-// convert a string to a vaild windows path
-function toValidWindowsPath(path: string) {
-	let newString = path.replace('?', '？');
-	newString = newString.replace(/[/|\\:*?"<>]/g, " ");
-	if (path != newString){
-		console.log("path",path);
-		console.log("-->");
-		console.log("newString",newString);
-	}
-	return newString;
-}
-
-
 export default class MyPlugin extends Plugin {
 	parser: EpubParser;
 	async onload() {
@@ -39,30 +26,47 @@ export default class MyPlugin extends Plugin {
 		const toc = this.parser.toc;
 		const path = require("path");
 		const epubName = path.basename(epubPath, path.extname(epubPath));
-		// this.app.vault.createFolder(epubName);
+		this.app.vault.createFolder(epubName);
 		let tocContent = "";
 		tocContent += `# ${epubName}\n\n`;
-
+		const toValidWindowsPath = require("./src/utils").toValidWindowsPath;
 		const create = (toc: TocItem, parentPath: string) => {
-			this.app.vault.create(
-				parentPath + ".md",
-				NoteParser.getParseredNote(htmlToMarkdown(toc.getChapter()),epubName)
-			);
+			
 
 			const filename = parentPath.split("\\").pop();
 			const level = parentPath.split("\\").length - 2;
+			let content = NoteParser.getParseredNote(htmlToMarkdown(toc.getChapter()),epubName);
 			tocContent += `${"\t".repeat(level)}- [[${parentPath.replace(
 				/\\/g,
 				"/"
 			)}|${filename}]]\n`;
 
 			if (toc.subItems.length >= 1) {
-				this.app.vault.createFolder(parentPath);
+				
+				const filesName: string[] = [];
+				const elements: TocItem[]= [];
 
+				
 				toc.subItems.forEach((element: TocItem) => {
-					create(element, path.join(parentPath, toValidWindowsPath(element.name)));
+					if(! filesName.includes(element.getFileName()) && ! (element.getFileName() == toc.getFileName())){
+						filesName.push(element.getFileName());
+						elements.push(element);
+					}
 				});
+				if(filesName.length == 1 && toc.subItems.length > 1){
+					content =content+"\n"+ NoteParser.getParseredNote(htmlToMarkdown(elements[0].getChapter()),epubName);
+				}else if(filesName.length != 0){
+					this.app.vault.createFolder(parentPath);
+					for (let i = 0; i < elements.length; i++) {
+						create(elements[i], path.join(parentPath, toValidWindowsPath(elements[i].name)));
+					}
+				}
+				
 			}
+			this.app.vault.create(
+				parentPath + ".md",
+				content
+			);
 		};
 
 		for (let i = 0; i < toc.length; i++) {
@@ -73,15 +77,29 @@ export default class MyPlugin extends Plugin {
 
 		const fs = require("fs");
 
-		fs.cpSync(
-			path.join(path.dirname(this.parser.tocFile), "images"),
-			path.join(
-				//@ts-ignore
-				this.app.vault.adapter.basePath,
-				path.join(epubName, "images")
-			),
-			{ recursive: true }
-		);
+		// find a folder named "images" under the this.parser.tmpobj.name\
+		let imageFolderPath = "";
+		const walkSync = require("./src/utils").walkSync;
+
+		walkSync(this.parser.tmpobj.name, (filePath: string, stat: any) => {
+			if (filePath.indexOf("images") !== -1) {
+				imageFolderPath = filePath;
+				console.log("image folder path: ", imageFolderPath);
+			}
+		});
+		console.log("image folder path: ", imageFolderPath);
+		if (imageFolderPath){
+			fs.cpSync(
+				imageFolderPath,
+				path.join(
+					//@ts-ignore
+					this.app.vault.adapter.basePath,
+					path.join(epubName, "images")
+				),
+				{ recursive: true }
+			);
+		}
+		
 	}
 
 	onunload() {}

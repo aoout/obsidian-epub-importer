@@ -22,6 +22,11 @@ export class TocItem {
 		const chapter = fs.readFileSync(this.url.split("#")[0], "utf-8");
 		return chapter;
 	}
+
+	getFileName(): string {
+		const path = require("path");
+		return path.basename(this.url).split("#")[0];
+	}
 }
 
 export class EpubParser {
@@ -46,19 +51,7 @@ export class EpubParser {
 	}
 
 	findOpfFile() {
-		const path = require("path");
-		const fs = require("fs");
-		const walkSync = (currentDirPath: string, callback: any) => {
-			fs.readdirSync(currentDirPath).forEach(function (name: string) {
-				const filePath = path.join(currentDirPath, name);
-				const stat = fs.statSync(filePath);
-				if (stat.isFile()) {
-					callback(filePath, stat);
-				} else if (stat.isDirectory()) {
-					walkSync(filePath, callback);
-				}
-			});
-		};
+		const walkSync = require("./utils").walkSync;
 		walkSync(this.tmpobj.name, (filePath: string, stat: any) => {
 			if (filePath.indexOf("toc.ncx") !== -1) {
 				this.tocFile = filePath;
