@@ -45,9 +45,13 @@ export default class MyPlugin extends Plugin {
 		const create = (toc: TocItem, parentPath: string) => {
 			this.app.vault.create(
 				parentPath + ".md",
-				htmlToMarkdown(toc.getChapter()).replace(
+				htmlToMarkdown(toc.getChapter())
+				.replace(
 					/\.\.\/images/g,
 					"images"
+				).replace(
+					"images",
+					`${epubName}/images`
 				)
 			);
 
