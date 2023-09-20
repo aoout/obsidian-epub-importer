@@ -11,6 +11,7 @@ Import .epub file into Obsidian as markdown notes.
 - [x] fix conflicting images bug.
 - [x] fix note duplication caused by href.
 - [x] inline fontnote support.
+- [ ] escape characters in the original text that are mistaken for markdown format tags.
 
 ## Working on Compatibility...
 

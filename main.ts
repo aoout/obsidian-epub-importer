@@ -81,8 +81,8 @@ export default class MyPlugin extends Plugin {
 		let imageFolderPath = "";
 		const walkSync = require("./src/utils").walkSync;
 
-		walkSync(this.parser.tmpobj.name, (filePath: string, stat: any) => {
-			if (filePath.indexOf("images") !== -1) {
+		walkSync(this.parser.tmpobj.name, "folder",(filePath: string, stat: any) => {
+			if (filePath.indexOf("images") !== -1 || filePath.indexOf("Images") !== -1) {
 				imageFolderPath = filePath;
 				console.log("image folder path: ", imageFolderPath);
 			}

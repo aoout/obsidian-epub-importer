@@ -52,7 +52,7 @@ export class EpubParser {
 
 	findOpfFile() {
 		const walkSync = require("./utils").walkSync;
-		walkSync(this.tmpobj.name, (filePath: string, stat: any) => {
+		walkSync(this.tmpobj.name, "file",(filePath: string, stat: any) => {
 			if (filePath.indexOf("toc.ncx") !== -1) {
 				this.tocFile = filePath;
 			}
