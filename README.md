@@ -1,12 +1,13 @@
 # Obsidian Epub Importer
 
+Import .epub file into Obsidian as markdown notes.
+
 ## RoudMap
 
 - [x] convert name of char to a vaild windows file path, delete invalid characters.
 - [x] image support.
 - [x] toc support.
 - [ ] inline link support.
-- [ ] only use longer paths for conflicting notes.
 - [x] fix conflicting images bug.
 - [x] fix note duplication caused by href.
 - [x] inline fontnote support.
