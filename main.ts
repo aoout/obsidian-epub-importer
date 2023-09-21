@@ -73,7 +73,7 @@ export default class MyPlugin extends Plugin {
 			create(toc[i], path.join(epubName, toValidWindowsPath(toc[i].name)));
 		}
 
-		this.app.vault.create(epubName + "//" + "toc.md", tocContent);
+		
 
 		const fs = require("fs");
 
@@ -99,6 +99,23 @@ export default class MyPlugin extends Plugin {
 				{ recursive: true }
 			);
 		}
+		// copy cover from tmpobj to vault, 保留原来的扩展名
+		const cover = this.parser.coverPath;
+		if (cover) {
+			fs.cpSync(
+				cover,
+				path.join(
+					//@ts-ignore
+					this.app.vault.adapter.basePath,
+					path.join(epubName, path.basename(cover))
+				)
+			);
+		}
+		// 在tocContent前面加上cover属性
+		if (cover) {
+			tocContent = "---\n"+`cover: ${epubName}/${path.basename(cover)}\n`+"tags: book\n"+"---\n" + tocContent;
+		}
+		this.app.vault.create(epubName + "//" + `${epubName}.md`, tocContent);
 		
 	}
 

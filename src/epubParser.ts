@@ -7,6 +7,7 @@ export class TocItem {
 	url: string;
 	subItems: TocItem[];
 
+
 	constructor(
 		name: string,
 		url: string,
@@ -34,6 +35,8 @@ export class EpubParser {
 	tmpobj: any;
 	tocFile: string;
 	toc: TocItem[];
+	opfFile:string;
+	coverPath:string;
 
 	constructor(path: string) {
 		this.epubPath = path;
@@ -50,7 +53,7 @@ export class EpubParser {
 			.promise();
 	}
 
-	findOpfFile() {
+	findTocFile() {
 		const walkSync = require("./utils").walkSync;
 		walkSync(this.tmpobj.name, "file",(filePath: string, stat: any) => {
 			if (filePath.indexOf("toc.ncx") !== -1) {
@@ -60,7 +63,17 @@ export class EpubParser {
 		console.log("toc file path: ", this.tocFile);
 	}
 
-	async parse() {
+	findOpfFile() {
+		const walkSync = require("./utils").walkSync;
+		walkSync(this.tmpobj.name, "file",(filePath: string, stat: any) => {
+			if (filePath.indexOf("content.opf") !== -1) {
+				this.opfFile = filePath;
+			}
+		});
+		console.log("opf file path: ", this.opfFile);
+	}
+
+	async parseToc() {
 		const fs = require("fs");
 		const xml2js = require("xml2js");
 		const parser = new xml2js.Parser();
@@ -98,13 +111,42 @@ export class EpubParser {
 		}
 		this.toc = toc;
 		console.log(toc);
+
+	}
+
+	async parseCover(){
+		const fs = require("fs");
+		const xml2js = require("xml2js");
+		const parser = new xml2js.Parser();
+		const data = fs.readFileSync(this.opfFile, "utf-8");
+
+		let result: any;
+		await parser.parseStringPromise(data).then((result2: any) => {
+			result = result2;
+		});
+		console.log(result);
+
+		for(let i = 0; i < result.package.manifest[0].item.length; i++){
+			const item = result.package.manifest[0].item[i];
+			if(item.$.id.indexOf("cover") !== -1){
+				const path = require("path");
+				const opfParentPath = path.dirname(this.opfFile);
+				this.coverPath = opfParentPath + "/" + item.$.href;
+				break;
+			}
+		}
+
+		console.log(this.coverPath);
+
 	}
 
 	static async getParser(path: string) {
 		const parser = new EpubParser(path);
 		await parser.init();
+		parser.findTocFile();
+		await parser.parseToc();
 		parser.findOpfFile();
-		await parser.parse();
+		await parser.parseCover();
 		return parser;
 	}
 }

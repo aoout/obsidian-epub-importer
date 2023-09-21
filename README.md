@@ -26,7 +26,8 @@ and input the absolute path to .epub file you want to import it into your obsidi
 - [x] inline fontnote support.
 - [ ] escape characters in the original text that are mistaken for markdown format tags.
 - [ ] settings tab page can specify the default path for searching e-book files.
-- [ ] cover parser for obsidian projects plugin.
+- [x] cover parser for obsidian projects plugin.
+- [ ] Parse more metadata.
 
 ## Working on Compatibility...
 
