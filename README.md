@@ -15,6 +15,8 @@ get the plugin from obsidian BRAT plugin.
 run `Epub Importer: Import epub to your vault` command, 
 and input the absolute path to .epub file you want to import it into your obsidian vault.
 
+[![Watch the video](https://img.youtube.com/vi/SH3OuDLdMQw/hqdefault.jpg)](https://www.youtube.com/embed/SH3OuDLdMQw)
+
 ## RoudMap
 
 - [x] convert name of char to a vaild windows file path, delete invalid characters.
