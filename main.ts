@@ -3,22 +3,35 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Plugin, htmlToMarkdown } from "obsidian";
 import { TocItem, EpubParser } from "src/epubParser";
-import { EpubModal } from "src/modal";
+import { EpubModal } from "src/ePubModal";
 import { NoteParser } from "src/noteParser";
+import { DEFAULT_SETTINGS, EpubImporterSettings } from "src/settings";
+import { EpubImporterSettingsTab } from "src/settingsTab";
 
-export default class MyPlugin extends Plugin {
+export default class EpubImporterPlugin extends Plugin {
+	settings: EpubImporterSettings;
 	parser: EpubParser;
 	async onload() {
+		await this.loadSettings();
+		this.addSettingTab(new EpubImporterSettingsTab(this.app,this));
 		this.addCommand({
 			id: "import-epub",
 			name: "Import epub to your vault",
 			callback: () => {
-				new EpubModal(this.app, async (result) => {
+				new EpubModal(this.app, this,async (result) => {
 					await this.import(result);
 				}).open();
 			},
 		});
 	}
+
+	async loadSettings(): Promise<void> {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
+
+    async saveSettings(): Promise<void> {
+        await this.saveData(this.settings);
+    }
 
 	async import(epubPath: string) {
 		this.parser = await EpubParser.getParser(epubPath);
@@ -112,8 +125,13 @@ export default class MyPlugin extends Plugin {
 			);
 		}
 		// 在tocContent前面加上cover属性
+		// 构建tags部分内容
+		let tagsContent = "tags: \n";
+		for (let i = 0; i < this.settings.tags.length; i++) {
+			tagsContent += `- ${this.settings.tags[i]}\n`;
+		}
 		if (cover) {
-			tocContent = "---\n"+`cover: ${epubName}/${path.basename(cover)}\n`+"tags: book\n"+"---\n" + tocContent;
+			tocContent = "---\n"+`cover: ${epubName}/${path.basename(cover)}\n`+tagsContent+"---\n" + tocContent;
 		}
 		this.app.vault.create(epubName + "//" + `${epubName}.md`, tocContent);
 		
