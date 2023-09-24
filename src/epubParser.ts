@@ -2,11 +2,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
 
+import * as xml2js from "xml2js";
+import * as fs from "fs";
+import * as path from "path";
+import * as tmp from "tmp";
+import * as unzipper from "unzipper";
+import { walkSync } from "./utils";
+
 export class TocItem {
 	name: string;
 	url: string;
 	subItems: TocItem[];
-
 
 	constructor(
 		name: string,
@@ -19,13 +25,11 @@ export class TocItem {
 	}
 
 	getChapter(): string {
-		const fs = require("fs");
 		const chapter = fs.readFileSync(this.url.split("#")[0], "utf-8");
 		return chapter;
 	}
 
 	getFileName(): string {
-		const path = require("path");
 		return path.basename(this.url).split("#")[0];
 	}
 }
@@ -35,18 +39,15 @@ export class EpubParser {
 	tmpobj: any;
 	tocFile: string;
 	toc: TocItem[];
-	opfFile:string;
-	coverPath:string;
+	opfFile: string;
+	coverPath: string;
 
 	constructor(path: string) {
 		this.epubPath = path;
 	}
 
 	async init() {
-		const tmp = require("tmp");
 		this.tmpobj = tmp.dirSync({ unsafeCleanup: true });
-		const fs = require("fs");
-		const unzipper = require("unzipper");
 		await fs
 			.createReadStream(this.epubPath)
 			.pipe(unzipper.Extract({ path: this.tmpobj.name }))
@@ -54,8 +55,7 @@ export class EpubParser {
 	}
 
 	findTocFile() {
-		const walkSync = require("./utils").walkSync;
-		walkSync(this.tmpobj.name, "file",(filePath: string, stat: any) => {
+		walkSync(this.tmpobj.name, "file", (filePath: string, stat: any) => {
 			if (filePath.indexOf("toc.ncx") !== -1) {
 				this.tocFile = filePath;
 			}
@@ -64,8 +64,7 @@ export class EpubParser {
 	}
 
 	findOpfFile() {
-		const walkSync = require("./utils").walkSync;
-		walkSync(this.tmpobj.name, "file",(filePath: string, stat: any) => {
+		walkSync(this.tmpobj.name, "file", (filePath: string, stat: any) => {
 			if (filePath.indexOf("content.opf") !== -1) {
 				this.opfFile = filePath;
 			}
@@ -74,8 +73,6 @@ export class EpubParser {
 	}
 
 	async parseToc() {
-		const fs = require("fs");
-		const xml2js = require("xml2js");
 		const parser = new xml2js.Parser();
 		const data = fs.readFileSync(this.tocFile, "utf-8");
 
@@ -87,7 +84,6 @@ export class EpubParser {
 		const navPoints = result.ncx.navMap[0].navPoint;
 
 		const parseNavPoint = (navPoint: any) => {
-			const path = require("path");
 			const tocParentPath = path.dirname(this.tocFile);
 
 			const item = new TocItem(
@@ -111,12 +107,9 @@ export class EpubParser {
 		}
 		this.toc = toc;
 		console.log(toc);
-
 	}
 
-	async parseCover(){
-		const fs = require("fs");
-		const xml2js = require("xml2js");
+	async parseCover() {
 		const parser = new xml2js.Parser();
 		const data = fs.readFileSync(this.opfFile, "utf-8");
 
@@ -126,10 +119,9 @@ export class EpubParser {
 		});
 		console.log(result);
 
-		for(let i = 0; i < result.package.manifest[0].item.length; i++){
+		for (let i = 0; i < result.package.manifest[0].item.length; i++) {
 			const item = result.package.manifest[0].item[i];
-			if(item.$.id.indexOf("cover") !== -1){
-				const path = require("path");
+			if (item.$.id.indexOf("cover") !== -1) {
 				const opfParentPath = path.dirname(this.opfFile);
 				this.coverPath = opfParentPath + "/" + item.$.href;
 				break;
@@ -137,7 +129,6 @@ export class EpubParser {
 		}
 
 		console.log(this.coverPath);
-
 	}
 
 	static async getParser(path: string) {

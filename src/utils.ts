@@ -3,6 +3,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 // convert a string to a vaild windows path
+
+import * as fs from "fs";
+import * as path from "path";
+
 export function toValidWindowsPath(path: string) {
 	let newString = path.replace("?", "？");
 	newString = newString.replace(/[/|\\:*?"<>]/g, " ");
@@ -19,8 +23,6 @@ export const walkSync = (
 	type: string,
 	callback: any
 ) => {
-	const fs = require("fs");
-	const path = require("path");
 	fs.readdirSync(currentDirPath).forEach(function (name: string) {
 		const filePath = path.join(currentDirPath, name);
 		const stat = fs.statSync(filePath);

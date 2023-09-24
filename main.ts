@@ -8,17 +8,21 @@ import { NoteParser } from "src/noteParser";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "src/settings";
 import { EpubImporterSettingsTab } from "src/settingsTab";
 
+import * as fs from "fs";
+import * as path from "path";
+import { toValidWindowsPath, walkSync } from "src/utils";
+
 export default class EpubImporterPlugin extends Plugin {
 	settings: EpubImporterSettings;
 	parser: EpubParser;
 	async onload() {
 		await this.loadSettings();
-		this.addSettingTab(new EpubImporterSettingsTab(this.app,this));
+		this.addSettingTab(new EpubImporterSettingsTab(this.app, this));
 		this.addCommand({
 			id: "import-epub",
 			name: "Import epub to your vault",
 			callback: () => {
-				new EpubModal(this.app, this,async (result) => {
+				new EpubModal(this.app, this, async (result) => {
 					await this.import(result);
 				}).open();
 			},
@@ -26,82 +30,98 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    }
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await this.loadData()
+		);
+	}
 
-    async saveSettings(): Promise<void> {
-        await this.saveData(this.settings);
-    }
+	async saveSettings(): Promise<void> {
+		await this.saveData(this.settings);
+	}
 
 	async import(epubPath: string) {
 		this.parser = await EpubParser.getParser(epubPath);
 
 		const toc = this.parser.toc;
-		const path = require("path");
 		const epubName = path.basename(epubPath, path.extname(epubPath));
 		this.app.vault.createFolder(epubName);
 		let tocContent = "";
 		tocContent += `# ${epubName}\n\n`;
-		const toValidWindowsPath = require("./src/utils").toValidWindowsPath;
 		const create = (toc: TocItem, parentPath: string) => {
-			
-
 			const filename = parentPath.split("\\").pop();
 			const level = parentPath.split("\\").length - 2;
-			let content = NoteParser.getParseredNote(htmlToMarkdown(toc.getChapter()),epubName);
+			let content = NoteParser.getParseredNote(
+				htmlToMarkdown(toc.getChapter()),
+				epubName
+			);
 			tocContent += `${"\t".repeat(level)}- [[${parentPath.replace(
 				/\\/g,
 				"/"
 			)}|${filename}]]\n`;
 
 			if (toc.subItems.length >= 1) {
-				
 				const filesName: string[] = [];
-				const elements: TocItem[]= [];
+				const elements: TocItem[] = [];
 
-				
 				toc.subItems.forEach((element: TocItem) => {
-					if(! filesName.includes(element.getFileName()) && ! (element.getFileName() == toc.getFileName())){
+					if (
+						!filesName.includes(element.getFileName()) &&
+						!(element.getFileName() == toc.getFileName())
+					) {
 						filesName.push(element.getFileName());
 						elements.push(element);
 					}
 				});
-				if(filesName.length == 1 && toc.subItems.length > 1){
-					content =content+"\n"+ NoteParser.getParseredNote(htmlToMarkdown(elements[0].getChapter()),epubName);
-				}else if(filesName.length != 0){
+				if (filesName.length == 1 && toc.subItems.length > 1) {
+					content =
+						content +
+						"\n" +
+						NoteParser.getParseredNote(
+							htmlToMarkdown(elements[0].getChapter()),
+							epubName
+						);
+				} else if (filesName.length != 0) {
 					this.app.vault.createFolder(parentPath);
 					for (let i = 0; i < elements.length; i++) {
-						create(elements[i], path.join(parentPath, toValidWindowsPath(elements[i].name)));
+						create(
+							elements[i],
+							path.join(
+								parentPath,
+								toValidWindowsPath(elements[i].name)
+							)
+						);
 					}
 				}
-				
 			}
-			this.app.vault.create(
-				parentPath + ".md",
-				content
-			);
+			this.app.vault.create(parentPath + ".md", content);
 		};
 
 		for (let i = 0; i < toc.length; i++) {
-			create(toc[i], path.join(epubName, toValidWindowsPath(toc[i].name)));
+			create(
+				toc[i],
+				path.join(epubName, toValidWindowsPath(toc[i].name))
+			);
 		}
 
-		
-
-		const fs = require("fs");
-
-		// find a folder named "images" under the this.parser.tmpobj.name\
 		let imageFolderPath = "";
-		const walkSync = require("./src/utils").walkSync;
 
-		walkSync(this.parser.tmpobj.name, "folder",(filePath: string, stat: any) => {
-			if (filePath.indexOf("images") !== -1 || filePath.indexOf("Images") !== -1) {
-				imageFolderPath = filePath;
-				console.log("image folder path: ", imageFolderPath);
+		walkSync(
+			this.parser.tmpobj.name,
+			"folder",
+			(filePath: string, stat: any) => {
+				if (
+					filePath.indexOf("images") !== -1 ||
+					filePath.indexOf("Images") !== -1
+				) {
+					imageFolderPath = filePath;
+					console.log("image folder path: ", imageFolderPath);
+				}
 			}
-		});
+		);
 		console.log("image folder path: ", imageFolderPath);
-		if (imageFolderPath){
+		if (imageFolderPath) {
 			fs.cpSync(
 				imageFolderPath,
 				path.join(
@@ -112,7 +132,6 @@ export default class EpubImporterPlugin extends Plugin {
 				{ recursive: true }
 			);
 		}
-		// copy cover from tmpobj to vault, 保留原来的扩展名
 		const cover = this.parser.coverPath;
 		if (cover) {
 			fs.cpSync(
@@ -124,17 +143,19 @@ export default class EpubImporterPlugin extends Plugin {
 				)
 			);
 		}
-		// 在tocContent前面加上cover属性
-		// 构建tags部分内容
 		let tagsContent = "tags: \n";
 		for (let i = 0; i < this.settings.tags.length; i++) {
 			tagsContent += `- ${this.settings.tags[i]}\n`;
 		}
 		if (cover) {
-			tocContent = "---\n"+`cover: ${epubName}/${path.basename(cover)}\n`+tagsContent+"---\n" + tocContent;
+			tocContent =
+				"---\n" +
+				`cover: ${epubName}/${path.basename(cover)}\n` +
+				tagsContent +
+				"---\n" +
+				tocContent;
 		}
 		this.app.vault.create(epubName + "//" + `${epubName}.md`, tocContent);
-		
 	}
 
 	onunload() {}
