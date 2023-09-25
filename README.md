@@ -17,7 +17,7 @@ and input the absolute path to .epub file you want to import it into your obsidi
 Then, .epub file will be converted to a folder and some notes, 
 so you can read the book directly in obsidian, and make some marks, make some links and notes.
 
-[![Watch the video](https://img.youtube.com/vi/SH3OuDLdMQw/hqdefault.jpg)](https://www.youtube.com/embed/SH3OuDLdMQw)
+https://github.com/aoout/obsidian-epub-importer/assets/60838705/1c2aea09-5a24-4d15-b148-22c9817a569f
 
 ## RoudMap
 
