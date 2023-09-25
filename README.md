@@ -2,11 +2,11 @@
 
 Import .epub file into Obsidian as markdown notes.
 
-> [!WARNING]
-> Please be sure to back up your library first. In principle, this plugin will not destroy your library, but accidents may occur.
-
 > [!IMPORTANT]
 > This plugin is still in a very early stage and will probably only work with some specific formats of .epub files. If you find any incompatibilities, please let me know.
+
+> [!NOTE]
+> the plugin need to access files outside of Obsidian vaults, becasue .epub file is outside of Obsidian vaults. 
 
 ## Usage
 
