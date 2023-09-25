@@ -10,10 +10,12 @@ Import .epub file into Obsidian as markdown notes.
 
 ## Usage
 
-get the plugin from obsidian BRAT plugin.
+Get the plugin from obsidian BRAT plugin.
 
-run `Epub Importer: Import epub to your vault` command, 
+Run `Epub Importer: Import epub to your vault` command, 
 and input the absolute path to .epub file you want to import it into your obsidian vault.
+Then, .epub file will be converted to a folder and some notes, 
+so you can read the book directly in obsidian, and make some marks, make some links and notes.
 
 [![Watch the video](https://img.youtube.com/vi/SH3OuDLdMQw/hqdefault.jpg)](https://www.youtube.com/embed/SH3OuDLdMQw)
 
