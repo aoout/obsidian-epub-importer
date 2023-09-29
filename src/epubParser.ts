@@ -7,7 +7,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp";
 import * as unzipper from "unzipper";
-import { walkSync } from "./utils";
+import { walkUntil } from "./utils/myPath";
 
 export class TocItem {
 	name: string;
@@ -55,20 +55,20 @@ export class EpubParser {
 	}
 
 	findTocFile() {
-		walkSync(this.tmpobj.name, "file", (filePath: string, stat: any) => {
-			if (filePath.indexOf("toc.ncx") !== -1) {
-				this.tocFile = filePath;
-			}
-		});
+		this.tocFile = walkUntil(
+			this.tmpobj.name,
+			"file",
+			(filePath: string) => filePath.indexOf("toc.ncx") !== -1
+		);
 		console.log("toc file path: ", this.tocFile);
 	}
 
 	findOpfFile() {
-		walkSync(this.tmpobj.name, "file", (filePath: string, stat: any) => {
-			if (filePath.indexOf("content.opf") !== -1) {
-				this.opfFile = filePath;
-			}
-		});
+		this.opfFile = walkUntil(
+			this.tmpobj.name,
+			"file",
+			(filePath: string) => filePath.indexOf("content.opf") !== -1
+		);
 		console.log("opf file path: ", this.opfFile);
 	}
 

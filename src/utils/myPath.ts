@@ -18,11 +18,7 @@ export function toValidWindowsPath(path: string) {
 	return newString;
 }
 
-export const walkSync = (
-	currentDirPath: string,
-	type: string,
-	callback: any
-) => {
+export const walk = (currentDirPath: string, type: string, callback: any) => {
 	fs.readdirSync(currentDirPath).forEach(function (name: string) {
 		const filePath = path.join(currentDirPath, name);
 		const stat = fs.statSync(filePath);
@@ -34,7 +30,35 @@ export const walkSync = (
 			callback(filePath, stat);
 		}
 		if (stat.isDirectory()) {
-			walkSync(filePath, type, callback);
+			walk(filePath, type, callback);
 		}
 	});
+};
+
+export const walkUntil = (
+	currentDirpath: string,
+	type: string,
+	check: any,
+	getvalue: any = null
+) => {
+	const files = fs.readdirSync(currentDirpath);
+	for (let i = 0; i < files.length; i++) {
+		const name = files[i];
+		const filePath = path.join(currentDirpath, name);
+		const stat = fs.statSync(filePath);
+		if (
+			check(filePath) &&
+			((stat.isFile() && type == "file") ||
+				(stat.isDirectory() && type == "folder"))
+		) {
+			if (getvalue) {
+				return getvalue(filePath, stat);
+			} else {
+				return filePath;
+			}
+		}
+		if (stat.isDirectory()) {
+			walkUntil(filePath, type, check, getvalue);
+		}
+	}
 };

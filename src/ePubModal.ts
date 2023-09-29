@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import EpubImporterPlugin from "main";
 import { App, Notice, SuggestModal } from "obsidian";
-import { walkSync } from "./utils";
+import { walk } from "./utils/myPath";
 
 function toValidEpubPath(string: string) {
 	try {
@@ -28,7 +28,7 @@ export class EpubModal extends SuggestModal<string> {
 	getSuggestions(query: string): string[] | Promise<string[]> {
 		const result: string[] = [];
 		this.librarys.forEach((lib) => {
-			walkSync(lib, "file", (filePath: string, stat: any) => {
+			walk(lib, "file", (filePath: string, stat: any) => {
 				if (filePath.indexOf(".epub") !== -1) {
 					result.push(filePath);
 				}
