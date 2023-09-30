@@ -40,25 +40,20 @@ export const walkUntil = (
 	type: string,
 	check: any,
 	getvalue: any = null
-) => {
-	const files = fs.readdirSync(currentDirpath);
-	for (let i = 0; i < files.length; i++) {
-		const name = files[i];
-		const filePath = path.join(currentDirpath, name);
-		const stat = fs.statSync(filePath);
+): any => {
+	const paths: string[] = [];
+	walk(currentDirpath, type, (path: string) => {
+		paths.push(path);
+	});
+
+	for (const path of paths) {
+		const stat = fs.statSync(path);
 		if (
-			check(filePath) &&
+			check(path) &&
 			((stat.isFile() && type == "file") ||
 				(stat.isDirectory() && type == "folder"))
 		) {
-			if (getvalue) {
-				return getvalue(filePath, stat);
-			} else {
-				return filePath;
-			}
-		}
-		if (stat.isDirectory()) {
-			walkUntil(filePath, type, check, getvalue);
+			return getvalue ? getvalue(path, stat) : path;
 		}
 	}
 };

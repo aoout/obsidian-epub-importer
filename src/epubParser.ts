@@ -8,25 +8,30 @@ import * as path from "path";
 import * as tmp from "tmp";
 import * as unzipper from "unzipper";
 import { walkUntil } from "./utils/myPath";
+import { htmlToMarkdown } from "obsidian";
 
-export class TocItem {
+export class Chapter {
 	name: string;
 	url: string;
-	subItems: TocItem[];
+	subItems: Chapter[];
 
 	constructor(
 		name: string,
 		url: string,
-		subItems: TocItem[] = new Array<TocItem>()
+		subItems: Chapter[] = new Array<Chapter>()
 	) {
 		this.name = name;
 		this.url = url;
 		this.subItems = subItems;
 	}
 
-	getChapter(): string {
+	getHtml(): string {
 		const chapter = fs.readFileSync(this.url.split("#")[0], "utf-8");
 		return chapter;
+	}
+
+	getMarkdown():string{
+		return htmlToMarkdown(this.getHtml());
 	}
 
 	getFileName(): string {
@@ -38,7 +43,7 @@ export class EpubParser {
 	epubPath: string;
 	tmpobj: any;
 	tocFile: string;
-	toc: TocItem[];
+	toc: Chapter[];
 	opfFile: string;
 	coverPath: string;
 
@@ -55,19 +60,21 @@ export class EpubParser {
 	}
 
 	findTocFile() {
+		console.log("this.tmpobj.name: ", this.tmpobj.name);
 		this.tocFile = walkUntil(
 			this.tmpobj.name,
 			"file",
-			(filePath: string) => filePath.indexOf("toc.ncx") !== -1
+			(filePath: string) => 	path.basename(filePath) == "toc.ncx"
 		);
 		console.log("toc file path: ", this.tocFile);
 	}
 
 	findOpfFile() {
+		
 		this.opfFile = walkUntil(
 			this.tmpobj.name,
 			"file",
-			(filePath: string) => filePath.indexOf("content.opf") !== -1
+			(filePath: string) => filePath.includes("content.opf")
 		);
 		console.log("opf file path: ", this.opfFile);
 	}
@@ -86,7 +93,7 @@ export class EpubParser {
 		const parseNavPoint = (navPoint: any) => {
 			const tocParentPath = path.dirname(this.tocFile);
 
-			const item = new TocItem(
+			const item = new Chapter(
 				navPoint.navLabel[0].text[0],
 				tocParentPath + "/" + navPoint.content[0].$["src"]
 			);

@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Plugin, htmlToMarkdown } from "obsidian";
-import { TocItem, EpubParser } from "src/epubParser";
-import { EpubModal } from "src/ePubModal";
+import { Chapter, EpubParser } from "src/epubParser";
+import { modal } from "src/modal";
 import { NoteParser } from "src/noteParser";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "src/settings/settings";
 import { EpubImporterSettingsTab } from "src/settings/settingsTab";
@@ -28,7 +28,7 @@ export default class EpubImporterPlugin extends Plugin {
 			id: "import-epub",
 			name: "Import epub to your vault",
 			callback: () => {
-				new EpubModal(this.app, this, async (result) => {
+				new modal(this.app, this, async (result) => {
 					await this.import(result);
 				}).open();
 			},
@@ -59,12 +59,16 @@ export default class EpubImporterPlugin extends Plugin {
 		const bookPath = path.join(this.vaultPath, epubName);
 
 		toc.forEach((element) => {
-			this.createTocItem(
+			this.createChapter(
 				epubName,
 				element,
 				path.join(epubName, toValidWindowsPath(element.name))
 			);
 		});
+		this.injectBartenderData(
+			epubName,
+			toc.map((element) => toValidWindowsPath(element.name))
+		);
 
 		this.copyImages(epubName, bookPath);
 		this.propertys.add("tags", this.settings.tags);
@@ -97,46 +101,40 @@ export default class EpubImporterPlugin extends Plugin {
 		}
 	}
 
-	createTocItem(epubName: string, toc: TocItem, thePath: string) {
-		const filename = thePath.split("\\").pop();
-		const level = thePath.split("\\").length - 2;
-		let content = NoteParser.getParseredNote(
-			htmlToMarkdown(toc.getChapter()),
-			epubName
-		);
-		this.folderNoteContent += `${"\t".repeat(level)}- [[${thePath.replace(
-			/\\/g,
-			"/"
-		)}|${filename}]]\n`;
+	createChapter(epubName: string, cpt: Chapter, notePath: string) {
+		const noteName = path.basename(notePath);
+		const level = notePath.split(path.sep).length - 2;
+		let content = NoteParser.getParseredNote(cpt.getMarkdown(), epubName);
 
-		if (toc.subItems.length) {
-			const vaildSubItems = toc.subItems.filter((element: TocItem) => {
-				return element.getFileName() != toc.getFileName();
+		if (cpt.subItems.length) {
+			const vaildSubItems = cpt.subItems.filter((element: Chapter) => {
+				return element.getFileName() != cpt.getFileName();
 			});
-			if (vaildSubItems.length == 1 && toc.subItems.length > 1) {
-				content =
-					content +
+			if (vaildSubItems.length == 1 && cpt.subItems.length > 1) {
+				content +=
 					"\n" +
 					NoteParser.getParseredNote(
-						htmlToMarkdown(vaildSubItems[0].getChapter()),
+						vaildSubItems[0].getMarkdown(),
 						epubName
 					);
 			} else if (vaildSubItems.length != 0) {
-				this.app.vault.createFolder(thePath);
-				vaildSubItems.forEach((element: TocItem) => {
-					this.createTocItem(
+				this.app.vault.createFolder(notePath);
+
+				vaildSubItems.forEach((element: Chapter) => {
+					this.createChapter(
 						epubName,
 						element,
-						path.join(thePath, toValidWindowsPath(element.name))
+						path.join(notePath, toValidWindowsPath(element.name))
 					);
 				});
+				notePath = path.join(notePath, noteName);
 			}
 		}
-		this.app.vault.create(thePath + ".md", content);
-	}
-
-	injectBartenderData() {
-		//TODO: Insert folder sorting data into the data.json of the bartender plugin.
+		this.app.vault.create(notePath + ".md", content);
+		this.folderNoteContent += `${"\t".repeat(level)}- [[${notePath.replace(
+			/\\/g,
+			"/"
+		)}|${noteName}]]\n`;
 	}
 
 	onunload() {}

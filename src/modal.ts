@@ -21,7 +21,7 @@ function toValidEpubPath(string: string) {
 	}
 }
 
-export class EpubModal extends SuggestModal<string> {
+export class modal extends SuggestModal<string> {
 	onSubmit: (result: string) => void;
 	librarys: string[];
 

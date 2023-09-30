@@ -17,7 +17,7 @@ export class NoteParser {
 	parseImagePath() {
 		// TODO: Avoid accidentally damaging the text content
 		this.content = this.content
-			.replace(/Images/g,"images")
+			.replace(/Images/g, "images")
 			.replace(/\.\.\/images/g, "images")
 			.replace(/images/g, `${this.epubName}/images`);
 	}
