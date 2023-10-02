@@ -23,13 +23,21 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
                     await this.plugin.saveSettings();
                 }));
 
-        // complete settings for library
         new Setting(containerEl)
             .setName("Library")
             .setDesc("The plugin will search for .epub files from these paths.")
             .addTextArea((text)=>{
                 text.setValue(this.plugin.settings.libratys.join("\n")).onChange(async (value)=>{
                     this.plugin.settings.libratys = value.split("\n").map(lib => lib.trim());
+                    await this.plugin.saveSettings();
+                })
+            })
+        new Setting(containerEl)
+            .setName("Auto open right panel")
+            .setDesc("The plugin will open the book note on right panel when you open a book.")
+            .addToggle((toggle)=>{
+                toggle.setValue(this.plugin.settings.autoOpenRightPanel).onChange(async (value)=>{
+                    this.plugin.settings.autoOpenRightPanel = value;
                     await this.plugin.saveSettings();
                 })
             })

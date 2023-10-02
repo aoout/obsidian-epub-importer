@@ -1,7 +1,8 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin } from "obsidian";
+import { Plugin, WorkspaceLeaf } from "obsidian";
 import { Chapter, EpubParser } from "src/epubParser";
 import { modal } from "src/modal";
 import { NoteParser } from "src/noteParser";
@@ -17,8 +18,10 @@ export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
 	settings: EpubImporterSettings;
 	parser: EpubParser;
-	folderNoteContent: string;
+	BookNote: string;
 	propertys: Propertys;
+	activeBook: string;
+	activeLeaf: WorkspaceLeaf;
 	async onload() {
 		//@ts-ignore
 		this.vaultPath = this.app.vault.adapter.basePath;
@@ -32,6 +35,29 @@ export default class EpubImporterPlugin extends Plugin {
 					await this.import(result);
 				}).open();
 			},
+		});
+
+		this.app.workspace.on("file-open", (file) => {
+			if(!this.settings.autoOpenRightPanel) return;
+			if (!file) return;
+			const bookNotePath = this.findBookNote(file.path);
+
+			if (!bookNotePath) return;
+			const bookName = bookNotePath.split("/")[0];
+			if (this.activeBook == bookName) return;
+			if (this.activeLeaf) this.activeLeaf.detach();
+			this.activeBook = bookName;
+			this.activeLeaf = this.app.workspace.getRightLeaf(false);
+			this.activeLeaf.setViewState({
+				type: "markdown",
+				state: {
+					file: bookNotePath,
+					mode: "preview",
+					backlinks: false,
+					source: false,
+				},
+			});
+			this.app.workspace.revealLeaf(this.activeLeaf);
 		});
 	}
 	onunload() {}
@@ -52,7 +78,7 @@ export default class EpubImporterPlugin extends Plugin {
 		this.parser = await EpubParser.getParser(epubPath);
 
 		const epubName = path.basename(epubPath, path.extname(epubPath));
-		this.folderNoteContent = `# ${epubName}\n\n`;
+		this.BookNote = `# ${epubName}\n\n`;
 		this.propertys = new Propertys();
 
 		const toc = this.parser.toc;
@@ -70,11 +96,10 @@ export default class EpubImporterPlugin extends Plugin {
 		this.copyImages(epubName, bookPath);
 		this.propertys.add("tags", this.settings.tags);
 
-		this.folderNoteContent =
-			this.propertys.toString() + this.folderNoteContent;
+		this.BookNote = this.propertys.toString() + this.BookNote;
 		this.app.vault.create(
 			epubName + "//" + `${epubName}.md`,
-			this.folderNoteContent
+			this.BookNote
 		);
 	}
 
@@ -128,9 +153,18 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 		}
 		this.app.vault.create(notePath + ".md", content);
-		this.folderNoteContent += `${"\t".repeat(level)}- [[${notePath.replace(
+		this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
 			/\\/g,
 			"/"
 		)}|${noteName}]]\n`;
+	}
+
+	findBookNote(notePath: string) {
+		const firstLevel = notePath.split("/")[0];
+		const bookNotePath = firstLevel + "/" + firstLevel + ".md";
+
+		const bookNote = this.app.vault.getAbstractFileByPath(bookNotePath);
+		if (!bookNote) return;
+		return bookNotePath;
 	}
 }
