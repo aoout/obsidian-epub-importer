@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin, htmlToMarkdown } from "obsidian";
+import { Plugin } from "obsidian";
 import { Chapter, EpubParser } from "src/epubParser";
 import { modal } from "src/modal";
 import { NoteParser } from "src/noteParser";
@@ -34,6 +34,7 @@ export default class EpubImporterPlugin extends Plugin {
 			},
 		});
 	}
+	onunload() {}
 
 	async loadSettings(): Promise<void> {
 		this.settings = Object.assign(
@@ -65,10 +66,6 @@ export default class EpubImporterPlugin extends Plugin {
 				path.join(epubName, toValidWindowsPath(element.name))
 			);
 		});
-		this.injectBartenderData(
-			epubName,
-			toc.map((element) => toValidWindowsPath(element.name))
-		);
 
 		this.copyImages(epubName, bookPath);
 		this.propertys.add("tags", this.settings.tags);
@@ -136,6 +133,4 @@ export default class EpubImporterPlugin extends Plugin {
 			"/"
 		)}|${noteName}]]\n`;
 	}
-
-	onunload() {}
 }
