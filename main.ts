@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin, WorkspaceLeaf } from "obsidian";
+import { Plugin, TFile, WorkspaceLeaf} from "obsidian";
 import { Chapter, EpubParser } from "src/epubParser";
 import { modal } from "src/modal";
 import { NoteParser } from "src/noteParser";
@@ -58,6 +58,26 @@ export default class EpubImporterPlugin extends Plugin {
 				},
 			});
 			this.app.workspace.revealLeaf(this.activeLeaf);
+		});
+
+		this.app.workspace.on("file-open",(file)=>{
+			const files = this.app.vault.getMarkdownFiles();
+			const files_with_tag = [] as TFile [];
+			files.forEach( (file) => {
+				const tags = this.app.metadataCache.getFileCache(file)?.frontmatter?.tags;
+				if(!tags) return;
+				if (tags.includes(this.settings.tags[0])) {
+					files_with_tag.push(file);
+				}
+			});
+			const allBooks = this.app.vault.getAbstractFileByPath("AllBooks.md");
+			if(allBooks && allBooks instanceof TFile){
+				this.app.vault.modify(allBooks,files_with_tag.map(file => `- [[${file.path}|${file.parent?.name}]]`).join("\n"));
+			}
+			else{
+				this.app.vault.create("AllBooks.md",files_with_tag.map(file => `[[${file.path}|${file.parent?.name}]]`).join("\n"));
+			}
+
 		});
 	}
 	onunload() {}
