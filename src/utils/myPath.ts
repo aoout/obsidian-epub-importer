@@ -7,17 +7,6 @@
 import * as fs from "fs";
 import * as path from "path";
 
-export function toValidWindowsPath(path: string) {
-	let newString = path.replace("?", "？");
-	newString = newString.replace(/[/|\\:*?"<>]/g, " ");
-	if (path != newString) {
-		console.log("path", path);
-		console.log("-->");
-		console.log("newString", newString);
-	}
-	return newString;
-}
-
 export const walk = (currentDirPath: string, type: string, callback: any) => {
 	fs.readdirSync(currentDirPath).forEach(function (name: string) {
 		const filePath = path.join(currentDirPath, name);

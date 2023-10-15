@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin, TFile, WorkspaceLeaf, parseYaml, stringifyYaml} from "obsidian";
+import { Plugin, TFile, WorkspaceLeaf, normalizePath, parseYaml, stringifyYaml} from "obsidian";
 import { Chapter, EpubParser } from "./lib/EpubParser";
 import { EpubImporterModal } from "./modals/EpubImporterModal";
 import { NoteParser } from "./lib/NoteParser";
@@ -11,7 +11,7 @@ import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import * as fs from "fs";
 import * as path from "path";
-import { toValidWindowsPath, walk, walkUntil} from "./utils/myPath";
+import { walk, walkUntil} from "./utils/myPath";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
@@ -109,7 +109,7 @@ export default class EpubImporterPlugin extends Plugin {
 			this.createChapter(
 				epubName,
 				element,
-				path.join(epubName, toValidWindowsPath(element.name))
+				path.join(epubName, normalizePath(element.name))
 			);
 		});
 
@@ -188,7 +188,7 @@ export default class EpubImporterPlugin extends Plugin {
 					this.createChapter(
 						epubName,
 						element,
-						path.join(notePath, toValidWindowsPath(element.name))
+						path.join(notePath, normalizePath(element.name))
 					);
 				});
 				notePath = path.join(notePath, noteName);
