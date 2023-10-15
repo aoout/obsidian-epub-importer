@@ -2,17 +2,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin, TFile, WorkspaceLeaf} from "obsidian";
-import { Chapter, EpubParser } from "src/epubParser";
-import { modal } from "src/modal";
-import { NoteParser } from "src/noteParser";
-import { DEFAULT_SETTINGS, EpubImporterSettings } from "src/settings/settings";
-import { EpubImporterSettingsTab } from "src/settings/settingsTab";
+import { Plugin, TFile, WorkspaceLeaf, normalizePath} from "obsidian";
+import { Chapter, EpubParser } from "./epubParser";
+import { modal } from "./modal";
+import { NoteParser } from "./noteParser";
+import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
+import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import * as fs from "fs";
 import * as path from "path";
-import { toValidWindowsPath, walkUntil } from "src/utils/myPath";
-import { Propertys } from "src/utils/propertys";
+import { toValidWindowsPath, walk, walkUntil} from "./utils/myPath";
+import { Propertys } from "./utils/propertys";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
@@ -80,6 +80,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		});
 	}
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	onunload() {}
 
 	async loadSettings(): Promise<void> {
@@ -102,7 +103,7 @@ export default class EpubImporterPlugin extends Plugin {
 		this.propertys = new Propertys();
 
 		const toc = this.parser.toc;
-		this.app.vault.createFolder(epubName);
+	 	await this.app.vault.createFolder(epubName);
 		const bookPath = path.join(this.vaultPath, epubName);
 
 		toc.forEach((element) => {
@@ -135,7 +136,29 @@ export default class EpubImporterPlugin extends Plugin {
 			fs.cpSync(imageFolderPath, path.join(bookPath, "images"), {
 				recursive: true,
 			});
+		}else{
+			const imagePath = walkUntil(
+				this.parser.tmpobj.name,
+				"file",
+				(filePath:string) => filePath.includes("image") || filePath.includes("Image")
+			);
+			if(imagePath){
+				fs.mkdirSync(path.join(bookPath,"images"));
+				walk(
+					this.parser.tmpobj.name,
+					"file",
+					(filePath:string,stat:any) => {
+						if(filePath.includes("image") || filePath.includes("Image")){
+							fs.copyFileSync(
+								filePath,
+								bookPath+"\\"+"images"+"\\"+filePath.split(path.sep).slice(-1)[0]
+							);
+						}
+					}
+				);
+			}
 		}
+
 		const cover = this.parser.coverPath;
 		if (cover) {
 			fs.cpSync(cover, path.join(bookPath, path.basename(cover)));

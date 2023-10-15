@@ -1,32 +1,48 @@
 {
-	"name": "obsidian-epub-importer",
-	"version": "0.0.3",
+	"name": "epub-importer",
+	"version": "0.0.1",
 	"description": "Import .epub file into Obsidian as markdown notes.",
-	"main": "main.js",
-	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
-	},
-	"keywords": [],
-	"author": "aoout",
+	"main": "lib/main.js",
 	"license": "MIT",
+	"scripts": {
+		"build": "obsidian-plugin build src/main.ts",
+		"dev": "node dev.js",
+		"lint:fix": "eslint --ext .ts,.js,.json src --fix",
+		"lint": "eslint --ext .ts src",
+		"bump": "node commit-and-tag-version.js",
+		"preexport": "npm run build",
+		"export": "node export.js",
+		"predeploy": "npm run bump",
+		"deploy": "npm run export"
+	},
+	"commit-and-tag-version": {
+		"t": ""
+	},
 	"devDependencies": {
-		"@types/node": "^16.11.6",
+		"@types/node": "^20.8.6",
 		"@types/tmp": "^0.2.4",
+		"@types/unzipper": "^0.10.7",
 		"@types/xml2js": "^0.4.12",
-		"@typescript-eslint/eslint-plugin": "5.29.0",
-		"@typescript-eslint/parser": "5.29.0",
-		"builtin-modules": "3.3.0",
-		"esbuild": "0.17.3",
+		"@typescript-eslint/eslint-plugin": "^5.59.7",
+		"@typescript-eslint/parser": "^5.59.7",
+		"ansi-colors": "^4.1.3",
+		"builtin-modules": "^3.3.0",
+		"commander": "^10.0.1",
+		"dedent": "^0.7.0",
+		"dotenv": "^16.1.3",
+		"eslint": "^8.41.0",
+		"eslint-config-standard": "^17.0.0",
+		"eslint-plugin-import": "^2.27.5",
+		"eslint-plugin-json": "^3.1.0",
+		"eslint-plugin-jsonc": "^2.8.0",
+		"eslint-plugin-node": "^11.1.0",
+		"eslint-plugin-promise": "^6.1.1",
 		"obsidian": "latest",
-		"tslib": "2.4.0",
-		"typescript": "4.7.4"
+		"obsidian-plugin-cli": "latest",
+		"typescript": "^5.0.4"
 	},
 	"dependencies": {
-		"@types/unzipper": "^0.10.7",
-		"jszip": "^3.10.1",
-		"jszip-unzip": "^3.4.0-0",
+		"commit-and-tag-version": "^11.0.0",
 		"tmp": "^0.2.1",
 		"unzipper": "^0.10.14",
 		"xml2js": "^0.6.2"

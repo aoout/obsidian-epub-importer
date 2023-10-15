@@ -1,3 +1,4 @@
-node_modules/
-
-main.js
+package.json
+manifest.json
+**/dist/**
+**/node_modules/**

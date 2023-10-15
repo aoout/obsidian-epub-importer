@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import EpubImporterPlugin from "main";
+import EpubImporterPlugin from "./main";
 import { App, Notice, SuggestModal } from "obsidian";
 import { walk } from "./utils/myPath";
+
 
 function toValidEpubPath(string: string) {
 	try {
 		// if there is " char at the beginning ,try to delete the " chat at the beginning and end
-		if (string.startsWith('"')) {
+		if (string.startsWith("\"")) {
 			string = string.slice(1, string.length - 1);
 		}
 		const terms = string.split(".");
@@ -28,6 +29,7 @@ export class modal extends SuggestModal<string> {
 	getSuggestions(query: string): string[] | Promise<string[]> {
 		const result: string[] = [];
 		this.librarys.forEach((lib) => {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			walk(lib, "file", (filePath: string, stat: any) => {
 				if (filePath.indexOf(".epub") !== -1) {
 					result.push(filePath);
@@ -39,6 +41,7 @@ export class modal extends SuggestModal<string> {
 	renderSuggestion(value: string, el: HTMLElement) {
 		el.createEl("div", { text: value });
 	}
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	onChooseSuggestion(item: string, evt: MouseEvent | KeyboardEvent) {
 		this.trySubmit(item);
 	}
