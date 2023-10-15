@@ -2,24 +2,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin, TFile, WorkspaceLeaf, normalizePath} from "obsidian";
-import { Chapter, EpubParser } from "./epubParser";
-import { modal } from "./modal";
-import { NoteParser } from "./noteParser";
+import { Plugin, TFile, WorkspaceLeaf, parseYaml, stringifyYaml} from "obsidian";
+import { Chapter, EpubParser } from "./lib/EpubParser";
+import { EpubImporterModal } from "./modals/EpubImporterModal";
+import { NoteParser } from "./lib/NoteParser";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import * as fs from "fs";
 import * as path from "path";
 import { toValidWindowsPath, walk, walkUntil} from "./utils/myPath";
-import { Propertys } from "./utils/propertys";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
 	settings: EpubImporterSettings;
 	parser: EpubParser;
 	BookNote: string;
-	propertys: Propertys;
+	propertys: any;
 	activeBook: string;
 	activeLeaf: WorkspaceLeaf;
 	async onload() {
@@ -31,7 +30,7 @@ export default class EpubImporterPlugin extends Plugin {
 			id: "import-epub",
 			name: "Import epub to your vault",
 			callback: () => {
-				new modal(this.app, this, async (result) => {
+				new EpubImporterModal(this.app, this, async (result) => {
 					await this.import(result);
 				}).open();
 			},
@@ -100,7 +99,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		const epubName = path.basename(epubPath, path.extname(epubPath));
 		this.BookNote = `# ${epubName}\n\n`;
-		this.propertys = new Propertys();
+		this.propertys = {};
 
 		const toc = this.parser.toc;
 	 	await this.app.vault.createFolder(epubName);
@@ -115,9 +114,9 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 
 		this.copyImages(epubName, bookPath);
-		this.propertys.add("tags", this.settings.tags);
+		this.propertys.tags = this.settings.tags;
 
-		this.BookNote = this.propertys.toString() + this.BookNote;
+		this.BookNote = "---\n"+stringifyYaml(this.propertys)+"\n---\n" + this.BookNote;
 		this.app.vault.create(
 			epubName + "//" + `${epubName}.md`,
 			this.BookNote
@@ -162,7 +161,7 @@ export default class EpubImporterPlugin extends Plugin {
 		const cover = this.parser.coverPath;
 		if (cover) {
 			fs.cpSync(cover, path.join(bookPath, path.basename(cover)));
-			this.propertys.add("cover", `${epubName}/${path.basename(cover)}`);
+			this.propertys.cover=  epubName+"/"+path.basename(cover);
 		}
 	}
 

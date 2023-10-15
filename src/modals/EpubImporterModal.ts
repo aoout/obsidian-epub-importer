@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import EpubImporterPlugin from "./main";
+import EpubImporterPlugin from "../main";
 import { App, Notice, SuggestModal } from "obsidian";
-import { walk } from "./utils/myPath";
+import { walk } from "../utils/myPath";
 
 
 function toValidEpubPath(string: string) {
@@ -22,7 +22,7 @@ function toValidEpubPath(string: string) {
 	}
 }
 
-export class modal extends SuggestModal<string> {
+export class EpubImporterModal extends SuggestModal<string> {
 	onSubmit: (result: string) => void;
 	librarys: string[];
 

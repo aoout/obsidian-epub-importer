@@ -7,7 +7,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as tmp from "tmp";
 import * as unzipper from "unzipper";
-import { walkUntil } from "./utils/myPath";
+import { walkUntil } from "../utils/myPath";
 import { htmlToMarkdown } from "obsidian";
 
 export class Chapter {
@@ -60,23 +60,19 @@ export class EpubParser {
 	}
 
 	findTocFile() {
-		console.log("this.tmpobj.name: ", this.tmpobj.name);
 		this.tocFile = walkUntil(
 			this.tmpobj.name,
 			"file",
 			(filePath: string) => 	path.basename(filePath) == "toc.ncx"
 		);
-		console.log("toc file path: ", this.tocFile);
 	}
 
 	findOpfFile() {
-		
 		this.opfFile = walkUntil(
 			this.tmpobj.name,
 			"file",
 			(filePath: string) => filePath.includes("content.opf")
 		);
-		console.log("opf file path: ", this.opfFile);
 	}
 
 	async parseToc() {
