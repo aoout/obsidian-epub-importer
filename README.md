@@ -23,10 +23,6 @@ https://github.com/aoout/obsidian-epub-importer/assets/60838705/9fb8d43a-ad4e-48
 
 - [ ] From Obsidian's community plugins
 - [x] Using BRAT with `https://github.com//epub-importer`
-- [x] From the release page:
-- Download the latest release
-- Unzip `epub-importer.zip` in `.obsidian/plugins/` path
-- In Obsidian settings, reload the plugin
 - Enable the plugin
 
 ## 🤖 Developing
