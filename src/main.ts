@@ -3,9 +3,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Plugin, TFile, WorkspaceLeaf, normalizePath, stringifyYaml} from "obsidian";
-import { Chapter, EpubParser } from "./lib/epubParser";
+import { Chapter, EpubParser } from "./lib/EpubParser";
 import { EpubImporterModal } from "./modal";
-import { NoteParser } from "./lib/noteParser";
+import { NoteParser } from "./lib/NoteParser";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
