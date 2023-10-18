@@ -9,9 +9,7 @@ import { NoteParser } from "./lib/noteParser";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
-import * as fs from "fs";
 import * as path from "path";
-import { walk, walkUntil} from "./utils/walker";
 import jetpack from "fs-jetpack";
 
 export default class EpubImporterPlugin extends Plugin {

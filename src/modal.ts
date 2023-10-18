@@ -2,8 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import EpubImporterPlugin from "./main";
 import { App, Notice, SuggestModal } from "obsidian";
-import { walk } from "./utils/walker";
-
+import jetpack from "fs-jetpack";
 
 function toValidEpubPath(string: string) {
 	try {
@@ -29,12 +28,7 @@ export class EpubImporterModal extends SuggestModal<string> {
 	getSuggestions(query: string): string[] | Promise<string[]> {
 		const result: string[] = [];
 		this.librarys.forEach((lib) => {
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			walk(lib, "file", (filePath: string, stat: any) => {
-				if (filePath.indexOf(".epub") !== -1) {
-					result.push(filePath);
-				}
-			});
+			result.push(...jetpack.find(lib,{matching:"**/,epub"}));
 		});
 		return result.filter((path) => path.indexOf(query) !== -1);
 	}
