@@ -58,7 +58,7 @@ export class EpubParser {
 
 	async parseToc() {
 		const parser = new xml2js.Parser();
-		const tocFile = path.join( this.tmpPath,jetpack.cwd(this.tmpPath).find({matching:"**/toc.ncx"})[0]);
+		const tocFile = path.join( this.tmpPath,jetpack.cwd(this.tmpPath).find({matching:"**/**.ncx"})[0]);
 		const data = jetpack.read(tocFile);
 
 		const result = await parser.parseStringPromise(data);
@@ -93,7 +93,7 @@ export class EpubParser {
 
 	async parseCover() {
 		const parser = new xml2js.Parser();
-		const opfFile = path.join( this.tmpPath,jetpack.cwd(this.tmpPath).find({matching:"**/content.opf"})[0]);
+		const opfFile = path.join( this.tmpPath,jetpack.cwd(this.tmpPath).find({matching:"**/**.opf"})[0]);
 		const data = jetpack.read(opfFile);
 
 		const result = await parser.parseStringPromise(data);

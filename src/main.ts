@@ -97,9 +97,8 @@ export default class EpubImporterPlugin extends Plugin {
 		this.parser = new EpubParser(epubPath);
 		await this.parser.init();
 
-		const epubName = path.basename(epubPath, path.extname(epubPath));
+		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
 		this.propertys = {};
-
 	 	await this.app.vault.createFolder(epubName);
 
 		 this.parser.toc.forEach((element) => {

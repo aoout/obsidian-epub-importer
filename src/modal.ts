@@ -4,31 +4,16 @@ import EpubImporterPlugin from "./main";
 import { App, Notice, SuggestModal } from "obsidian";
 import jetpack from "fs-jetpack";
 
-function toValidEpubPath(string: string) {
-	try {
-		// if there is " char at the beginning ,try to delete the " chat at the beginning and end
-		if (string.startsWith("\"")) {
-			string = string.slice(1, string.length - 1);
-		}
-		const terms = string.split(".");
-		if (terms[terms.length - 1] == "epub") {
-			return string;
-		} else {
-			return false;
-		}
-	} catch (e) {
-		return false;
-	}
-}
-
 export class EpubImporterModal extends SuggestModal<string> {
 	onSubmit: (result: string) => void;
 	librarys: string[];
-
+	emptyStateText = "No .epub files found in librarys.";
 	getSuggestions(query: string): string[] | Promise<string[]> {
 		const result: string[] = [];
 		this.librarys.forEach((lib) => {
-			result.push(...jetpack.find(lib,{matching:"**/,epub"}));
+			jetpack.find(lib,{matching:"**/**.epub"}).forEach((path=>{
+				result.push(jetpack.path(path));
+			}));
 		});
 		return result.filter((path) => path.indexOf(query) !== -1);
 	}
@@ -40,16 +25,15 @@ export class EpubImporterModal extends SuggestModal<string> {
 		this.trySubmit(item);
 	}
 	trySubmit(path: string) {
-		const epubPath = toValidEpubPath(path);
-		if (epubPath) {
+		const epubPath = path.replace(/^"(.+(?="$))"$/, "$1");
+		try {
 			this.onSubmit(epubPath);
 			new Notice(`imported: ${epubPath}`);
 			this.close();
-		} else {
+		} catch (error) {
 			new Notice("Invalid path.");
 		}
 	}
-
 	constructor(
 		app: App,
 		plugin: EpubImporterPlugin,
@@ -58,7 +42,6 @@ export class EpubImporterModal extends SuggestModal<string> {
 		super(app);
 
 		this.onSubmit = onSubmit;
-		console.log(plugin.settings);
 		this.librarys = plugin.settings.libratys;
 
 		this.inputEl.addEventListener("keyup", ({ key }) => {
