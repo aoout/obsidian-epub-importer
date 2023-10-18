@@ -2,16 +2,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin, TFile, WorkspaceLeaf, normalizePath, parseYaml, stringifyYaml} from "obsidian";
-import { Chapter, EpubParser } from "./lib/EpubParser";
-import { EpubImporterModal } from "./modals/EpubImporterModal";
-import { NoteParser } from "./lib/NoteParser";
+import { Plugin, TFile, WorkspaceLeaf, normalizePath, stringifyYaml} from "obsidian";
+import { Chapter, EpubParser } from "./lib/epubParser";
+import { EpubImporterModal } from "./modal";
+import { NoteParser } from "./lib/noteParser";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import * as fs from "fs";
 import * as path from "path";
-import { walk, walkUntil} from "./utils/myPath";
+import { walk, walkUntil} from "./utils/walker";
+import jetpack from "fs-jetpack";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
@@ -95,17 +96,15 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	async import(epubPath: string) {
-		this.parser = await EpubParser.getParser(epubPath);
+		this.parser = new EpubParser(epubPath);
+		await this.parser.init();
 
 		const epubName = path.basename(epubPath, path.extname(epubPath));
-		this.BookNote = `# ${epubName}\n\n`;
 		this.propertys = {};
 
-		const toc = this.parser.toc;
 	 	await this.app.vault.createFolder(epubName);
-		const bookPath = path.join(this.vaultPath, epubName);
 
-		toc.forEach((element) => {
+		 this.parser.toc.forEach((element) => {
 			this.createChapter(
 				epubName,
 				element,
@@ -113,7 +112,7 @@ export default class EpubImporterPlugin extends Plugin {
 			);
 		});
 
-		this.copyImages(epubName, bookPath);
+		this.copyImages(epubName);
 		this.propertys.tags = this.settings.tags;
 
 		this.BookNote = "---\n"+stringifyYaml(this.propertys)+"\n---\n" + this.BookNote;
@@ -123,46 +122,15 @@ export default class EpubImporterPlugin extends Plugin {
 		);
 	}
 
-	copyImages(epubName: string, bookPath: string) {
-		const imageFolderPath = walkUntil(
-			this.parser.tmpobj.name,
-			"folder",
-			(filePath: string) =>
-				filePath.includes("images") || filePath.includes("Images")
+	copyImages(epubName:string) {
+		const imagesPath = path.join(this.vaultPath,epubName,"images");
+		jetpack.copy(
+			this.parser.tmpPath,
+			imagesPath,
+			{matching:["*.jpg","*.jpeg","*.png"]}
 		);
 
-		if (imageFolderPath) {
-			fs.cpSync(imageFolderPath, path.join(bookPath, "images"), {
-				recursive: true,
-			});
-		}else{
-			const imagePath = walkUntil(
-				this.parser.tmpobj.name,
-				"file",
-				(filePath:string) => filePath.includes("image") || filePath.includes("Image")
-			);
-			if(imagePath){
-				fs.mkdirSync(path.join(bookPath,"images"));
-				walk(
-					this.parser.tmpobj.name,
-					"file",
-					(filePath:string,stat:any) => {
-						if(filePath.includes("image") || filePath.includes("Image")){
-							fs.copyFileSync(
-								filePath,
-								bookPath+"\\"+"images"+"\\"+filePath.split(path.sep).slice(-1)[0]
-							);
-						}
-					}
-				);
-			}
-		}
-
-		const cover = this.parser.coverPath;
-		if (cover) {
-			fs.cpSync(cover, path.join(bookPath, path.basename(cover)));
-			this.propertys.cover=  epubName+"/"+path.basename(cover);
-		}
+		this.propertys.cover=  path.basename(this.parser.coverPath);
 	}
 
 	createChapter(epubName: string, cpt: Chapter, notePath: string) {

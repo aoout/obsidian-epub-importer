@@ -3,12 +3,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import * as xml2js from "xml2js";
-import * as fs from "fs";
 import * as path from "path";
-import * as tmp from "tmp";
 import * as unzipper from "unzipper";
-import { walkUntil } from "../utils/myPath";
 import { htmlToMarkdown } from "obsidian";
+import jetpack from "fs-jetpack";
 
 export class Chapter {
 	name: string;
@@ -26,8 +24,7 @@ export class Chapter {
 	}
 
 	getHtml(): string {
-		const chapter = fs.readFileSync(this.url.split("#")[0], "utf-8");
-		return chapter;
+		return jetpack.read(this.url.split("#")[0]);
 	}
 
 	getMarkdown():string{
@@ -41,10 +38,8 @@ export class Chapter {
 
 export class EpubParser {
 	epubPath: string;
-	tmpobj: any;
-	tocFile: string;
+	tmpPath: string;
 	toc: Chapter[];
-	opfFile: string;
 	coverPath: string;
 
 	constructor(path: string) {
@@ -52,42 +47,26 @@ export class EpubParser {
 	}
 
 	async init() {
-		this.tmpobj = tmp.dirSync({ unsafeCleanup: true });
-		await fs
+		this.tmpPath = jetpack.tmpDir().path();
+		await jetpack
 			.createReadStream(this.epubPath)
-			.pipe(unzipper.Extract({ path: this.tmpobj.name }))
+			.pipe(unzipper.Extract({ path: this.tmpPath }))
 			.promise();
-	}
-
-	findTocFile() {
-		this.tocFile = walkUntil(
-			this.tmpobj.name,
-			"file",
-			(filePath: string) => 	path.basename(filePath) == "toc.ncx"
-		);
-	}
-
-	findOpfFile() {
-		this.opfFile = walkUntil(
-			this.tmpobj.name,
-			"file",
-			(filePath: string) => filePath.includes("content.opf")
-		);
+		await this.parseToc();
+		await this.parseCover();
 	}
 
 	async parseToc() {
 		const parser = new xml2js.Parser();
-		const data = fs.readFileSync(this.tocFile, "utf-8");
+		const tocFile = path.join( this.tmpPath,jetpack.cwd(this.tmpPath).find({matching:"**/toc.ncx"})[0]);
+		const data = jetpack.read(tocFile);
 
-		let result: any;
-		await parser.parseStringPromise(data).then((result2: any) => {
-			result = result2;
-		});
+		const result = await parser.parseStringPromise(data);
 		console.log(result);
 		const navPoints = result.ncx.navMap[0].navPoint;
 
 		const parseNavPoint = (navPoint: any) => {
-			const tocParentPath = path.dirname(this.tocFile);
+			const tocParentPath = path.dirname(tocFile);
 
 			const item = new Chapter(
 				navPoint.navLabel[0].text[0],
@@ -114,33 +93,19 @@ export class EpubParser {
 
 	async parseCover() {
 		const parser = new xml2js.Parser();
-		const data = fs.readFileSync(this.opfFile, "utf-8");
+		const opfFile = path.join( this.tmpPath,jetpack.cwd(this.tmpPath).find({matching:"**/content.opf"})[0]);
+		const data = jetpack.read(opfFile);
 
-		let result: any;
-		await parser.parseStringPromise(data).then((result2: any) => {
-			result = result2;
-		});
+		const result = await parser.parseStringPromise(data);
 		console.log(result);
 
 		for (let i = 0; i < result.package.manifest[0].item.length; i++) {
 			const item = result.package.manifest[0].item[i];
 			if (item.$.id.indexOf("cover") !== -1) {
-				const opfParentPath = path.dirname(this.opfFile);
-				this.coverPath = opfParentPath + "/" + item.$.href;
+				const opfParentPath = path.dirname(opfFile);
+				this.coverPath = path.join(opfParentPath , item.$.href);
 				break;
 			}
 		}
-
-		console.log(this.coverPath);
-	}
-
-	static async getParser(path: string) {
-		const parser = new EpubParser(path);
-		await parser.init();
-		parser.findTocFile();
-		await parser.parseToc();
-		parser.findOpfFile();
-		await parser.parseCover();
-		return parser;
 	}
 }

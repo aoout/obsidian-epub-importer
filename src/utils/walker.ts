@@ -2,11 +2,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-// convert a string to a vaild windows path
-
 import * as fs from "fs";
 import * as path from "path";
 
+// TODO: Change the code below into a for loop for interruption.
+// TODO: Can set the type to all, and add type to callback call.
 export const walk = (currentDirPath: string, type: string, callback: any) => {
 	fs.readdirSync(currentDirPath).forEach(function (name: string) {
 		const filePath = path.join(currentDirPath, name);
@@ -24,6 +24,7 @@ export const walk = (currentDirPath: string, type: string, callback: any) => {
 	});
 };
 
+// TODO: Can set the type to all, and add type to callback call.
 export const walkUntil = (
 	currentDirpath: string,
 	type: string,

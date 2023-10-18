@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import EpubImporterPlugin from "../main";
+import EpubImporterPlugin from "./main";
 import { App, Notice, SuggestModal } from "obsidian";
-import { walk } from "../utils/myPath";
+import { walk } from "./utils/walker";
 
 
 function toValidEpubPath(string: string) {
