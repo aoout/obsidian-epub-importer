@@ -2,7 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin, TFile, WorkspaceLeaf, normalizePath, stringifyYaml} from "obsidian";
+import {
+	Plugin,
+	TFile,
+	WorkspaceLeaf,
+	htmlToMarkdown,
+	normalizePath,
+	stringifyYaml,
+} from "obsidian";
 import { Chapter, EpubParser } from "./lib/EpubParser";
 import { EpubImporterModal } from "./modal";
 import { NoteParser } from "./lib/NoteParser";
@@ -36,7 +43,7 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 
 		this.app.workspace.on("file-open", (file) => {
-			if(!this.settings.autoOpenRightPanel) return;
+			if (!this.settings.autoOpenRightPanel) return;
 			if (!file) return;
 			const bookNotePath = this.findBookNote(file.path);
 
@@ -58,35 +65,40 @@ export default class EpubImporterPlugin extends Plugin {
 			this.app.workspace.revealLeaf(this.activeLeaf);
 		});
 
-		this.app.workspace.on("file-open",(file)=>{
+		this.app.workspace.on("file-open", (file) => {
 			const files = this.app.vault.getMarkdownFiles();
-			const files_with_tag = [] as TFile [];
-			files.forEach( (file) => {
-				const tags = this.app.metadataCache.getFileCache(file)?.frontmatter?.tags;
-				if(!tags) return;
+			const files_with_tag = [] as TFile[];
+			files.forEach((file) => {
+				const tags =
+          this.app.metadataCache.getFileCache(file)?.frontmatter?.tags;
+				if (!tags) return;
 				if (tags.includes(this.settings.tags[0])) {
 					files_with_tag.push(file);
 				}
 			});
 			const allBooks = this.app.vault.getAbstractFileByPath("AllBooks.md");
-			if(allBooks && allBooks instanceof TFile){
-				this.app.vault.modify(allBooks,files_with_tag.map(file => `- [[${file.path}|${file.parent?.name}]]`).join("\n"));
+			if (allBooks && allBooks instanceof TFile) {
+				this.app.vault.modify(
+					allBooks,
+					files_with_tag
+						.map((file) => `- [[${file.path}|${file.parent?.name}]]`)
+						.join("\n")
+				);
+			} else {
+				this.app.vault.create(
+					"AllBooks.md",
+					files_with_tag
+						.map((file) => `[[${file.path}|${file.parent?.name}]]`)
+						.join("\n")
+				);
 			}
-			else{
-				this.app.vault.create("AllBooks.md",files_with_tag.map(file => `[[${file.path}|${file.parent?.name}]]`).join("\n"));
-			}
-
 		});
 	}
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	onunload() {}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData()
-		);
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
 	async saveSettings(): Promise<void> {
@@ -99,66 +111,70 @@ export default class EpubImporterPlugin extends Plugin {
 
 		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
 		this.propertys = {};
-	 	await this.app.vault.createFolder(epubName);
+		await this.app.vault.createFolder(epubName);
 
-		 this.parser.toc.forEach((element) => {
+		this.parser.toc.forEach((element) => {
 			this.createChapter(
 				epubName,
 				element,
-				path.join(epubName, normalizePath(element.name))
+				path.join(epubName, normalizePath(element.name.replace("/", "&")))
 			);
 		});
 
 		this.copyImages(epubName);
 		this.propertys.tags = this.settings.tags;
 
-		this.BookNote = "---\n"+stringifyYaml(this.propertys)+"\n---\n" + this.BookNote;
-		this.app.vault.create(
-			epubName + "//" + `${epubName}.md`,
-			this.BookNote
-		);
+		this.BookNote =
+      "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
+		this.app.vault.create(epubName + "//" + `${epubName}.md`, this.BookNote);
 	}
 
-	copyImages(epubName:string) {
-		const imagesPath = path.join(this.vaultPath,epubName,"images");
-		jetpack.copy(
-			this.parser.tmpPath,
-			imagesPath,
-			{matching:["*.jpg","*.jpeg","*.png"]}
-		);
+	copyImages(epubName: string) {
+		const imagesPath = path.join(this.vaultPath, epubName, "images");
+		jetpack.copy(this.parser.tmpPath, imagesPath, {
+			matching: ["*.jpg", "*.jpeg", "*.png"],
+		});
+		const files = jetpack.find(imagesPath, {
+			matching: ["*.jpg", "*.jpeg", "*.png"],
+		});
+		files.forEach((file) => {
+			const fileName = path.basename(file);
+			jetpack.move(file, path.join(imagesPath, fileName));
+		});
+		const folders = jetpack.find(imagesPath, {
+			matching: ["*"],
+			directories: true,
+			files: false,
+		});
+		folders.forEach((folder) => {
+			jetpack.remove(folder);
+		});
+		jetpack.remove(this.parser.tmpPath);
 
-		this.propertys.cover=  path.basename(this.parser.coverPath);
+		this.propertys.cover = path.basename(this.parser.coverPath);
 	}
 
 	createChapter(epubName: string, cpt: Chapter, notePath: string) {
 		const noteName = path.basename(notePath);
 		const level = notePath.split(path.sep).length - 2;
-		let content = NoteParser.getParseredNote(cpt.getMarkdown(), epubName);
+		const content = NoteParser.getParseredNote(
+			htmlToMarkdown(cpt.html),
+			epubName
+		);
 
 		if (cpt.subItems.length) {
-			const vaildSubItems = cpt.subItems.filter((element: Chapter) => {
-				return element.getFileName() != cpt.getFileName();
-			});
-			if (vaildSubItems.length == 1 && cpt.subItems.length > 1) {
-				content +=
-					"\n" +
-					NoteParser.getParseredNote(
-						vaildSubItems[0].getMarkdown(),
-						epubName
-					);
-			} else if (vaildSubItems.length != 0) {
-				this.app.vault.createFolder(notePath);
+			this.app.vault.createFolder(notePath);
 
-				vaildSubItems.forEach((element: Chapter) => {
-					this.createChapter(
-						epubName,
-						element,
-						path.join(notePath, normalizePath(element.name))
-					);
-				});
-				notePath = path.join(notePath, noteName);
-			}
+			cpt.subItems.forEach((element: Chapter) => {
+				this.createChapter(
+					epubName,
+					element,
+					path.join(notePath, normalizePath(element.name.replace("/", "&")))
+				);
+			});
+			notePath = path.join(notePath, noteName);
 		}
+
 		this.app.vault.create(notePath + ".md", content);
 		this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
 			/\\/g,
