@@ -32,7 +32,7 @@ export class Chapter {
 export class EpubParser {
 	epubPath: string;
 	tmpPath: string;
-	toc: Chapter[];
+	chapters: Chapter[];
 	coverPath: string;
 
 	constructor(path: string) {
@@ -58,55 +58,37 @@ export class EpubParser {
 		const data = jetpack.read(tocFile);
 
 		const result = await parser.parseStringPromise(data);
-		console.log(result);
 		const navPoints = result.ncx.navMap[0].navPoint;
 
-		const parseNavPoint = (navPoint: any) => {
-			const tocParentPath = path.dirname(tocFile);
-			const item = new Chapter(
+		const getChapter = (navPoint: any) => 
+			new Chapter(
 				navPoint.navLabel[0].text[0],
-				tocParentPath + "/" + navPoint.content[0].$["src"]
+				path.dirname(tocFile) + "/" + navPoint.content[0].$["src"],
+				navPoint["navPoint"]?navPoint["navPoint"].map(getChapter):[]
 			);
-			if (navPoint["navPoint"])
-				item.subItems.push(...navPoint["navPoint"].map(parseNavPoint));
-			return item;
-		};
 
-		const toc = [];
-		for (let i = 0; i < navPoints.length; i++) {
-			const item = navPoints[i];
-			toc.push(parseNavPoint(item));
-		}
+		this.chapters = navPoints.map(getChapter);
 
 		const urlMap = new Map<string, string[]>();
-		const parseChapter = (chapter: Chapter) => {
+		const updateUrlMap = (chapter: Chapter) => {
 			if (!urlMap.has(chapter.urlPath)) {
 				urlMap.set(chapter.urlPath, chapter.urlHref ? [chapter.urlHref] : []);
 			} else {
 				urlMap.get(chapter.urlPath).push(chapter.urlHref);
 				if (urlMap.get(chapter.urlPath)[0] != "firstHref") {
-					//在最前面插入一个firstHref
 					urlMap.get(chapter.urlPath).unshift("firstHref");
 				}
 			}
-			chapter.subItems.forEach((subItem) => {
-				parseChapter(subItem);
-			});
+			chapter.subItems.forEach(updateUrlMap);
 		};
-		toc.forEach((chapter) => {
-			parseChapter(chapter);
-		});
+		this.chapters.forEach(updateUrlMap);
 
-		console.log("urlMap", urlMap);
 		const htmlMap = new Map<string, string>();
 
 		urlMap.forEach((urlHrefs, urlPath) => {
 			const urlPathHtml = jetpack.read(urlPath);
 			const html = urlPathHtml;
-			console.log("urlHref", urlHrefs);
 			if (urlHrefs.length) {
-				const urlHrefs2 = urlHrefs.slice(1);
-
 				const reg = new RegExp(
 					`(?<=<[^>]*id=['"])(?:${urlHrefs.join("|")})(?=['"][^>]*>)`,
 					"g"
@@ -119,22 +101,15 @@ export class EpubParser {
 				htmlMap.set(urlPath, html);
 			}
 		});
-		// console.log("htmlMap", htmlMap);
-		const parseChapterHtml = (chapter: Chapter) => {
+		const setChapterHtml = (chapter: Chapter) => {
 			if (!chapter.urlHref && urlMap.get(chapter.urlPath).length > 1) {
 				chapter.urlHref = "firstHref";
 				chapter.url = chapter.urlPath + "#" + chapter.urlHref;
 			}
 			chapter.html = htmlMap.get(chapter.url);
-			chapter.subItems.forEach((subItem) => {
-				parseChapterHtml(subItem);
-			});
+			chapter.subItems.forEach(setChapterHtml);
 		};
-		toc.forEach((chapter) => {
-			parseChapterHtml(chapter);
-		});
-		this.toc = toc;
-		console.log(toc);
+		this.chapters.forEach(setChapterHtml);
 	}
 
 	async parseCover() {
@@ -146,7 +121,6 @@ export class EpubParser {
 		const data = jetpack.read(opfFile);
 
 		const result = await parser.parseStringPromise(data);
-		console.log(result);
 
 		for (let i = 0; i < result.package.manifest[0].item.length; i++) {
 			const item = result.package.manifest[0].item[i];

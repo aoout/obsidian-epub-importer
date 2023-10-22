@@ -19,7 +19,8 @@ export class NoteParser {
 		this.content = this.content
 			.replace(/Images/g, "images")
 			.replace(/\.\.\/images/g, "images")
-			.replace(/images/g, `${this.epubName}/images`);
+			.replace(/images/g, `${this.epubName}/images`)
+			.replace(/Image/g, `${this.epubName}/images/Image`);
 	}
 
 	parseFontNote() {

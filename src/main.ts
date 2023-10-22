@@ -112,8 +112,7 @@ export default class EpubImporterPlugin extends Plugin {
 		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
 		this.propertys = {};
 		await this.app.vault.createFolder(epubName);
-
-		this.parser.toc.forEach((element) => {
+		this.parser.chapters.forEach((element) => {
 			this.createChapter(
 				epubName,
 				element,
@@ -157,8 +156,9 @@ export default class EpubImporterPlugin extends Plugin {
 	createChapter(epubName: string, cpt: Chapter, notePath: string) {
 		const noteName = path.basename(notePath);
 		const level = notePath.split(path.sep).length - 2;
+		console.log("cpt",cpt);
 		const content = NoteParser.getParseredNote(
-			htmlToMarkdown(cpt.html),
+			htmlToMarkdown(cpt.html?cpt.html:""),
 			epubName
 		);
 
