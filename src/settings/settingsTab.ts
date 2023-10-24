@@ -42,6 +42,15 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 					await this.plugin.saveSettings();
 				}));
 		new Setting(containerEl)
+			.setName("Serial number")
+			.setDesc("The plugin will add serial number to the imported book.")
+			.addToggle((toggle)=>{
+				toggle.setValue(this.plugin.settings.serialNumber).onChange(async (value)=>{
+					this.plugin.settings.serialNumber = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		new Setting(containerEl)
 			.setName("Auto open right panel")
 			.setDesc("The plugin will open the book note on right panel when you open a book.")
 			.addToggle((toggle)=>{

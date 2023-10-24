@@ -112,11 +112,12 @@ export default class EpubImporterPlugin extends Plugin {
 		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
 		this.propertys = {};
 		await this.app.vault.createFolder(this.settings.savePath +  "/"+epubName);
-		this.parser.chapters.forEach((element) => {
+		this.parser.chapters.forEach((element,index) => {
 			this.createChapter(
 				epubName,
 				element,
-				path.join(epubName, normalizePath(element.name.replace("/", "&")))
+				path.join(epubName, normalizePath(element.name.replace("/", "&"))),
+				[index+1]
 			);
 		});
 
@@ -153,7 +154,7 @@ export default class EpubImporterPlugin extends Plugin {
 		this.propertys.cover = epubName + "/" + "images" +"/" +  path.basename(this.parser.coverPath);
 	}
 
-	createChapter(epubName: string, cpt: Chapter, notePath: string) {
+	createChapter(epubName: string, cpt: Chapter, notePath: string, serialNumber:number[]) {
 		const noteName = path.basename(notePath);
 		const level = notePath.split(path.sep).length - 2;
 		console.log("cpt",cpt);
@@ -165,16 +166,19 @@ export default class EpubImporterPlugin extends Plugin {
 		if (cpt.subItems.length) {
 			this.app.vault.createFolder(this.settings.savePath +  "/"+notePath);
 
-			cpt.subItems.forEach((element: Chapter) => {
+			cpt.subItems.forEach((element: Chapter,index) => {
 				this.createChapter(
 					epubName,
 					element,
-					path.join(notePath, normalizePath(element.name.replace("/", "&")))
+					path.join(notePath, normalizePath(element.name.replace("/", "&"))),
+					serialNumber.concat([index+1])
 				);
 			});
 			notePath = path.join(notePath, noteName);
 		}
-
+		if (this.settings.serialNumber) {
+			notePath = path.dirname(notePath)+"/"+ serialNumber.join(".")+" " +noteName;
+		}
 		this.app.vault.create( this.settings.savePath +  "/"+notePath + ".md", content);
 		this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
 			/\\/g,
