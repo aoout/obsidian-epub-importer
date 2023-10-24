@@ -1,11 +1,15 @@
 export interface EpubImporterSettings {
     tags:string[],
-    libratys:string[]
-    autoOpenRightPanel:boolean
+    libratys:string[],
+    savePath:string,
+    autoOpenRightPanel:boolean,
+    allbooks:boolean
 }
 
 export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	tags: ["book"],
 	libratys: [],
-	autoOpenRightPanel: false
+	savePath: "",
+	autoOpenRightPanel: false,
+	allbooks:false
 };

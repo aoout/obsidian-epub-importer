@@ -66,6 +66,7 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 
 		this.app.workspace.on("file-open", (file) => {
+			if (!this.settings.allbooks) return;
 			const files = this.app.vault.getMarkdownFiles();
 			const files_with_tag = [] as TFile[];
 			files.forEach((file) => {
@@ -111,7 +112,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
 		this.propertys = {};
-		await this.app.vault.createFolder(epubName);
+		await this.app.vault.createFolder(this.settings.savePath +  "/"+epubName);
 		this.parser.chapters.forEach((element) => {
 			this.createChapter(
 				epubName,
@@ -125,20 +126,20 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.BookNote =
       "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
-		this.app.vault.create(epubName + "//" + `${epubName}.md`, this.BookNote);
+		this.app.vault.create(this.settings.savePath +  "/"+epubName + "//" + `${epubName}.md`, this.BookNote);
 	}
 
 	copyImages(epubName: string) {
-		const imagesPath = path.join(this.vaultPath, epubName, "images");
+		const imagesPath = path.join(this.vaultPath, this.settings.savePath,epubName, "images");
 		jetpack.copy(this.parser.tmpPath, imagesPath, {
 			matching: ["*.jpg", "*.jpeg", "*.png"],
 		});
-		const files = jetpack.find(imagesPath, {
+		jetpack.find(imagesPath, {
 			matching: ["*.jpg", "*.jpeg", "*.png"],
-		});
-		files.forEach((file) => {
+		}).forEach((file) => {
 			const fileName = path.basename(file);
-			jetpack.move(file, path.join(imagesPath, fileName));
+			const newPath = path.join(imagesPath, fileName);
+			if (file!=newPath) jetpack.move(file, newPath);
 		});
 		const folders = jetpack.find(imagesPath, {
 			matching: ["*"],
@@ -150,7 +151,7 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 		jetpack.remove(this.parser.tmpPath);
 
-		this.propertys.cover = path.basename(this.parser.coverPath);
+		this.propertys.cover = epubName + "/" + "images" +"/" +  path.basename(this.parser.coverPath);
 	}
 
 	createChapter(epubName: string, cpt: Chapter, notePath: string) {
@@ -163,7 +164,7 @@ export default class EpubImporterPlugin extends Plugin {
 		);
 
 		if (cpt.subItems.length) {
-			this.app.vault.createFolder(notePath);
+			this.app.vault.createFolder(this.settings.savePath +  "/"+notePath);
 
 			cpt.subItems.forEach((element: Chapter) => {
 				this.createChapter(
@@ -175,7 +176,7 @@ export default class EpubImporterPlugin extends Plugin {
 			notePath = path.join(notePath, noteName);
 		}
 
-		this.app.vault.create(notePath + ".md", content);
+		this.app.vault.create( this.settings.savePath +  "/"+notePath + ".md", content);
 		this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
 			/\\/g,
 			"/"

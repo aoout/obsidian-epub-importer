@@ -33,11 +33,29 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 				});
 			});
 		new Setting(containerEl)
+			.setName("Save path")
+			.setDesc("The plugin will save the imported book to this path.")
+			.addText(text => text
+				.setValue(this.plugin.settings.savePath)
+				.onChange(async (value) => {
+					this.plugin.settings.savePath = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
 			.setName("Auto open right panel")
 			.setDesc("The plugin will open the book note on right panel when you open a book.")
 			.addToggle((toggle)=>{
 				toggle.setValue(this.plugin.settings.autoOpenRightPanel).onChange(async (value)=>{
 					this.plugin.settings.autoOpenRightPanel = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		new Setting(containerEl)
+			.setName("AllBooks")
+			.setDesc("create AllBooks.md in root folder")
+			.addToggle((toggle)=>{
+				toggle.setValue(this.plugin.settings.allbooks).onChange(async (value)=>{
+					this.plugin.settings.allbooks = value;
 					await this.plugin.saveSettings();
 				});
 			});
