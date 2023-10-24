@@ -46,9 +46,8 @@ export default class EpubImporterPlugin extends Plugin {
 			if (!this.settings.autoOpenRightPanel) return;
 			if (!file) return;
 			const bookNotePath = this.findBookNote(file.path);
-
 			if (!bookNotePath) return;
-			const bookName = bookNotePath.split("/")[0];
+			const bookName = bookNotePath.split("/")[bookNotePath.split("/").length -2];
 			if (this.activeBook == bookName) return;
 			if (this.activeLeaf) this.activeLeaf.detach();
 			this.activeBook = bookName;
@@ -184,9 +183,9 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	findBookNote(notePath: string) {
-		const firstLevel = notePath.split("/")[0];
-		const bookNotePath = firstLevel + "/" + firstLevel + ".md";
-
+		const firstLevel = notePath.replace(this.settings.savePath+"/", "").split("/")[0];
+		console.log("!",firstLevel);
+		const bookNotePath = this.settings.savePath+"/" + firstLevel + "/" + firstLevel + ".md";
 		const bookNote = this.app.vault.getAbstractFileByPath(bookNotePath);
 		if (!bookNote) return;
 		return bookNotePath;
