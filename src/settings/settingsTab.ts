@@ -60,6 +60,18 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 				});
 			});
 		new Setting(containerEl)
+			.setName("granularity")
+			.setDesc("Determine the granularity of generated markdown notes.")
+			.addSlider((slider)=>{
+				slider.setLimits(0, 5, 1)
+					.setDynamicTooltip()
+					.setValue(this.plugin.settings.granularity).onChange(async (value)=>{
+						this.plugin.settings.granularity = value;
+						await this.plugin.saveSettings();
+					});
+			});
+			
+		new Setting(containerEl)
 			.setName("Auto open right panel")
 			.setDesc("The plugin will open the book note on right panel when you open a book.")
 			.addToggle((toggle)=>{

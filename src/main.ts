@@ -112,20 +112,45 @@ export default class EpubImporterPlugin extends Plugin {
 		this.propertys = parseYaml(defaultPropertys);
 
 		await this.app.vault.createFolder(this.settings.savePath +  "/"+epubName);
-		this.parser.chapters.forEach((element,index) => {
-			this.createChapter(
-				epubName,
-				element,
-				path.join(epubName, normalizePath(element.name.replace("/", "&"))),
-				[index+1]
+		if(this.settings.granularity!=0){
+			this.parser.chapters.forEach((element,index) => {
+				this.createChapter(
+					epubName,
+					element,
+					path.join(epubName, normalizePath(element.name.replace("/", "&"))),
+					[index+1]
+				);
+			});
+		}else{
+			let content = "";
+			const append = (chapter:Chapter)=>{
+				content += "\n\n" + NoteParser.getParseredNote(
+					htmlToMarkdown(chapter.html?chapter.html:""),
+					epubName
+				);
+				chapter.subItems.forEach((element: Chapter) => {
+					append(element);
+				}
+				);
+			};
+			this.parser.chapters.forEach((element: Chapter) => {
+				append(element);
+			});
+			this.app.vault.create(
+				this.settings.savePath +  "/"+epubName + "//" + `${epubName}.md`,
+				content
 			);
-		});
+		}
+		
 
 		this.copyImages(epubName);
 		this.propertys.tags = (this.propertys.tags?this.propertys.tags:[]).concat([this.settings.tag]);
 		console.log(this.propertys);
-		this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
-		this.app.vault.create(this.settings.savePath +  "/"+epubName + "//" + `${epubName}.md`, this.BookNote);
+		if(this.settings.granularity!=0){
+			this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
+			this.app.vault.create(this.settings.savePath +  "/"+epubName + "//" + `${epubName}.md`, this.BookNote);
+		}
+		
 		jetpack.remove(this.parser.tmpPath);
 	}
 
@@ -141,37 +166,62 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	createChapter(epubName: string, cpt: Chapter, notePath: string, serialNumber:number[]) {
-		console.log(cpt);
 		const noteName = path.basename(notePath);
 		const level = serialNumber.length - 1;
-		if(cpt.subItems.length){
-			notePath = path.join(notePath, noteName);
-		}
-		if (this.settings.serialNumber) {
-			notePath = path.dirname(notePath)+"/"+ serialNumber.join(".")+" " +noteName;
-		}
-		this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
-			/\\/g,
-			"/"
-		)}|${noteName}]]\n`;
-		const content = NoteParser.getParseredNote(
+
+		
+		let content = NoteParser.getParseredNote(
 			htmlToMarkdown(cpt.html?cpt.html:""),
 			epubName
 		);
 
 		if (cpt.subItems.length) {
-			this.app.vault.createFolder(path.join(this.settings.savePath,notePath));
+			if(serialNumber.length==this.settings.granularity){
+				this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
+					/\\/g,
+					"/"
+				)}|${noteName}]]\n`;
+				const append = (chapter:Chapter)=>{
+					content += "\n\n" + NoteParser.getParseredNote(
+						htmlToMarkdown(chapter.html?chapter.html:""),
+						epubName
+					);
+					chapter.subItems.forEach((element: Chapter) => {
+						append(element);
+					}
+					);
+				};
+				cpt.subItems.forEach((element: Chapter) => {
+					append(element);
+				});
 
-			cpt.subItems.forEach((element: Chapter,index) => {
-				this.createChapter(
-					epubName,
-					element,
-					path.join(notePath, normalizePath(element.name.replace("/", "&"))),
-					serialNumber.concat([index+1])
-				);
-			});
+			}else{
+				this.app.vault.createFolder(path.join(this.settings.savePath,notePath));
+				
+				notePath = path.join(notePath, noteName);
+				if (this.settings.serialNumber) {
+					notePath = path.dirname(notePath)+"/"+ serialNumber.join(".")+" " +noteName;
+				}
+				this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
+					/\\/g,
+					"/"
+				)}|${noteName}]]\n`;
+				cpt.subItems.forEach((element: Chapter,index) => {
+					this.createChapter(
+						epubName,
+						element,
+						path.join(path.dirname(notePath), element.name.replace("/", "&")),
+						serialNumber.concat([index+1])
+					);
+				});
+			}
+			
 			
 		}
+		this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
+			/\\/g,
+			"/"
+		)}|${noteName}]]\n`;
 		
 		this.app.vault.create( this.settings.savePath +  "/"+notePath + ".md", content);
 		
