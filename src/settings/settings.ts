@@ -1,5 +1,5 @@
 export interface EpubImporterSettings {
-    tags:string[],
+    tag:string,
     libratys:string[],
     savePath:string,
     serialNumber:boolean,
@@ -9,7 +9,7 @@ export interface EpubImporterSettings {
 }
 
 export const DEFAULT_SETTINGS: EpubImporterSettings = {
-	tags: ["book"],
+	tag: "book",
 	libratys: [],
 	savePath: "",
 	serialNumber: false,

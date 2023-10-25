@@ -19,6 +19,7 @@ import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import * as path from "path";
 import jetpack from "fs-jetpack";
+import { getNotesWithTag } from "./utils";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
@@ -45,7 +46,6 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.app.workspace.on("file-open", (file) => {
 			if (!this.settings.autoOpenRightPanel) return;
-			if (!file) return;
 			const bookNotePath = this.findBookNote(file.path);
 			if (!bookNotePath) return;
 			const bookName = bookNotePath.split("/")[bookNotePath.split("/").length -2];
@@ -67,16 +67,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.app.workspace.on("file-open", (file) => {
 			if (!this.settings.allbooks) return;
-			const files = this.app.vault.getMarkdownFiles();
-			const files_with_tag = [] as TFile[];
-			files.forEach((file) => {
-				const tags =
-          this.app.metadataCache.getFileCache(file)?.frontmatter?.tags;
-				if (!tags) return;
-				if (tags.includes(this.settings.tags[0])) {
-					files_with_tag.push(file);
-				}
-			});
+			const files_with_tag = getNotesWithTag(this.app,this.settings.tag);
 			const allBooks = this.app.vault.getAbstractFileByPath("AllBooks.md");
 			if (allBooks && allBooks instanceof TFile) {
 				this.app.vault.modify(
@@ -131,39 +122,26 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 
 		this.copyImages(epubName);
-		this.propertys.tags = this.settings.tags;
+		this.propertys.tags = (this.propertys.tags?this.propertys.tags:[]).concat([this.settings.tag]);
 		console.log(this.propertys);
-		this.BookNote =
-      "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
+		this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
 		this.app.vault.create(this.settings.savePath +  "/"+epubName + "//" + `${epubName}.md`, this.BookNote);
+		jetpack.remove(this.parser.tmpPath);
 	}
 
 	copyImages(epubName: string) {
-		const imagesPath = path.join(this.vaultPath, this.settings.savePath,epubName, "images");
-		jetpack.copy(this.parser.tmpPath, imagesPath, {
-			matching: ["*.jpg", "*.jpeg", "*.png"],
+		const imagesPath = path.join(this.vaultPath, this.settings.savePath, epubName, "images");
+		jetpack.find(
+			this.parser.tmpPath,
+			{matching: ["*.jpg", "*.jpeg", "*.png"]}
+		).forEach((file)=>{
+			jetpack.copy(file,path.join(imagesPath,path.basename(file)));
 		});
-		jetpack.find(imagesPath, {
-			matching: ["*.jpg", "*.jpeg", "*.png"],
-		}).forEach((file) => {
-			const fileName = path.basename(file);
-			const newPath = path.join(imagesPath, fileName);
-			if (file!=newPath) jetpack.move(file, newPath);
-		});
-		const folders = jetpack.find(imagesPath, {
-			matching: ["*"],
-			directories: true,
-			files: false,
-		});
-		folders.forEach((folder) => {
-			jetpack.remove(folder);
-		});
-		jetpack.remove(this.parser.tmpPath);
-
-		this.propertys.cover = epubName + "/" + "images" +"/" +  path.basename(this.parser.coverPath);
+		this.propertys.cover = path.join(epubName,"images",path.basename(this.parser.coverPath));
 	}
 
 	createChapter(epubName: string, cpt: Chapter, notePath: string, serialNumber:number[]) {
+		console.log(cpt);
 		const noteName = path.basename(notePath);
 		const level = notePath.split(path.sep).length - 2;
 		const content = NoteParser.getParseredNote(
@@ -172,7 +150,7 @@ export default class EpubImporterPlugin extends Plugin {
 		);
 
 		if (cpt.subItems.length) {
-			this.app.vault.createFolder(this.settings.savePath +  "/"+notePath);
+			this.app.vault.createFolder(path.join(this.settings.savePath,notePath));
 
 			cpt.subItems.forEach((element: Chapter,index) => {
 				this.createChapter(
@@ -194,9 +172,9 @@ export default class EpubImporterPlugin extends Plugin {
 		)}|${noteName}]]\n`;
 	}
 
-	findBookNote(notePath: string) {
-		const firstLevel = notePath.replace(this.settings.savePath+"/", "").split("/")[0];
-		const bookNotePath = this.settings.savePath+"/" + firstLevel + "/" + firstLevel + ".md";
+	findBookNote(notePath: string):string {
+		const epubName = notePath.replace(this.settings.savePath+"/", "").split("/")[0];
+		const bookNotePath =path.join(this.settings.savePath,epubName,epubName+".md");
 		const bookNote = this.app.vault.getAbstractFileByPath(bookNotePath);
 		if (!bookNote) return;
 		return bookNotePath;

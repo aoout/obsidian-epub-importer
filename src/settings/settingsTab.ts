@@ -13,13 +13,13 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Tags")
-			.setDesc("The tags that will be added to the imported books.")
+			.setName("Tag")
+			.setDesc("The tag is used to identify book objects.")
 			.addText(text => text
 				.setPlaceholder("book")
-				.setValue(this.plugin.settings.tags.join(", "))
+				.setValue(this.plugin.settings.tag)
 				.onChange(async (value) => {
-					this.plugin.settings.tags = value.split(",").map(tag => tag.trim());
+					this.plugin.settings.tag = value;
 					await this.plugin.saveSettings();
 				}));
 

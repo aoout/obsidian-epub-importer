@@ -96,8 +96,11 @@ export class EpubParser {
 					"g"
 				);
 				const htmls = html.split(reg);
+				const delta = urlHrefs[0] == "firstHref"?0:-1;
 				htmls.forEach((html, index) => {
-					htmlMap.set(urlPath + "#" + urlHrefs[index], html);
+					if(index+delta>=0){
+						htmlMap.set(urlPath + "#" + urlHrefs[index+delta], html);
+					}
 				});
 			} else {
 				htmlMap.set(urlPath, html);
