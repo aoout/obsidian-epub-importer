@@ -34,6 +34,7 @@ export class EpubParser {
 	tmpPath: string;
 	chapters: Chapter[];
 	coverPath: string;
+	meta:Map<string,string>;
 
 	constructor(path: string) {
 		this.epubPath = path;
@@ -47,6 +48,7 @@ export class EpubParser {
 			.promise();
 		await this.parseToc();
 		await this.parseCover();
+		await this.parseMeta();
 	}
 
 	async parseToc() {
@@ -130,5 +132,29 @@ export class EpubParser {
 				break;
 			}
 		}
+	}
+
+	async parseMeta() {
+		new xml2js.Parser().parseString(
+			jetpack.read(
+				path.join(
+					this.tmpPath,
+					jetpack.cwd(this.tmpPath).find({ matching: "**/**.opf" })[0]
+				)
+			),(err, result) => {
+				const meta = result.package.metadata[0];
+				const title = meta["dc:title"];
+				const author = meta["dc:creator"];
+				const publisher = meta["dc:publisher"];
+				const language = meta["dc:language"];
+				
+				this.meta = new Map<string,string>();
+				this.meta.set("title",title?title[0]:"");
+				this.meta.set("author",author?author[0]["_"]:"");
+				this.meta.set("publisher",publisher?publisher[0]:"");
+				this.meta.set("language",language?language[0]:"");
+				console.log(this.meta);
+			}
+		);
 	}
 }

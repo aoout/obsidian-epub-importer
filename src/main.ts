@@ -109,9 +109,17 @@ export default class EpubImporterPlugin extends Plugin {
 	async import(epubPath: string) {
 		this.parser = new EpubParser(epubPath);
 		await this.parser.init();
+		this.BookNote = "";
 
 		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
-		this.propertys = parseYaml(this.settings.propertysTemplate.replace("{{bookName}}",epubName));
+		let defaultPropertys = this.settings.propertysTemplate.replace("{{bookName}}",epubName);
+
+		this.parser.meta.forEach((value,key)=>{
+			defaultPropertys = defaultPropertys.replace("{{"+key+"}}",value);
+		});
+
+		this.propertys = parseYaml(defaultPropertys);
+
 		await this.app.vault.createFolder(this.settings.savePath +  "/"+epubName);
 		this.parser.chapters.forEach((element,index) => {
 			this.createChapter(
@@ -124,7 +132,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.copyImages(epubName);
 		this.propertys.tags = this.settings.tags;
-
+		console.log(this.propertys);
 		this.BookNote =
       "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
 		this.app.vault.create(this.settings.savePath +  "/"+epubName + "//" + `${epubName}.md`, this.BookNote);
@@ -158,7 +166,6 @@ export default class EpubImporterPlugin extends Plugin {
 	createChapter(epubName: string, cpt: Chapter, notePath: string, serialNumber:number[]) {
 		const noteName = path.basename(notePath);
 		const level = notePath.split(path.sep).length - 2;
-		console.log("cpt",cpt);
 		const content = NoteParser.getParseredNote(
 			htmlToMarkdown(cpt.html?cpt.html:""),
 			epubName
@@ -189,7 +196,6 @@ export default class EpubImporterPlugin extends Plugin {
 
 	findBookNote(notePath: string) {
 		const firstLevel = notePath.replace(this.settings.savePath+"/", "").split("/")[0];
-		console.log("!",firstLevel);
 		const bookNotePath = this.settings.savePath+"/" + firstLevel + "/" + firstLevel + ".md";
 		const bookNote = this.app.vault.getAbstractFileByPath(bookNotePath);
 		if (!bookNote) return;
