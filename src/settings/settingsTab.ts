@@ -51,6 +51,15 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 				});
 			});
 		new Setting(containerEl)
+			.setName("Propertys template")
+			.setDesc("The plugin will add these propertys to the imported book.")
+			.addTextArea((text)=>{
+				text.setValue(this.plugin.settings.propertysTemplate).onChange(async (value)=>{
+					this.plugin.settings.propertysTemplate = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		new Setting(containerEl)
 			.setName("Auto open right panel")
 			.setDesc("The plugin will open the book note on right panel when you open a book.")
 			.addToggle((toggle)=>{

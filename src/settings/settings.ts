@@ -3,6 +3,7 @@ export interface EpubImporterSettings {
     libratys:string[],
     savePath:string,
     serialNumber:boolean,
+    propertysTemplate:string,
     autoOpenRightPanel:boolean,
     allbooks:boolean
 }
@@ -12,6 +13,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	libratys: [],
 	savePath: "",
 	serialNumber: false,
+	propertysTemplate: "",
 	autoOpenRightPanel: false,
 	allbooks:false
 };

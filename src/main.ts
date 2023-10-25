@@ -8,6 +8,7 @@ import {
 	WorkspaceLeaf,
 	htmlToMarkdown,
 	normalizePath,
+	parseYaml,
 	stringifyYaml,
 } from "obsidian";
 import { Chapter, EpubParser } from "./lib/EpubParser";
@@ -110,7 +111,7 @@ export default class EpubImporterPlugin extends Plugin {
 		await this.parser.init();
 
 		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
-		this.propertys = {};
+		this.propertys = parseYaml(this.settings.propertysTemplate.replace("{{bookName}}",epubName));
 		await this.app.vault.createFolder(this.settings.savePath +  "/"+epubName);
 		this.parser.chapters.forEach((element,index) => {
 			this.createChapter(
