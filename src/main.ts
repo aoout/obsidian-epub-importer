@@ -143,7 +143,17 @@ export default class EpubImporterPlugin extends Plugin {
 	createChapter(epubName: string, cpt: Chapter, notePath: string, serialNumber:number[]) {
 		console.log(cpt);
 		const noteName = path.basename(notePath);
-		const level = notePath.split(path.sep).length - 2;
+		const level = serialNumber.length - 1;
+		if(cpt.subItems.length){
+			notePath = path.join(notePath, noteName);
+		}
+		if (this.settings.serialNumber) {
+			notePath = path.dirname(notePath)+"/"+ serialNumber.join(".")+" " +noteName;
+		}
+		this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
+			/\\/g,
+			"/"
+		)}|${noteName}]]\n`;
 		const content = NoteParser.getParseredNote(
 			htmlToMarkdown(cpt.html?cpt.html:""),
 			epubName
@@ -160,16 +170,11 @@ export default class EpubImporterPlugin extends Plugin {
 					serialNumber.concat([index+1])
 				);
 			});
-			notePath = path.join(notePath, noteName);
+			
 		}
-		if (this.settings.serialNumber) {
-			notePath = path.dirname(notePath)+"/"+ serialNumber.join(".")+" " +noteName;
-		}
+		
 		this.app.vault.create( this.settings.savePath +  "/"+notePath + ".md", content);
-		this.BookNote += `${"\t".repeat(level)}- [[${notePath.replace(
-			/\\/g,
-			"/"
-		)}|${noteName}]]\n`;
+		
 	}
 
 	findBookNote(notePath: string):string {
