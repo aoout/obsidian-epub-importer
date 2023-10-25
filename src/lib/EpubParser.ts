@@ -91,11 +91,9 @@ export class EpubParser {
 			const urlPathHtml = jetpack.read(urlPath);
 			const html = urlPathHtml;
 			if (urlHrefs.length) {
-				const reg = new RegExp(
-					`(?<=<[^>]*id=['"])(?:${urlHrefs.join("|")})(?=['"][^>]*>)`,
-					"g"
-				);
+				const reg = /(?=<[^>]*id=['"](?:${urlHrefs.join("|")})['"][^>]*>[\s\S]*?<\/[^>]*>)/g;
 				const htmls = html.split(reg);
+				console.log(htmls);
 				const delta = urlHrefs[0] == "firstHref"?0:-1;
 				htmls.forEach((html, index) => {
 					if(index+delta>=0){
