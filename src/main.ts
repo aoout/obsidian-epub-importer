@@ -166,6 +166,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	createChapter(epubName: string, cpt: Chapter, notePath: string, serialNumber:number[]) {
+		console.log(cpt);
 		const noteName = path.basename(notePath);
 		const level = serialNumber.length - 1;
 
