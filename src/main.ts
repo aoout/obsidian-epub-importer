@@ -136,7 +136,7 @@ export default class EpubImporterPlugin extends Plugin {
 			);
 		}
 
-		this.copyImages(epubName);
+		this.copyImages();
 		this.propertys.tags = (this.propertys.tags?this.propertys.tags:[]).concat([this.settings.tag]);
 		if(this.settings.granularity!=0){
 			this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
@@ -146,7 +146,7 @@ export default class EpubImporterPlugin extends Plugin {
 		jetpack.remove(this.parser.tmpPath);
 	}
 
-	copyImages(epubName: string) {
+	copyImages() {
 		const imagesPath = new Path(this.vaultPath,this.assetsPath,"/");
 		jetpack.find(
 			this.parser.tmpPath,
