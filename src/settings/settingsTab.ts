@@ -69,7 +69,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 				});
 			});
 		new Setting(containerEl)
-			.setName("granularity")
+			.setName("Granularity")
 			.setDesc("Determine the granularity of generated markdown notes.")
 			.addSlider((slider)=>{
 				slider.setLimits(0, 5, 1)
@@ -91,7 +91,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 			});
 		new Setting(containerEl)
 			.setName("AllBooks")
-			.setDesc("create AllBooks.md in root folder")
+			.setDesc("Create AllBooks.md in root folder")
 			.addToggle((toggle)=>{
 				toggle.setValue(this.plugin.settings.allbooks).onChange(async (value)=>{
 					this.plugin.settings.allbooks = value;

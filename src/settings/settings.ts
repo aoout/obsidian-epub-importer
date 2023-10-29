@@ -14,7 +14,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	tag: "book",
 	libratys: [],
 	savePath: "",
-	assetsPath: "{savePath}/{bookName}/images",
+	assetsPath: "{{savePath}}/{{bookName}}/images",
 	serialNumber: false,
 	propertysTemplate: "",
 	granularity: 4,
