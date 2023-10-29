@@ -2,9 +2,9 @@
 export class NoteParser {
 	content: string;
 	epubName: string;
-	static getParseredNote(originNote: string, epubName: string) {
+	static getParseredNote(originNote: string, epubName: string,assetsPath:string) {
 		const parser = new NoteParser(originNote, epubName);
-		parser.parseImagePath();
+		parser.parseImagePath(assetsPath);
 		parser.parseFontNote();
 		return parser.content;
 	}
@@ -14,13 +14,14 @@ export class NoteParser {
 		this.epubName = epubName;
 	}
 
-	parseImagePath() {
+	parseImagePath(assetsPath:string) {
 		// TODO: Avoid accidentally damaging the text content
 		this.content = this.content
 			.replace(/Images/g, "images")
 			.replace(/\.\.\/images/g, "images")
-			.replace(/images/g, `${this.epubName}/images`)
-			.replace(/Image/g, `${this.epubName}/images/Image`);
+			.replace(/Image/g, "images/Image")
+			.replace(/images/g, assetsPath);
+
 	}
 
 	parseFontNote() {

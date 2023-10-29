@@ -26,13 +26,13 @@ https://github.com/aoout/obsidian-epub-importer/assets/60838705/9fb8d43a-ad4e-48
 
 all available variables:
 
-``````
+```
 - {{bookName}}
 - {{title}}
 - {{author}}
 - {{publisher}}
 - {{language}}
-``````
+```
 
 example:
 
@@ -41,4 +41,19 @@ title: {{bookName}}
 author: {{author}}
 publisher: {{publisher}}
 status: false
+```
+
+### AssetsPath template
+
+all available variables:
+
+```
+- {{savePath}}
+- {{bookName}}
+```
+
+example:
+
+```
+{{savePath}}/{{bookName}}/images
 ```

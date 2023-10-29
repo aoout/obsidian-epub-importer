@@ -25,6 +25,7 @@ export default class EpubImporterPlugin extends Plugin {
 	settings: EpubImporterSettings;
 	parser: EpubParser;
 	BookNote: string;
+	assetsPath:string;
 	propertys: any;
 	activeBook: string;
 	activeLeaf: WorkspaceLeaf;
@@ -103,6 +104,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		const epubName = new Path(epubPath).stem;
 		console.log("epubName",epubName);
+		this.assetsPath = this.settings.assetsPath.replace("{{bookName}}",epubName).replace("{{savePath}}",this.settings.savePath);
 		let defaultPropertys = this.settings.propertysTemplate.replace("{{bookName}}",epubName);
 
 		this.parser.meta.forEach((value,key)=>{
@@ -125,7 +127,8 @@ export default class EpubImporterPlugin extends Plugin {
 			const Chapter2MD2 = (chapter:Chapter)=>{
 				content += "\n\n" + NoteParser.getParseredNote(
 					htmlToMarkdown(chapter.html?chapter.html:""),
-					epubName
+					epubName,
+					this.assetsPath
 				);
 				chapter.subItems.forEach(Chapter2MD2);
 			};
@@ -148,7 +151,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	copyImages(epubName: string) {
-		const imagesPath = new Path(this.vaultPath).join(this.settings.savePath, epubName, "images");
+		const imagesPath = new Path(this.vaultPath,this.assetsPath,"/");
 		jetpack.find(
 			this.parser.tmpPath,
 			{matching: ["*.jpg", "*.jpeg", "*.png"]}
@@ -169,7 +172,8 @@ export default class EpubImporterPlugin extends Plugin {
 		}
 		const content = NoteParser.getParseredNote(
 			htmlToMarkdown(cpt.html?cpt.html:""),
-			epubName
+			epubName,
+			this.assetsPath
 		);
 		if(!restricted){
 			await this.app.vault.create(

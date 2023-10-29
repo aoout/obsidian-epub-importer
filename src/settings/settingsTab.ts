@@ -42,6 +42,15 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 					await this.plugin.saveSettings();
 				}));
 		new Setting(containerEl)
+			.setName("Assets path")
+			.setDesc("The plugin will save the assets of the imported book to this path.")
+			.addText(text => text
+				.setValue(this.plugin.settings.assetsPath)
+				.onChange(async (value) => {
+					this.plugin.settings.assetsPath = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
 			.setName("Serial number")
 			.setDesc("The plugin will add serial number to the imported book.")
 			.addToggle((toggle)=>{
