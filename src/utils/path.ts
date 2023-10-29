@@ -12,7 +12,11 @@ export class Path{
 			let sep = "/";
 			if (path.includes("\\")) sep = "\\";
 			if (path.includes("/")) sep = "/";
-			this.data = path == sep?[]: path.split(sep);
+			if(path===sep || path ===""){
+				this.data = [];
+			}else{
+				this.data = path.split(sep);
+			}
 			this.sep = sep;
 		}
 	}

@@ -101,7 +101,6 @@ export default class EpubImporterPlugin extends Plugin {
 		this.parser = new EpubParser(epubPath);
 		await this.parser.init();
 		this.BookNote = "";
-
 		const epubName = new Path(epubPath).stem;
 		this.assetsPath = this.settings.assetsPath.replace("{{bookName}}",epubName).replace("{{savePath}}",this.settings.savePath);
 		let defaultPropertys = this.settings.propertysTemplate.replace("{{bookName}}",epubName);
@@ -109,7 +108,6 @@ export default class EpubImporterPlugin extends Plugin {
 		this.parser.meta.forEach((value,key)=>{
 			defaultPropertys = defaultPropertys.replace("{{"+key+"}}",value);
 		});
-
 		this.propertys = parseYaml(defaultPropertys);
 		await this.app.vault.createFolder(Path.join(this.settings.savePath,epubName,"/"));
 		if(this.settings.granularity!=0){
@@ -194,7 +192,6 @@ export default class EpubImporterPlugin extends Plugin {
 			/\\/g,
 			"/"
 		)}|${noteName}]]\n`;
-		console.log(this.BookNote);
 		for(let i=0;i<cpt.subItems.length;i++){
 			const item = cpt.subItems[i];
 			await this.Chapter2MD(
