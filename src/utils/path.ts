@@ -7,7 +7,6 @@ export class Path{
 			const result = new Path(Path.join(...paths));
 			this.data = result.data;
 			this.sep = result.sep;
-			console.log("Path.constructor1",this.data,this.sep);
 		}else{
 			const path = paths[0];
 			let sep = "/";
@@ -15,7 +14,6 @@ export class Path{
 			if (path.includes("/")) sep = "/";
 			this.data = path == sep?[]: path.split(sep);
 			this.sep = sep;
-			console.log("Path.constructor2",this.data,this.sep);
 		}
 	}
 	getParent(level=1):Path{

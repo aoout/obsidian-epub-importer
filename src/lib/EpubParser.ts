@@ -94,8 +94,6 @@ export class EpubParser {
 				const reg = new RegExp(`(?=<[^>]*id=['"](?:${urlHrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`, "g");
 
 				const htmls = html.split(reg);
-				console.log(urlPath);				
-				console.log(htmls.length);
 				const delta = urlHrefs[0] == "firstHref"?0:-1;
 				htmls.forEach((html, index) => {
 					if(index+delta>=0){
@@ -156,7 +154,6 @@ export class EpubParser {
 				this.meta.set("author",author?author[0]["_"]:"");
 				this.meta.set("publisher",publisher?publisher[0]:"");
 				this.meta.set("language",language?language[0]:"");
-				console.log(this.meta);
 			}
 		);
 	}

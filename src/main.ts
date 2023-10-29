@@ -103,7 +103,6 @@ export default class EpubImporterPlugin extends Plugin {
 		this.BookNote = "";
 
 		const epubName = new Path(epubPath).stem;
-		console.log("epubName",epubName);
 		this.assetsPath = this.settings.assetsPath.replace("{{bookName}}",epubName).replace("{{savePath}}",this.settings.savePath);
 		let defaultPropertys = this.settings.propertysTemplate.replace("{{bookName}}",epubName);
 
@@ -141,7 +140,6 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.copyImages(epubName);
 		this.propertys.tags = (this.propertys.tags?this.propertys.tags:[]).concat([this.settings.tag]);
-		console.log(this.propertys);
 		if(this.settings.granularity!=0){
 			this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
 			this.app.vault.create(Path.join(this.settings.savePath,epubName,epubName+".md","/"), this.BookNote);
@@ -156,7 +154,7 @@ export default class EpubImporterPlugin extends Plugin {
 			this.parser.tmpPath,
 			{matching: ["*.jpg", "*.jpeg", "*.png"]}
 		).forEach((file)=>{
-			jetpack.copy(file,imagesPath.join(new Path(file).name).string);
+			jetpack.copy(file,imagesPath.join(new Path(file).name).string,{overwrite:true});
 		});
 		this.propertys.cover = new Path(epubName).join("images",new Path(this.parser.coverPath).name).string;
 	}
