@@ -113,14 +113,14 @@ export default class EpubImporterPlugin extends Plugin {
 		this.propertys = parseYaml(defaultPropertys);
 		await this.app.vault.createFolder(Path.join(this.settings.savePath,epubName,"/"));
 		if(this.settings.granularity!=0){
-			this.parser.chapters.forEach(async (element,index) => {
+			for(let i=0;i<this.parser.chapters.length;i++){
 				await this.Chapter2MD(
 					epubName,
-					element,
-					new Path(this.settings.savePath,epubName,element.name,"/"),
-					[index+1]
+					this.parser.chapters[i],
+					new Path(this.settings.savePath,epubName,this.parser.chapters[i].name,"/"),
+					[i+1]
 				);
-			});
+			}
 		}else{
 			let content = "";
 			const Chapter2MD2 = (chapter:Chapter)=>{
@@ -142,7 +142,7 @@ export default class EpubImporterPlugin extends Plugin {
 		this.propertys.tags = (this.propertys.tags?this.propertys.tags:[]).concat([this.settings.tag]);
 		if(this.settings.granularity!=0){
 			this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
-			this.app.vault.create(Path.join(this.settings.savePath,epubName,epubName+".md","/"), this.BookNote);
+			await this.app.vault.create(Path.join(this.settings.savePath,epubName,epubName+".md","/"), this.BookNote);
 		}
 		
 		jetpack.remove(this.parser.tmpPath);
@@ -191,6 +191,7 @@ export default class EpubImporterPlugin extends Plugin {
 			/\\/g,
 			"/"
 		)}|${noteName}]]\n`;
+		console.log(this.BookNote);
 		for(let i=0;i<cpt.subItems.length;i++){
 			const item = cpt.subItems[i];
 			await this.Chapter2MD(
