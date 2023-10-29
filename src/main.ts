@@ -179,6 +179,10 @@ export default class EpubImporterPlugin extends Plugin {
 				notePath.withSuffix("md").string,
 				content
 			);
+			this.BookNote += `${"\t".repeat(serialNumber.length-1)}- [[${notePath.string.replace(
+				/\\/g,
+				"/"
+			)}|${noteName}]]\n`;
 		}else{
 			let parentPath = notePath;
 			const delta = serialNumber.length - this.settings.granularity;
@@ -188,10 +192,7 @@ export default class EpubImporterPlugin extends Plugin {
 				return data + "\n\n" + content;
 			});
 		}
-		this.BookNote += `${"\t".repeat(serialNumber.length-1)}- [[${notePath.string.replace(
-			/\\/g,
-			"/"
-		)}|${noteName}]]\n`;
+		
 		for(let i=0;i<cpt.subItems.length;i++){
 			const item = cpt.subItems[i];
 			await this.Chapter2MD(
