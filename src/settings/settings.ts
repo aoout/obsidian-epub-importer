@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	savePath: "",
 	assetsPath: "{{savePath}}/{{bookName}}/images",
 	serialNumber: false,
-	propertysTemplate: "",
+	propertysTemplate: "title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
 	granularity: 4,
 	autoOpenRightPanel: false,
 	allbooks:false
