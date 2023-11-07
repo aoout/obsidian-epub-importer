@@ -1,7 +1,7 @@
 {
 	"id": "epub-importer",
 	"name": "Epub Importer",
-	"description": "Import .epub file into your vault as markdown notes.",
+	"description": "Import EPUB files as Markdown",
 	"author": "aoout",
 	"authorUrl": "https://github.com/aoout",
 	"isDesktopOnly": true,
