@@ -1,6 +1,6 @@
 # Epub Importer
 
-Import .epub file into Obsidian as markdown notes.
+Import .epub file into your vault as markdown notes.
 
 > [!IMPORTANT]
 > This plugin is still in a very early stage and will probably only work with some specific formats of .epub files. If you find any incompatibilities, please let me know.
