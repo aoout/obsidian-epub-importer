@@ -44,7 +44,7 @@ export default class EpubImporterPlugin extends Plugin {
 			},
 		});
 
-		this.app.workspace.on("file-open", (file) => {
+		this.registerEvent( this.app.workspace.on("file-open", (file) => {
 			if (!this.settings.autoOpenRightPanel) return;
 			const bookNotePath = this.findBookNote(new Path(file.path));
 			if (!bookNotePath) return;
@@ -63,9 +63,9 @@ export default class EpubImporterPlugin extends Plugin {
 				},
 			});
 			this.app.workspace.revealLeaf(this.activeLeaf);
-		});
+		}));
 
-		this.app.workspace.on("file-open", (file) => {
+		this.registerEvent(this.app.workspace.on("file-open", (file) => {
 			if (!this.settings.allbooks) return;
 			const files_with_tag = getNotesWithTag(this.app,this.settings.tag);
 			const allBooks = this.app.vault.getAbstractFileByPath("AllBooks.md");
@@ -84,7 +84,7 @@ export default class EpubImporterPlugin extends Plugin {
 						.join("\n")
 				);
 			}
-		});
+		}));
 	}
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	onunload() {}
