@@ -175,14 +175,17 @@ export default class EpubImporterPlugin extends Plugin {
 			this.assetsPath
 		);
 		if(!restricted){
-			await this.app.vault.create(
-				notePath.withSuffix("md").string,
-				content
-			);
-			this.BookNote += `${"\t".repeat(serialNumber.length-1)}- [[${notePath.string.replace(
-				/\\/g,
-				"/"
-			)}|${noteName}]]\n`;
+			if(! this.app.vault.getAbstractFileByPath(notePath.withSuffix("md").string)){
+				await this.app.vault.create(
+					notePath.withSuffix("md").string,
+					content
+				);
+				this.BookNote += `${"\t".repeat(serialNumber.length-1)}- [[${notePath.string.replace(
+					/\\/g,
+					"/"
+				)}|${noteName}]]\n`;
+			}
+			
 		}else{
 			let parentPath = notePath;
 			const delta = serialNumber.length - this.settings.granularity;
