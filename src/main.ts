@@ -18,7 +18,7 @@ import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import jetpack from "fs-jetpack";
 import { getNotesWithTag } from "./utils/obsidianUtils";
-import { Path } from "./utils/path";
+import { Path,convertToValidFilename } from "./utils/path";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;

@@ -60,6 +60,7 @@ export class EpubParser {
 		const data = jetpack.read(tocFile);
 
 		const result = await parser.parseStringPromise(data);
+		
 		const navPoints = result.ncx.navMap[0].navPoint;
 
 		const getChapter = (navPoint: any) => 

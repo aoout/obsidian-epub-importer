@@ -47,3 +47,7 @@ example:
 ```
 {{savePath}}/{{bookName}}/images
 ```
+
+# Platform
+
+The function is tested based on Windows system. I don’t have an Apple computer.

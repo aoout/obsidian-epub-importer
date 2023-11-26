@@ -1,3 +1,7 @@
+export function convertToValidFilename(string) {
+	return (string.replace(/[/|\\:*?"<>]/g, " "));
+}
+
 export class Path{
 	data: string[];
 	sep: string;
@@ -59,6 +63,6 @@ export class Path{
 		return this.name.split(".").slice(-1)[0];
 	}
 	get string():string{
-		return this.data.join(this.sep);
+		return this.data.map(convertToValidFilename).join(this.sep);
 	}
 }
