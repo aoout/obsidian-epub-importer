@@ -18,7 +18,7 @@ import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import jetpack from "fs-jetpack";
 import { getNotesWithTag } from "./utils/obsidianUtils";
-import { Path,convertToValidFilename } from "./utils/path";
+import { Path } from "./utils/path";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
@@ -147,7 +147,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	copyImages() {
-		const imagesPath = new Path(this.vaultPath,this.assetsPath,"/");
+		const imagesPath = new Path("/",this.vaultPath,this.assetsPath);
 		jetpack.find(
 			this.parser.tmpPath,
 			{matching: ["*.jpg", "*.jpeg", "*.png"]}

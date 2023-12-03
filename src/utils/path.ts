@@ -1,5 +1,5 @@
 export function convertToValidFilename(string) {
-	return (string.replace(/[/|\\:*?"<>]/g, " "));
+	return (string.replace(/[/|\\:*?"<>]/g, ""));
 }
 
 export class Path{
@@ -19,7 +19,7 @@ export class Path{
 			if(path===sep || path ===""){
 				this.data = [];
 			}else{
-				this.data = path.split(sep);
+				this.data = path.split(sep).filter((d)=>d!="");
 			}
 			this.sep = sep;
 		}
@@ -63,6 +63,13 @@ export class Path{
 		return this.name.split(".").slice(-1)[0];
 	}
 	get string():string{
-		return this.data.map(convertToValidFilename).join(this.sep);
+		const firstOne = this.data[0];
+		const result = this.data.map(convertToValidFilename);
+		if(firstOne.length == 2 && firstOne[1] == ":"){
+			console.log(result);
+			result[0] = result[0] + ":";
+			console.log(result);
+		}
+		return result.join(this.sep);
 	}
 }
