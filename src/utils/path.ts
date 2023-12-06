@@ -44,8 +44,13 @@ export class Path{
 	withStem(stem:string){
 		return this.getParent().join(stem+"."+this.suffix);
 	}
-	withSuffix(suffix:string){
-		return this.getParent().join(this.stem+"."+suffix);
+	withSuffix(suffix:string,includeingDot=false){
+		if(!includeingDot){
+
+			return this.getParent().join(this.stem+"."+suffix);
+		}else{
+			return this.getParent().join(this.name+"."+suffix);
+		}
 	}
 	get length():number{
 		return this.data.length;
@@ -60,15 +65,15 @@ export class Path{
 		return this.name.split(".")[0];
 	}
 	get suffix():string{
-		return this.name.split(".").slice(-1)[0];
+		const result = this.name.split(".");
+		result.pop();
+		return result.join(".");
 	}
 	get string():string{
 		const firstOne = this.data[0];
 		const result = this.data.map(convertToValidFilename);
 		if(firstOne.length == 2 && firstOne[1] == ":"){
-			console.log(result);
 			result[0] = result[0] + ":";
-			console.log(result);
 		}
 		return result.join(this.sep);
 	}
