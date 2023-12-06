@@ -62,12 +62,13 @@ export class Path{
 		return this.data[this.data.length-1];
 	}
 	get stem():string{
-		return this.name.split(".")[0];
-	}
-	get suffix():string{
 		const result = this.name.split(".");
 		result.pop();
 		return result.join(".");
+	}
+	get suffix():string{
+		const result = this.name.split(".");
+		return result.pop();
 	}
 	get string():string{
 		const firstOne = this.data[0];
