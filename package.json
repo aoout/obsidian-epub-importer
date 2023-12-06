@@ -42,7 +42,7 @@
 	"dependencies": {
 		"commit-and-tag-version": "^11.0.0",
 		"fs-jetpack": "^5.1.0",
-		"unzipper": "^0.10.14",
+		"unzipper": "0.10.11",
 		"xml2js": "^0.6.2"
 	}
 }
