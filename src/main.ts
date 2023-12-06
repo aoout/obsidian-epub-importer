@@ -128,8 +128,9 @@ export default class EpubImporterPlugin extends Plugin {
 		}else{
 			let content = "";
 			const Chapter2MD2 = (chapter:Chapter)=>{
+				const content2 = htmlToMarkdown(chapter.html?chapter.html:"");
 				content += "\n\n" + NoteParser.getParseredNote(
-					htmlToMarkdown(chapter.html?chapter.html:""),
+					content2?content2:chapter.html.replace(/<[^>]+>/g, ""),
 					epubName,
 					this.assetsPath
 				);
@@ -183,8 +184,9 @@ export default class EpubImporterPlugin extends Plugin {
 			await this.app.vault.createFolder(notePath.string);
 			notePath = notePath.join(noteName);
 		}
+		const content2 = htmlToMarkdown(cpt.html?cpt.html:"");
 		const content = NoteParser.getParseredNote(
-			htmlToMarkdown(cpt.html?cpt.html:""),
+			content2?content2:cpt.html.replace(/<[^>]+>/g, ""),
 			epubName,
 			this.assetsPath
 		);
