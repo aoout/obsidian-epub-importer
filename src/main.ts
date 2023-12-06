@@ -156,10 +156,13 @@ export default class EpubImporterPlugin extends Plugin {
 		).forEach((file)=>{
 			jetpack.copy(file,imagesPath.join(new Path(file).name).string,{overwrite:true});
 		});
-		this.propertys.cover = new Path(
-			this.assetsPath,
-			new Path(this.parser.coverPath).name
-		).string;
+		if(this.parser.coverPath){
+			this.propertys.cover = new Path(
+				this.assetsPath,
+				new Path(this.parser.coverPath).name
+			).string;
+		}
+		
 	}
 
 	async Chapter2MD(epubName: string, cpt: Chapter, notePath: Path, serialNumber:number[]) {
