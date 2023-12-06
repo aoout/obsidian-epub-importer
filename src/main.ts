@@ -47,7 +47,7 @@ export default class EpubImporterPlugin extends Plugin {
 		this.registerEvent( this.app.workspace.on("file-open", (file) => {
 			if (!this.settings.autoOpenRightPanel) return;
 			const bookNotePath = this.findBookNote(new Path(file.path));
-			if (!bookNotePath) return;
+			if (!bookNotePath) return this.activeLeaf.detach();
 			const bookName = bookNotePath.split("/")[bookNotePath.split("/").length -2];
 			if (this.activeBook == bookName) return;
 			if (this.activeLeaf) this.activeLeaf.detach();
@@ -62,6 +62,7 @@ export default class EpubImporterPlugin extends Plugin {
 					source: false,
 				},
 			});
+			this.activeLeaf.setPinned(true);
 			this.app.workspace.revealLeaf(this.activeLeaf);
 		}));
 
@@ -86,8 +87,9 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 		}));
 	}
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	onunload() {}
+	onunload() {
+		this.activeLeaf.detach();
+	}
 
 	async loadSettings(): Promise<void> {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
