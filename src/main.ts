@@ -163,6 +163,15 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	async Chapter2MD(epubName: string, cpt: Chapter, notePath: Path, serialNumber:number[]) {
+		if(this.settings.serialNumber){
+			let lastOne = notePath.data.pop();
+			const serialNumber2 = [...serialNumber];
+			serialNumber2[0] = serialNumber2[0] - this.settings.serialNumberDelta;
+			if(serialNumber2[0]>=1){
+				lastOne = serialNumber2.join(".") +" "+ lastOne;
+			}
+			notePath.data.push(lastOne);
+		}
 		const restricted = serialNumber.length > this.settings.granularity?1:0;
 		const extend = (cpt.subItems.length && serialNumber.length < this.settings.granularity)?1:0;
 		const noteName = notePath.name;
@@ -177,9 +186,11 @@ export default class EpubImporterPlugin extends Plugin {
 			this.assetsPath
 		);
 		if(!restricted){
-			if(! this.app.vault.getAbstractFileByPath(notePath.withSuffix("md").string)){
+			
+			
+			if(! this.app.vault.getAbstractFileByPath(notePath.withSuffix("md",true).string)){
 				await this.app.vault.create(
-					notePath.withSuffix("md").string,
+					notePath.withSuffix("md",true).string,
 					content
 				);
 				this.BookNote += `${"\t".repeat(serialNumber.length-1)}- [[${notePath.string.replace(

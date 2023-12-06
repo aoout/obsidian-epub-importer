@@ -60,6 +60,17 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 				});
 			});
 		new Setting(containerEl)
+			.setName("serialNumberDelta")
+			.setDesc("Subtract this value from the first level of serialNumber.")
+			.addSlider((slider)=>{
+				slider.setLimits(0, 10, 1)
+					.setDynamicTooltip()
+					.setValue(this.plugin.settings.serialNumberDelta).onChange(async (value)=>{
+						this.plugin.settings.serialNumberDelta = value;
+						await this.plugin.saveSettings();
+					});
+			});
+		new Setting(containerEl)
 			.setName("Propertys template")
 			.setDesc("The plugin will add these propertys to the imported book.")
 			.addTextArea((text)=>{
