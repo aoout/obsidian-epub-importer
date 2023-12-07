@@ -46,7 +46,6 @@ export class Path{
 	}
 	withSuffix(suffix:string,includeingDot=false){
 		if(!includeingDot){
-
 			return this.getParent().join(this.stem+"."+suffix);
 		}else{
 			return this.getParent().join(this.name+"."+suffix);
@@ -62,13 +61,25 @@ export class Path{
 		return this.data[this.data.length-1];
 	}
 	get stem():string{
+		// example1: usihso.epub -> usihso
+		// example2: usihso.epub.text.zip -> usihso.epub.text
+		// example3: usihso -> usihso
 		const result = this.name.split(".");
-		result.pop();
+		if(result.length>1){
+			result.pop();
+		}
 		return result.join(".");
 	}
 	get suffix():string{
+		// example1: usihso.epub -> epub
+		// example2: usihso.epub.text.zip -> zip
+		// example3: usihso -> ""
+
 		const result = this.name.split(".");
-		return result.pop();
+		if(result.length>1){
+			return result.pop();
+		}
+		return "";
 	}
 	get string():string{
 		const firstOne = this.data[0];

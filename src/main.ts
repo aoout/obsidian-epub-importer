@@ -225,6 +225,8 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 			notePath.data.push(lastOne);
 		}
+		console.log(notePath.string);
+		console.log(serialNumber);
 		const restricted = serialNumber.length > this.settings.granularity ? 1 : 0;
 		const extend =
       cpt.subItems.length && serialNumber.length < this.settings.granularity
@@ -268,6 +270,7 @@ export default class EpubImporterPlugin extends Plugin {
 			const parentFile = this.app.vault.getAbstractFileByPath(
 				parentPath.withSuffix("md").string
 			) as TFile;
+			console.log("parent",parentPath);
 			await this.app.vault.process(parentFile, (data) => {
 				return data + "\n\n" + content;
 			});
