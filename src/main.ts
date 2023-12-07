@@ -43,6 +43,18 @@ export default class EpubImporterPlugin extends Plugin {
 				}).open();
 			},
 		});
+		this.addCommand({
+			id: "sync-librarys",
+			name: "Import all epub from librarys to your vault",
+			callback: async () => {
+				for(let i=0;i<this.settings.libratys.length;i++){
+					const results = jetpack.find(this.settings.libratys[i],{matching:"**/**.epub"});
+					for(let j=0;j<results.length;j++){
+						await this.import(jetpack.path(results[j]));
+					}
+				}
+			},
+		});
 
 		this.registerEvent( this.app.workspace.on("file-open", (file) => {
 			if (!this.settings.autoOpenRightPanel) return;
