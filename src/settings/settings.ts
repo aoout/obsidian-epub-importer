@@ -6,7 +6,8 @@ export interface EpubImporterSettings {
     serialNumber:boolean,
     serialNumberDelta:number,
     propertysTemplate:string,
-    granularity: number
+    granularity: number,
+    imageFormat:string,
     autoOpenRightPanel:boolean,
     allbooks:boolean
 }
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	serialNumberDelta:0,
 	propertysTemplate: "title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
 	granularity: 4,
+	imageFormat:"![](imagePath)",
 	autoOpenRightPanel: false,
 	allbooks:false
 };

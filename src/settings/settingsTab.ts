@@ -90,7 +90,21 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 						await this.plugin.saveSettings();
 					});
 			});
-			
+		new Setting(containerEl)
+			.setName("imageFormat")
+			.setDesc("The type of imageFormat. caption only for chinese now.")
+			.addDropdown((text)=>
+				text.addOptions({
+					"![](imagePath)": "![](imagePath)",
+					"![[imagePath]]": "![[imagePath]]",
+					"![[imagePath||caption]]":"![[imagePath||caption]]"
+				})
+					.setValue(this.plugin.settings.imageFormat)
+					.onChange(async (value) => {
+						this.plugin.settings.imageFormat = value;
+						await this.plugin.saveSettings();
+					})
+			);
 		new Setting(containerEl)
 			.setName("Auto open right panel")
 			.setDesc("The plugin will open the book note on right panel when you open a book.")

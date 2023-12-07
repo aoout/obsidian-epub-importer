@@ -179,7 +179,7 @@ export default class EpubImporterPlugin extends Plugin {
 				}
 				content +=
           "\n\n" +
-          NoteParser.getParseredNote(content2, epubName, this.assetsPath);
+          NoteParser.getParseredNote(content2, epubName, this.assetsPath,this.settings.imageFormat);
 				chapter.subItems.forEach(Chapter2MD2);
 			};
 			this.parser.chapters.forEach(Chapter2MD2);
@@ -244,7 +244,8 @@ export default class EpubImporterPlugin extends Plugin {
 		const content = NoteParser.getParseredNote(
 			content2,
 			epubName,
-			this.assetsPath
+			this.assetsPath,
+			this.settings.imageFormat
 		);
 		if (!restricted) {
 			if (
