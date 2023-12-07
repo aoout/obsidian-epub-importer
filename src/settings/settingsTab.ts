@@ -27,8 +27,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab{
 			.setName("Library")
 			.setDesc("The plugin will search for .epub files from these paths.")
 			.addTextArea((text)=>{
-				text.setValue(this.plugin.settings.libratys.join("\n")).onChange(async (value)=>{
-					this.plugin.settings.libratys = value.split("\n").map(lib => lib.trim());
+				text.setValue(this.plugin.settings.librarys.join("\n")).onChange(async (value)=>{
+					this.plugin.settings.librarys = value.split("\n").map(lib => lib.trim());
 					await this.plugin.saveSettings();
 				});
 			});

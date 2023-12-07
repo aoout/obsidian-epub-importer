@@ -42,7 +42,7 @@ export class EpubImporterModal extends SuggestModal<string> {
 		super(app);
 
 		this.onSubmit = onSubmit;
-		this.librarys = plugin.settings.libratys;
+		this.librarys = plugin.settings.librarys;
 
 		this.inputEl.addEventListener("keyup", ({ key }) => {
 			if (key === "Enter" && this.inputEl.value) {

@@ -47,8 +47,8 @@ export default class EpubImporterPlugin extends Plugin {
 			id: "sync-librarys",
 			name: "Import all epub from librarys to your vault",
 			callback: async () => {
-				for(let i=0;i<this.settings.libratys.length;i++){
-					const results = jetpack.find(this.settings.libratys[i],{matching:"**/**.epub"});
+				for(let i=0;i<this.settings.librarys.length;i++){
+					const results = jetpack.find(this.settings.librarys[i],{matching:"**/**.epub"});
 					for(let j=0;j<results.length;j++){
 						await this.import(jetpack.path(results[j]));
 					}

@@ -1,6 +1,6 @@
 export interface EpubImporterSettings {
     tag:string,
-    libratys:string[],
+    librarys:string[],
     savePath:string,
     assetsPath:string,
     serialNumber:boolean,
@@ -13,7 +13,7 @@ export interface EpubImporterSettings {
 
 export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	tag: "book",
-	libratys: [],
+	librarys: [],
 	savePath: "",
 	assetsPath: "{{savePath}}/{{bookName}}/images",
 	serialNumber: false,
