@@ -65,8 +65,12 @@ export default class EpubImporterPlugin extends Plugin {
 			this.activeLeaf.setPinned(true);
 			this.app.workspace.revealLeaf(this.activeLeaf);
 		}));
+		
+		this.registerEvent( this.app.workspace.on("quit", () => {
+			this.activeLeaf.detach();
+		}));
 
-		this.registerEvent(this.app.workspace.on("file-open", (file) => {
+		this.registerEvent(this.app.workspace.on("file-open", () => {
 			if (!this.settings.allbooks) return;
 			const files_with_tag = getNotesWithTag(this.app,this.settings.tag);
 			const allBooks = this.app.vault.getAbstractFileByPath("AllBooks.md");
