@@ -12,6 +12,8 @@ so you can read the book directly in obsidian, and make some marks, make some li
 
 ![](assets/demo.gif)
 
+Or, you can add some `librarys`` in settings, and epubs under the paths will come out when you type the command.
+
 ### Propertys template
 
 all available variables:
@@ -51,3 +53,12 @@ example:
 # Platform
 
 The function is tested based on Windows system. I don’t have an Apple computer.
+
+# How to issue bugs
+
+You should upload the epub the same time. 
+
+You should also upload the .epub file where the bug occurred. Github does not support uploading files in .epub format. It doesn't matter. You just need to change its suffix to .zip and upload it.
+
+>[!warning]
+>Please do not compress it in a zip file and upload the zip file.
