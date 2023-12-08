@@ -126,9 +126,19 @@ export default class EpubImporterPlugin extends Plugin {
 
 	async import(epubPath: string) {
 		const epubName = new Path(epubPath).stem;
-
 		const { assetsPath, propertysTemplate, savePath, tag, granularity, imageFormat } =
 			this.settings;
+		const savePathP = new Path(savePath);
+		const folder = savePathP.join(epubName);
+		const folderA = new Path("/",this.vaultPath,folder.string).string;
+		if (jetpack.exists(folderA)) {
+			if (this.settings.removeDuplicateFolders) {
+				jetpack.remove(folderA);
+			} else {
+				new Notice("Duplicate folder already exists.");
+				return;
+			}
+		}
 
 		this.assetsPath = assetsPath
 			.replace("{{bookName}}", epubName)
@@ -145,19 +155,9 @@ export default class EpubImporterPlugin extends Plugin {
 		);
 		this.propertys.tags = (this.propertys.tags ?? []).concat([tag]);
 
-		const savePathP = new Path(savePath);
 
 		this.BookNote = "";
 
-		const folder = savePathP.join(epubName);
-		if (jetpack.exists(folder.string)) {
-			if (this.settings.removeDuplicateFolders) {
-				jetpack.remove(folder.string);
-			} else {
-				new Notice("Duplicate folder already exists.");
-				return;
-			}
-		}
 		await this.app.vault.createFolder(folder.string);
 
 		this.copyImages();
