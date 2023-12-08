@@ -3,10 +3,13 @@ export function convertToValidFilename(string) {
 }
 
 export class Path {
+	// the robustness of this class is very low, use it with caution.
 	data: string[];
 	sep: string;
 
 	constructor(...paths: string[]) {
+		// sep will be determined by the first parameter.
+		// example: const p = new Path("/", path1, path2);
 		if (paths.length > 1) {
 			const result = new Path(Path.join(...paths));
 			this.data = result.data;
@@ -42,9 +45,14 @@ export class Path {
 		return this.getParent().join(name);
 	}
 	withStem(stem: string) {
+		// example1: usihso.epub -> newname.epub
+		// example2: usihso.epub.text.zip -> newname.zip
+		// example3: usihso -> newname
+
 		return this.getParent().join(stem + "." + this.suffix);
 	}
 	withSuffix(suffix: string, includeingDot = false) {
+		// If you are sure that filename has no suffix, please do not use this method, but directly + ".ext".
 		if (!includeingDot) {
 			return this.getParent().join(this.stem + "." + suffix);
 		} else {

@@ -163,12 +163,14 @@ export default class EpubImporterPlugin extends Plugin {
 		this.copyImages();
 
 		if (granularity != 0) {
+			// when granularity>0, The entire book will be converted into a structured folder.
 			for (const [i, cpt] of this.parser.chapters.entries()) {
 				await this.Chapter2MD(cpt, folder.join(cpt.name), [i + 1]);
 			}
 			this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
 			await this.app.vault.create(folder.join(epubName + ".md").string, this.BookNote);
 		} else {
+			// when granularity=0, the The entire book will be converted into a note.
 			let content = "";
 			const Chapter2MD2 = (chapter: Chapter) => {
 				content +=
@@ -230,6 +232,7 @@ export default class EpubImporterPlugin extends Plugin {
 		}
 
 		const level = serialNumber.length;
+		// restricted means that the file corresponding to the chapter will not be created.
 		const restricted = level > this.settings.granularity;
 		const noteName = notePath.name;
 		const folderPath = notePath;
@@ -253,6 +256,7 @@ export default class EpubImporterPlugin extends Plugin {
 				)}|${noteName}]]\n`;
 			}
 		} else {
+			// for restricted chapters, their content will be appended to the notes of their parent chapter.
 			let parentPath = notePath;
 			const delta = level - this.settings.granularity;
 			parentPath = parentPath.getParent(delta);
