@@ -11,9 +11,9 @@ export class EpubImporterModal extends SuggestModal<string> {
 	getSuggestions(query: string): string[] | Promise<string[]> {
 		const result: string[] = [];
 		this.librarys.forEach((lib) => {
-			jetpack.find(lib,{matching:"**/**.epub"}).forEach((path=>{
+			jetpack.find(lib, { matching: "**/**.epub" }).forEach((path) => {
 				result.push(jetpack.path(path));
-			}));
+			});
 		});
 		return result.filter((path) => path.indexOf(query) !== -1);
 	}
@@ -34,11 +34,7 @@ export class EpubImporterModal extends SuggestModal<string> {
 			new Notice("Invalid path.");
 		}
 	}
-	constructor(
-		app: App,
-		plugin: EpubImporterPlugin,
-		onSubmit: (result: string) => void
-	) {
+	constructor(app: App, plugin: EpubImporterPlugin, onSubmit: (result: string) => void) {
 		super(app);
 
 		this.onSubmit = onSubmit;

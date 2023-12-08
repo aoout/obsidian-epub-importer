@@ -1,15 +1,15 @@
 export interface EpubImporterSettings {
-    tag:string,
-    librarys:string[],
-    savePath:string,
-    assetsPath:string,
-    serialNumber:boolean,
-    serialNumberDelta:number,
-    propertysTemplate:string,
-    granularity: number,
-    imageFormat:string,
-    autoOpenRightPanel:boolean,
-    allbooks:boolean
+	tag: string;
+	librarys: string[];
+	savePath: string;
+	assetsPath: string;
+	serialNumber: boolean;
+	serialNumberDelta: number;
+	propertysTemplate: string;
+	granularity: number;
+	imageFormat: string;
+	autoOpenRightPanel: boolean;
+	allbooks: boolean;
 }
 
 export const DEFAULT_SETTINGS: EpubImporterSettings = {
@@ -18,10 +18,11 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	savePath: "",
 	assetsPath: "{{savePath}}/{{bookName}}/images",
 	serialNumber: false,
-	serialNumberDelta:0,
-	propertysTemplate: "title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
+	serialNumberDelta: 0,
+	propertysTemplate:
+		"title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
 	granularity: 4,
-	imageFormat:"![](imagePath)",
+	imageFormat: "![](imagePath)",
 	autoOpenRightPanel: false,
-	allbooks:false
+	allbooks: false,
 };

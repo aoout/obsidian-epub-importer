@@ -12,5 +12,3 @@ export function getNotesWithTag(app: App, tag: string): TFile[] {
 	});
 	return files_with_tag;
 }
-
-

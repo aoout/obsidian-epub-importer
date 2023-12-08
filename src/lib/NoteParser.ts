@@ -1,35 +1,32 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class NoteParser {
 	content: string;
-	epubName: string;
-	imageFormat: string;
-	static getParseredNote(originNote: string, epubName: string,assetsPath:string, imageFormat:string) {
-		const parser = new NoteParser(originNote, epubName, imageFormat);
-		parser.parseImagePath(assetsPath);
+	static parse(originNote: string, assetsPath: string, imageFormat: string) {
+		const parser = new NoteParser(originNote);
+		parser.parseImagePath(assetsPath, imageFormat);
 		parser.parseFontNote();
 		return parser.content;
 	}
 
-	constructor(originNote: string, epubName: string, imageFormat:string) {
+	constructor(originNote: string) {
 		this.content = originNote;
-		this.epubName = epubName;
-		this.imageFormat = imageFormat;
 	}
 
-	parseImagePath(assetsPath:string) {
+	parseImagePath(assetsPath: string, imageFormat: string) {
 		// TODO: Avoid accidentally damaging the text content
 		this.content = this.content
 			.replace(/Images/g, "images")
 			.replace(/\.\.\/images/g, "images")
 			.replace(/Image/g, "images/Image")
 			.replace(/images/g, assetsPath);
-		if(this.imageFormat == "![[imagePath]]"){
-			this.content = this.content
-				.replace(/!\[\]\((.*images.*)\)/g,"![[$1]]");
+		if (imageFormat == "![[imagePath]]") {
+			this.content = this.content.replace(/!\[\]\((.*images.*)\)/g, "![[$1]]");
 		}
-		if(this.imageFormat == "![[imagePath||caption]]"){
-			this.content = this.content
-				.replace(/!\[\]\((.*images.*)\)\n+(\**图.*)\n/g,"![[$1|$2]]\n");
+		if (imageFormat == "![[imagePath||caption]]") {
+			this.content = this.content.replace(
+				/!\[\]\((.*images.*)\)\n+(\**图.*)\n/g,
+				"![[$1|$2]]\n"
+			);
 		}
 	}
 
