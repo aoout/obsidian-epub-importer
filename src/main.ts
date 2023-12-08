@@ -236,7 +236,7 @@ export default class EpubImporterPlugin extends Plugin {
 		const restricted = level > this.settings.granularity;
 		const noteName = notePath.name;
 		const folderPath = notePath;
-		if (!restricted && cpt.subItems.length) {
+		if (level < this.settings.granularity && cpt.subItems.length) {
 			await this.app.vault.createFolder(notePath.string);
 			notePath = notePath.join(noteName);
 		}
@@ -261,7 +261,7 @@ export default class EpubImporterPlugin extends Plugin {
 			const delta = level - this.settings.granularity;
 			parentPath = parentPath.getParent(delta);
 			const parentFile = this.app.vault.getAbstractFileByPath(
-				parentPath.withSuffix("md").string
+				parentPath.string + ".md"
 			) as TFile;
 			await this.app.vault.process(parentFile, (data) => {
 				return data + "\n\n" + content;
