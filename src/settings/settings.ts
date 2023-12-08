@@ -10,6 +10,7 @@ export interface EpubImporterSettings {
 	imageFormat: string;
 	autoOpenRightPanel: boolean;
 	allbooks: boolean;
+	removeDuplicateFolders: boolean;
 }
 
 export const DEFAULT_SETTINGS: EpubImporterSettings = {
@@ -25,4 +26,5 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	imageFormat: "![](imagePath)",
 	autoOpenRightPanel: false,
 	allbooks: false,
+	removeDuplicateFolders: false
 };

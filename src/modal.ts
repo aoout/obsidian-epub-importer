@@ -28,7 +28,7 @@ export class EpubImporterModal extends SuggestModal<string> {
 		const epubPath = path.replace(/^"(.+(?="$))"$/, "$1");
 		try {
 			this.onSubmit(epubPath);
-			new Notice(`imported: ${epubPath}`);
+			new Notice(`Imported: ${epubPath}`);
 			this.close();
 		} catch (error) {
 			new Notice("Invalid path.");

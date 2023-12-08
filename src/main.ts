@@ -2,7 +2,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Plugin, TFile, WorkspaceLeaf, htmlToMarkdown, parseYaml, stringifyYaml } from "obsidian";
+import {
+	Notice,
+	Plugin,
+	TFile,
+	WorkspaceLeaf,
+	htmlToMarkdown,
+	parseYaml,
+	stringifyYaml,
+} from "obsidian";
 import { Chapter, EpubParser } from "./lib/EpubParser";
 import { EpubImporterModal } from "./modal";
 import { NoteParser } from "./lib/NoteParser";
@@ -142,7 +150,14 @@ export default class EpubImporterPlugin extends Plugin {
 		this.BookNote = "";
 
 		const folder = savePathP.join(epubName);
-		if (jetpack.exists(folder.string)) return;
+		if (jetpack.exists(folder.string)) {
+			if (this.settings.removeDuplicateFolders) {
+				jetpack.remove(folder.string);
+			} else {
+				new Notice("Duplicate folder already exists.");
+				return;
+			}
+		}
 		await this.app.vault.createFolder(folder.string);
 
 		this.copyImages();

@@ -130,5 +130,14 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+		new Setting(containerEl)
+			.setName("Remove duplicate folders")
+			.setDesc("Remove duplicate folders(risky, for users who understand the usefulness of this option, or developers).")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.removeDuplicateFolders).onChange(async (value) => {
+					this.plugin.settings.removeDuplicateFolders = value;
+					await this.plugin.saveSettings();
+				});
+			});
 	}
 }
