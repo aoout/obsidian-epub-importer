@@ -104,7 +104,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					.addOptions({
 						"![](imagePath)": "![](imagePath)",
 						"![[imagePath]]": "![[imagePath]]",
-						"![[imagePath||caption]]": "![[imagePath||caption]]",
+						"![[imagePath|caption]]": "![[imagePath|caption]]",
 					})
 					.setValue(this.plugin.settings.imageFormat)
 					.onChange(async (value) => {

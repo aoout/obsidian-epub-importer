@@ -31,7 +31,7 @@ export class NoteParser {
 		if (imageFormat == "![[imagePath]]") {
 			this.content = this.content.replace(/!\[\]\((.*images.*)\)/g, "![[$1]]");
 		}
-		if (imageFormat == "![[imagePath||caption]]") {
+		if (imageFormat == "![[imagePath|caption]]") {
 			this.content = this.content.replace(/!\[\]\((.*images.*)\)/g, "![[$1]]");
 			this.content = this.content.replace(
 				/!\[\[(.*images.*)\]\]\n+(\**图.*)\n/g,
