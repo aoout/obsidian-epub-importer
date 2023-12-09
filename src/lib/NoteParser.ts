@@ -14,17 +14,27 @@ export class NoteParser {
 
 	parseImagePath(assetsPath: string, imageFormat: string) {
 		// TODO: Avoid accidentally damaging the text content
-		this.content = this.content
-			.replace(/Images/g, "images")
-			.replace(/\.\.\/images/g, "images")
-			.replace(/Image/g, "images/Image")
-			.replace(/images/g, assetsPath);
+		// TODO: Identify links first, then convert.
+		// this.content = this.content
+		// 	.replace(/Images/g, "images")
+		// 	.replace(/\.\.\/images/g, "images")
+		// 	.replace(/Image/g, "images/Image")
+		// 	.replace(/images/g, assetsPath);
+		this.content = this.content.replace(
+			/!\[\].*?\(.*?([^\\/]*)\.(jpg|jpeg|png)\)/g,
+			"![](images/$1.$2)"
+		);
+		if (imageFormat == "![](imagePath)") {
+			assetsPath = assetsPath.replaceAll(" ", "%20");
+		}
+		this.content = this.content.replace(/images/g, assetsPath);
 		if (imageFormat == "![[imagePath]]") {
 			this.content = this.content.replace(/!\[\]\((.*images.*)\)/g, "![[$1]]");
 		}
 		if (imageFormat == "![[imagePath||caption]]") {
+			this.content = this.content.replace(/!\[\]\((.*images.*)\)/g, "![[$1]]");
 			this.content = this.content.replace(
-				/!\[\]\((.*images.*)\)\n+(\**图.*)\n/g,
+				/!\[\[(.*images.*)\]\]\n+(\**图.*)\n/g,
 				"![[$1|$2]]\n"
 			);
 		}
