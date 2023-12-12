@@ -24,10 +24,11 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
-
 		new Setting(containerEl)
 			.setName("Library")
-			.setDesc("The plugin will search for .epub files from these paths.")
+			.setDesc(
+				"The plugin will search for .epub files from these paths. Please enter an absolute path, not a relative path in obsidan vault."
+			)
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.libraries.join("\n")).onChange(async (value) => {
 					this.plugin.settings.libraries = value.split("\n").map((lib) => lib.trim());
@@ -132,12 +133,16 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 			});
 		new Setting(containerEl)
 			.setName("Remove duplicate folders")
-			.setDesc("Remove duplicate folders(risky, for users who understand the usefulness of this option, or developers).")
+			.setDesc(
+				"Remove duplicate folders(risky, for users who understand the usefulness of this option, or developers)."
+			)
 			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.removeDuplicateFolders).onChange(async (value) => {
-					this.plugin.settings.removeDuplicateFolders = value;
-					await this.plugin.saveSettings();
-				});
+				toggle
+					.setValue(this.plugin.settings.removeDuplicateFolders)
+					.onChange(async (value) => {
+						this.plugin.settings.removeDuplicateFolders = value;
+						await this.plugin.saveSettings();
+					});
 			});
 	}
 }
