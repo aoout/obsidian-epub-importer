@@ -6,11 +6,11 @@ import jetpack from "fs-jetpack";
 
 export class EpubImporterModal extends SuggestModal<string> {
 	onSubmit: (result: string) => void;
-	librarys: string[];
-	emptyStateText = "No .epub files found in librarys.";
+	libraries: string[];
+	emptyStateText = "No .epub files found in libraries.";
 	getSuggestions(query: string): string[] | Promise<string[]> {
 		const result: string[] = [];
-		this.librarys.forEach((lib) => {
+		this.libraries.forEach((lib) => {
 			jetpack.find(lib, { matching: "**/**.epub" }).forEach((path) => {
 				result.push(jetpack.path(path));
 			});
@@ -38,7 +38,7 @@ export class EpubImporterModal extends SuggestModal<string> {
 		super(app);
 
 		this.onSubmit = onSubmit;
-		this.librarys = plugin.settings.librarys;
+		this.libraries = plugin.settings.libraries;
 
 		this.inputEl.addEventListener("keyup", ({ key }) => {
 			if (key === "Enter" && this.inputEl.value) {
