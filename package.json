@@ -41,6 +41,7 @@
 		"typescript": "^5.0.4"
 	},
 	"dependencies": {
+		"@lisandra-dev/create-obsidian-plugin": "^1.9.1",
 		"commit-and-tag-version": "^11.0.0",
 		"fs-jetpack": "^5.1.0",
 		"unzipper": "0.10.11",

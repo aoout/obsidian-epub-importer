@@ -20,6 +20,8 @@ import { EpubImporterSettingsTab } from "./settings/settingsTab";
 import jetpack from "fs-jetpack";
 import { getNotesWithTag } from "./utils/obsidianUtils";
 import { Path } from "./utils/path";
+import i18next from "i18next";
+import { resources, translationLanguage } from "./i18n/i18next";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
@@ -31,13 +33,20 @@ export default class EpubImporterPlugin extends Plugin {
 	activeBook: string;
 	activeLeaf: WorkspaceLeaf;
 	async onload() {
+		i18next.init({
+			lng: translationLanguage,
+			fallbackLng: "en",
+			resources: resources,
+			returnNull: false,
+		});
+
 		//@ts-ignore
 		this.vaultPath = this.app.vault.adapter.basePath;
 		await this.loadSettings();
 		this.addSettingTab(new EpubImporterSettingsTab(this.app, this));
 		this.addCommand({
 			id: "import-epub",
-			name: "Import epub to your vault",
+			name: i18next.t("import-epub"),
 			callback: () => {
 				new EpubImporterModal(this.app, this, async (result) => {
 					await this.import(result);
@@ -46,7 +55,7 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 		this.addCommand({
 			id: "sync-libraries",
-			name: "Import all epub from libraries to your vault",
+			name: i18next.t("sync-libraries"),
 			callback: async () => {
 				for (let i = 0; i < this.settings.libraries.length; i++) {
 					const results = jetpack.find(this.settings.libraries[i], {
@@ -130,7 +139,7 @@ export default class EpubImporterPlugin extends Plugin {
 			this.settings;
 		const savePathP = new Path(savePath);
 		const folder = savePathP.join(epubName);
-		const folderA = new Path("/",this.vaultPath,folder.string).string;
+		const folderA = new Path("/", this.vaultPath, folder.string).string;
 		if (jetpack.exists(folderA)) {
 			if (this.settings.removeDuplicateFolders) {
 				jetpack.remove(folderA);
@@ -154,7 +163,6 @@ export default class EpubImporterPlugin extends Plugin {
 			)
 		);
 		this.propertys.tags = (this.propertys.tags ?? []).concat([tag]);
-
 
 		this.BookNote = "";
 

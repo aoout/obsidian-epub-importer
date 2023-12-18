@@ -1,5 +1,6 @@
 import EpubImporterPlugin from "../main";
 import { App, PluginSettingTab, Setting } from "obsidian";
+import i18next from "i18next";
 
 export class EpubImporterSettingsTab extends PluginSettingTab {
 	plugin: EpubImporterPlugin;
@@ -13,8 +14,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Tag")
-			.setDesc("The tag is used to identify book objects.")
+			.setName(i18next.t("Tag_o"))
+			.setDesc(i18next.t("Tag"))
 			.addText((text) =>
 				text
 					.setPlaceholder("book")
@@ -25,10 +26,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					})
 			);
 		new Setting(containerEl)
-			.setName("Library")
-			.setDesc(
-				"The plugin will search for .epub files from these paths. Please enter an absolute path, not a relative path in obsidan vault."
-			)
+			.setName(i18next.t("Library_o"))
+			.setDesc(i18next.t("Library"))
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.libraries.join("\n")).onChange(async (value) => {
 					this.plugin.settings.libraries = value.split("\n").map((lib) => lib.trim());
@@ -36,8 +35,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 		new Setting(containerEl)
-			.setName("Save path")
-			.setDesc("The plugin will save the imported book to this path.")
+			.setName(i18next.t("Save path_o"))
+			.setDesc(i18next.t("Save path"))
 			.addText((text) =>
 				text.setValue(this.plugin.settings.savePath).onChange(async (value) => {
 					this.plugin.settings.savePath = value;
@@ -45,8 +44,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				})
 			);
 		new Setting(containerEl)
-			.setName("Assets path")
-			.setDesc("The plugin will save the assets of the imported book to this path.")
+			.setName(i18next.t("Assets path_o"))
+			.setDesc(i18next.t("Assets path"))
 			.addText((text) =>
 				text.setValue(this.plugin.settings.assetsPath).onChange(async (value) => {
 					this.plugin.settings.assetsPath = value;
@@ -54,8 +53,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				})
 			);
 		new Setting(containerEl)
-			.setName("Serial number")
-			.setDesc("The plugin will add serial number to the imported book.")
+			.setName(i18next.t("Save path_o"))
+			.setDesc(i18next.t("Serial number"))
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.serialNumber).onChange(async (value) => {
 					this.plugin.settings.serialNumber = value;
@@ -63,8 +62,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 		new Setting(containerEl)
-			.setName("serialNumberDelta")
-			.setDesc("Subtract this value from the first level of serialNumber.")
+			.setName(i18next.t("serialNumberDelta_o"))
+			.setDesc(i18next.t("serialNumberDelta"))
 			.addSlider((slider) => {
 				slider
 					.setLimits(0, 10, 1)
@@ -76,8 +75,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					});
 			});
 		new Setting(containerEl)
-			.setName("Propertys template")
-			.setDesc("The plugin will add these propertys to the imported book.")
+			.setName(i18next.t("Propertys template_o"))
+			.setDesc(i18next.t("Propertys template"))
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.propertysTemplate).onChange(async (value) => {
 					this.plugin.settings.propertysTemplate = value;
@@ -85,8 +84,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 		new Setting(containerEl)
-			.setName("Granularity")
-			.setDesc("Determine the granularity of generated markdown notes.")
+			.setName(i18next.t("Hierarchy depth_o"))
+			.setDesc(i18next.t("Hierarchy depth"))
 			.addSlider((slider) => {
 				slider
 					.setLimits(0, 5, 1)
@@ -98,8 +97,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					});
 			});
 		new Setting(containerEl)
-			.setName("imageFormat")
-			.setDesc("The type of imageFormat. caption only for chinese now.")
+			.setName(i18next.t("imageFormat_o"))
+			.setDesc(i18next.t("imageFormat"))
 			.addDropdown((text) =>
 				text
 					.addOptions({
@@ -114,8 +113,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					})
 			);
 		new Setting(containerEl)
-			.setName("Auto open right panel")
-			.setDesc("The plugin will open the book note on right panel when you open a book.")
+			.setName(i18next.t("Auto open right panel_o"))
+			.setDesc(i18next.t("Auto open right panel"))
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.autoOpenRightPanel).onChange(async (value) => {
 					this.plugin.settings.autoOpenRightPanel = value;
@@ -123,8 +122,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 		new Setting(containerEl)
-			.setName("AllBooks")
-			.setDesc("Create AllBooks.md in root folder")
+			.setName(i18next.t("AllBooks_o"))
+			.setDesc(i18next.t("AllBooks"))
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.allbooks).onChange(async (value) => {
 					this.plugin.settings.allbooks = value;
@@ -132,10 +131,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 		new Setting(containerEl)
-			.setName("Remove duplicate folders")
-			.setDesc(
-				"Remove duplicate folders(risky, for users who understand the usefulness of this option, or developers)."
-			)
+			.setName(i18next.t("Remove duplicate folders_o"))
+			.setDesc(i18next.t("Remove duplicate folders"))
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.removeDuplicateFolders)
