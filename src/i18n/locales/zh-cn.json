@@ -1,6 +1,9 @@
 {
   "import-epub": "导入epub到库中",
   "sync-libraries": "将所有书库中的epub导入到库中",
+  "no libraries": "你没有在设置页中添加任何书库",
+  "no book in libraries": "书库里没有任何epub",
+  "sync-libraries_r": "成功导入了 ${n} 本书",
   "Tag_o": "标签",
   "Tag": "这个标签用于识别书籍对象",
   "Library_o": "书库",

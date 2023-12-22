@@ -19,7 +19,7 @@ import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import jetpack from "fs-jetpack";
 import { getNotesWithTag } from "./utils/obsidianUtils";
-import { Path } from "./utils/path";
+import { Path, convertToValidFilename } from "./utils/path";
 import i18next from "i18next";
 import { resources, translationLanguage } from "./i18n/i18next";
 
@@ -57,13 +57,26 @@ export default class EpubImporterPlugin extends Plugin {
 			id: "sync-libraries",
 			name: i18next.t("sync-libraries"),
 			callback: async () => {
+				if (this.settings.libraries.length == 0) {
+					new Notice(i18next.t("no libraries"));
+					return;
+				}
+				let n = 0;
 				for (let i = 0; i < this.settings.libraries.length; i++) {
 					const results = jetpack.find(this.settings.libraries[i], {
 						matching: "**/**.epub",
 					});
 					for (let j = 0; j < results.length; j++) {
 						await this.import(jetpack.path(results[j]));
+						n++;
 					}
+				}
+				if (n == 0) {
+					new Notice(i18next.t("no book in libraries"));
+					console.log(i18next.t("no book in libraries"));
+				} else {
+					new Notice(i18next.t("translation:sync-libraries_r").replace("${n}",n.toString()));
+					console.log(i18next.t("translation:sync-libraries_r").replace("${n}",n.toString()));
 				}
 			},
 		});
@@ -122,7 +135,11 @@ export default class EpubImporterPlugin extends Plugin {
 		);
 	}
 	onunload() {
-		this.activeLeaf.detach();
+		try {
+			this.activeLeaf.detach();
+		} catch (err) {
+			/* empty */
+		}
 	}
 
 	async loadSettings(): Promise<void> {
@@ -173,7 +190,7 @@ export default class EpubImporterPlugin extends Plugin {
 		if (granularity != 0) {
 			// when granularity>0, The entire book will be converted into a structured folder.
 			for (const [i, cpt] of this.parser.chapters.entries()) {
-				await this.Chapter2MD(cpt, folder.join(cpt.name), [i + 1]);
+				await this.Chapter2MD(cpt, folder.join(convertToValidFilename(cpt.name)), [i + 1]);
 			}
 			this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
 			await this.app.vault.create(folder.join(epubName + ".md").string, this.BookNote);
@@ -200,6 +217,7 @@ export default class EpubImporterPlugin extends Plugin {
 		}
 
 		jetpack.remove(this.parser.tmpPath);
+		console.log(`Successfully imported ${epubName}`);
 	}
 
 	copyImages() {
@@ -277,7 +295,11 @@ export default class EpubImporterPlugin extends Plugin {
 		}
 
 		for (const [i, item] of cpt.subItems.entries()) {
-			await this.Chapter2MD(item, folderPath.join(item.name), serialNumber.concat([i + 1]));
+			await this.Chapter2MD(
+				item,
+				folderPath.join(convertToValidFilename(item.name)),
+				serialNumber.concat([i + 1])
+			);
 		}
 	}
 

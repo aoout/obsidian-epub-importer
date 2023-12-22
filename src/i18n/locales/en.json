@@ -1,6 +1,9 @@
 {
   "import-epub": "Import epub to your vault",
   "sync-libraries": "Import all epub from libraries to your vault",
+  "no libraries": "You have not added any library to the settings page",
+  "no book in libraries": "There is no epub in the libraries",
+  "sync-libraries_r": "Successfully imported ${n} books",
   "Tag_o": "Tag",
   "Tag": "The tag is used to identify book objects",
   "Library_o": "Library",

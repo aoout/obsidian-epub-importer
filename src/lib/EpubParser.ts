@@ -39,13 +39,17 @@ export class EpubParser {
 
 	async init() {
 		this.tmpPath = jetpack.tmpDir().path();
-		await jetpack
-			.createReadStream(this.epubPath)
-			.pipe(unzipper.Extract({ path: this.tmpPath }))
-			.promise();
-		await this.parseToc();
-		await this.parseCover();
-		await this.parseMeta();
+		try {
+			await jetpack
+				.createReadStream(this.epubPath)
+				.pipe(unzipper.Extract({ path: this.tmpPath }))
+				.promise();
+			await this.parseToc();
+			await this.parseCover();
+			await this.parseMeta();
+		} catch (err) {
+			throw new Error(`Parsing failed for epub from ${this.epubPath}`);
+		}
 	}
 
 	async parseToc() {
