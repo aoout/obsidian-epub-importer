@@ -84,7 +84,6 @@ export default class EpubImporterPlugin extends Plugin {
 			//@ts-ignore
 			if(this.settings.byDrag && e.toElement.className == "nav-files-container node-insert-event"){
 				const files = e.dataTransfer.files;
-				console.log(files);
 				//@ts-ignore
 				if(files.length == 1 && new Path(files[0].name).suffix == "epub"){
 					//@ts-ignore
