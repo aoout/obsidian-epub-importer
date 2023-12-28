@@ -8,6 +8,8 @@
   "Tag": "The tag is used to identify book objects",
   "Library_o": "Library",
   "Library": "The plugin will search for .epub files from these paths. Please enter an absolute path, not a relative path in obsidan vault.",
+  "byDrag_o": "Import by drag",
+  "byDrag": "Import .epub file by drag it to obsidian vault. The .epub  file will be deleted after importing.",
   "Save path_o": "Save path",
   "Save path": "The plugin will save the imported book to this path.",
   "Assets path_o": "Assets path",

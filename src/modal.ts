@@ -39,7 +39,13 @@ export class EpubImporterModal extends SuggestModal<string> {
 
 		this.onSubmit = onSubmit;
 		this.libraries = plugin.settings.libraries;
-
+		this.inputEl.addEventListener("paste",(data)=>{
+			if(data.clipboardData.files.length == 1){
+				//@ts-ignore
+				const path = data.clipboardData.files[0].path;
+				this.inputEl.value = path;
+			}
+		});
 		this.inputEl.addEventListener("keyup", ({ key }) => {
 			if (key === "Enter" && this.inputEl.value) {
 				this.trySubmit(this.inputEl.value);
