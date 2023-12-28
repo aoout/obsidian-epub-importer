@@ -62,7 +62,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				})
 			);
 		new Setting(containerEl)
-			.setName(i18next.t("Save path_o"))
+			.setName(i18next.t("Serial number_o"))
 			.setDesc(i18next.t("Serial number"))
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.serialNumber).onChange(async (value) => {
