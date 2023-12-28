@@ -64,7 +64,7 @@ export default class EpubImporterPlugin extends Plugin {
 				let n = 0;
 				for (let i = 0; i < this.settings.libraries.length; i++) {
 					const results = jetpack.find(this.settings.libraries[i], {
-						matching: "**/**.epub",
+						matching: "**/**.epub"
 					});
 					for (let j = 0; j < results.length; j++) {
 						await this.import(jetpack.path(results[j]));
@@ -80,7 +80,21 @@ export default class EpubImporterPlugin extends Plugin {
 				}
 			},
 		});
-
+		this.registerDomEvent(document, "drop", async (e) => {
+			//@ts-ignore
+			if(this.settings.byDrag && e.toElement.className == "nav-files-container node-insert-event"){
+				const files = e.dataTransfer.files;
+				console.log(files);
+				//@ts-ignore
+				if(files.length == 1 && new Path(files[0].name).suffix == "epub"){
+					//@ts-ignore
+					await this.import(files[0].path);
+					jetpack.find(this.vaultPath,{
+						matching: "**/**.epub"
+					}).forEach(jetpack.remove);
+				}
+			}
+		});
 		this.registerEvent(
 			this.app.workspace.on("file-open", (file) => {
 				if (!this.settings.autoOpenRightPanel) return;

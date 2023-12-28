@@ -8,6 +8,8 @@
   "Tag": "这个标签用于识别书籍对象",
   "Library_o": "书库",
   "Library": "该插件将从这些路径中搜索 .epub 文件。 请输入绝对路径，而不是obsidian vault中的相对路径。",
+  "byDrag_o": "通过拖拽导入",
+  "byDrag": "将.epub文件拖拽到obsidian库中来导入它。导入后将删除该.epub文件。",
   "Save path_o": "保存路径",
   "Save path": "导入的epub将会被保存到该路径。",
   "Assets path_o": "附件路径",

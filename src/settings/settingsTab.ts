@@ -35,6 +35,15 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 		new Setting(containerEl)
+			.setName(i18next.t("byDrag_o"))
+			.setDesc(i18next.t("byDrag"))
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.byDrag).onChange(async (value) => {
+					this.plugin.settings.byDrag = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		new Setting(containerEl)
 			.setName(i18next.t("Save path_o"))
 			.setDesc(i18next.t("Save path"))
 			.addText((text) =>
