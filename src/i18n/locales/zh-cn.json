@@ -16,7 +16,7 @@
   "Save path": "导入的epub将会被保存到该路径。",
   "Assets path_o": "附件路径",
   "Assets path": "附件将会被保存到该路径。",
-  "display": "显示/所有",
+  "display": "显示/索引",
   "Hierarchy depth_o": "层级深度",
   "Hierarchy depth": "决定生成的 Markdown 笔记的层级结构深度。",
   "Propertys template_o": "属性模板",
