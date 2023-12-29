@@ -216,7 +216,8 @@ export default class EpubImporterPlugin extends Plugin {
 					NoteParser.parse(
 						this.htmlToMarkdown(chapter.html),
 						this.assetsPath,
-						imageFormat
+						imageFormat,
+						this.settings.imageResize
 					);
 				chapter.subItems.forEach(Chapter2MD2);
 			};
@@ -283,7 +284,8 @@ export default class EpubImporterPlugin extends Plugin {
 		const content = NoteParser.parse(
 			this.htmlToMarkdown(cpt.html),
 			this.assetsPath,
-			this.settings.imageFormat
+			this.settings.imageFormat,
+			this.settings.imageResize
 		);
 		if (!restricted) {
 			const notePathS = notePath.string + ".md";

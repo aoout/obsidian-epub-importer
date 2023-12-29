@@ -25,6 +25,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+		this.containerEl.createEl("h2", { text: i18next.t("import") });
 		new Setting(containerEl)
 			.setName(i18next.t("Library_o"))
 			.setDesc(i18next.t("Library"))
@@ -43,6 +44,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+		this.containerEl.createEl("h2", { text:i18next.t("storage") });
 		new Setting(containerEl)
 			.setName(i18next.t("Save path_o"))
 			.setDesc(i18next.t("Save path"))
@@ -61,6 +63,29 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+		this.containerEl.createEl("h2", { text: i18next.t("display") });
+		new Setting(containerEl)
+			.setName(i18next.t("Hierarchy depth_o"))
+			.setDesc(i18next.t("Hierarchy depth"))
+			.addSlider((slider) => {
+				slider
+					.setLimits(0, 5, 1)
+					.setDynamicTooltip()
+					.setValue(this.plugin.settings.granularity)
+					.onChange(async (value) => {
+						this.plugin.settings.granularity = value;
+						await this.plugin.saveSettings();
+					});
+			});
+		new Setting(containerEl)
+			.setName(i18next.t("Propertys template_o"))
+			.setDesc(i18next.t("Propertys template"))
+			.addTextArea((text) => {
+				text.setValue(this.plugin.settings.propertysTemplate).onChange(async (value) => {
+					this.plugin.settings.propertysTemplate = value;
+					await this.plugin.saveSettings();
+				});
+			});
 		new Setting(containerEl)
 			.setName(i18next.t("Serial number_o"))
 			.setDesc(i18next.t("Serial number"))
@@ -83,28 +108,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
-		new Setting(containerEl)
-			.setName(i18next.t("Propertys template_o"))
-			.setDesc(i18next.t("Propertys template"))
-			.addTextArea((text) => {
-				text.setValue(this.plugin.settings.propertysTemplate).onChange(async (value) => {
-					this.plugin.settings.propertysTemplate = value;
-					await this.plugin.saveSettings();
-				});
-			});
-		new Setting(containerEl)
-			.setName(i18next.t("Hierarchy depth_o"))
-			.setDesc(i18next.t("Hierarchy depth"))
-			.addSlider((slider) => {
-				slider
-					.setLimits(0, 5, 1)
-					.setDynamicTooltip()
-					.setValue(this.plugin.settings.granularity)
-					.onChange(async (value) => {
-						this.plugin.settings.granularity = value;
-						await this.plugin.saveSettings();
-					});
-			});
+		
+		this.containerEl.createEl("h2", { text: i18next.t("content") });
 		new Setting(containerEl)
 			.setName(i18next.t("imageFormat_o"))
 			.setDesc(i18next.t("imageFormat"))
@@ -121,6 +126,16 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+		new Setting(containerEl)
+			.setName(i18next.t("imageResize_o"))
+			.setDesc(i18next.t("imageResize"))
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.imageResize).onChange(async (value) => {
+					this.plugin.settings.imageResize = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		this.containerEl.createEl("h2", { text: i18next.t("helper") });
 		new Setting(containerEl)
 			.setName(i18next.t("Auto open right panel_o"))
 			.setDesc(i18next.t("Auto open right panel"))
@@ -139,6 +154,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+		this.containerEl.createEl("h2", { text: i18next.t("developing") });
 		new Setting(containerEl)
 			.setName(i18next.t("Remove duplicate folders_o"))
 			.setDesc(i18next.t("Remove duplicate folders"))

@@ -9,6 +9,7 @@ export interface EpubImporterSettings {
 	propertysTemplate: string;
 	granularity: number;
 	imageFormat: string;
+	imageResize: boolean,
 	autoOpenRightPanel: boolean;
 	allbooks: boolean;
 	removeDuplicateFolders: boolean;
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 		"title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
 	granularity: 4,
 	imageFormat: "![](imagePath)",
+	imageResize: false,
 	autoOpenRightPanel: false,
 	allbooks: false,
 	removeDuplicateFolders: false
