@@ -15,27 +15,21 @@ export class NoteParser {
 
 	parseImagePath(assetsPath: string, imageFormat: string, resize: boolean) {
 		// TODO: Avoid accidentally damaging the text content
-		// TODO: Identify links first, then convert.
-		// this.content = this.content
-		// 	.replace(/Images/g, "images")
-		// 	.replace(/\.\.\/images/g, "images")
-		// 	.replace(/Image/g, "images/Image")
-		// 	.replace(/images/g, assetsPath);
+
 		this.content = this.content
-			.replaceAll(/!\[\]\(([^)]*)\.(jpg|jpeg|png)\)/g, "![](images/$1.$2)")
+			.replaceAll(/!\[.*?\]\(([^)]*)\.(jpg|jpeg|png)\)/g, "![](images/$1.$2)")
 			.replaceAll(/!\[\].*?\(.*?([^\\/]*)\.(jpg|jpeg|png)\)/g, "![](images/$1.$2)");
 		if (imageFormat == "![](imagePath)") {
 			assetsPath = assetsPath.replaceAll(" ", "%20");
 		}
 		if (imageFormat == "![[imagePath]]") {
-			if (!resize) {
-				this.content = this.content.replaceAll(/!\[\]\(([^)]*images[^)]*)\)/g, "![[$1]]");
-			} else {
+			if (resize) {
 				this.content = this.content.replaceAll(
-					/!\[\]\(([^)]*images[^)]*)\)/g,
+					/[^^]!\[\]\(([^)]*images[^)]*)\)/g,
 					"![[$1|20]]"
 				);
 			}
+			this.content = this.content.replaceAll(/!\[\]\(([^)]*images[^)]*)\)/g, "![[$1]]");
 		}
 		if (imageFormat == "![[imagePath|caption]]") {
 			this.content = this.content.replaceAll(/!\[\]\((.*images.*)\)/g, "![[$1]]");
@@ -49,10 +43,10 @@ export class NoteParser {
 
 	parseFontNote() {
 		// example: [[2]](ab0c_defg.html#hi_j0kl) -> [^2]
-		this.content = this.content.replace(/\[\[(\d+)\]\]\(.*\)/g, "[^$1]");
+		this.content = this.content.replace(/([^!])\[\[(\d+)\]\]\(.*\)/g, "$1[^$2]");
 
 		// example: [2](ab0c_defg.html#hi_j0kl) -> [^2]
-		this.content = this.content.replace(/\[(\d+)\]\(.*\)/g, "[^$1]");
+		this.content = this.content.replace(/([^!])\[(\d+)\]\(.*\)/g, "$1[^$2]");
 
 		// example: [^2]something is good.00264qed你说对吧 -> [^2]: something is good.00264qed你说对吧
 		// and, the string is from the begging of the line
