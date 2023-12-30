@@ -6,7 +6,7 @@ import * as xml2js from "xml2js";
 import * as path from "path";
 import * as unzipper from "unzipper";
 import jetpack from "fs-jetpack";
-import { Path } from "../utils/path";
+import { Path, convertToValidFilename } from "../utils/path";
 
 export class Chapter {
 	name: string;
@@ -73,51 +73,59 @@ export class EpubParser {
 
 		this.chapters = navPoints.map(getChapter);
 
-		const urlMap = new Map<string, string[]>();
-		const updateUrlMap = (chapter: Chapter) => {
-			if (!urlMap.has(chapter.urlPath)) {
-				urlMap.set(chapter.urlPath, chapter.urlHref ? [chapter.urlHref] : []);
+		const url2href = new Map<string, string[]>();
+		const url2name = new Map<string, string>();
+		const initMap = (chapter: Chapter) => {
+			if (!url2href.has(chapter.urlPath)) {
+				url2href.set(chapter.urlPath, chapter.urlHref ? [chapter.urlHref] : []);
 			} else {
-				urlMap.get(chapter.urlPath).push(chapter.urlHref);
-				if (urlMap.get(chapter.urlPath)[0] != "firstHref") {
-					urlMap.get(chapter.urlPath).unshift("firstHref");
+				url2href.get(chapter.urlPath).push(chapter.urlHref);
+				if (url2href.get(chapter.urlPath)[0] != "firstHref") {
+					url2href.get(chapter.urlPath).unshift("firstHref");
 				}
 			}
-			chapter.subItems.forEach(updateUrlMap);
+			url2name.set(chapter.urlPath, convertToValidFilename(chapter.name));
+			chapter.subItems.forEach(initMap);
 		};
-		this.chapters.forEach(updateUrlMap);
+		this.chapters.forEach(initMap);
 
-		const htmlMap = new Map<string, string>();
-
-		urlMap.forEach((urlHrefs, urlPath) => {
-			const urlPathHtml = jetpack.read(urlPath);
-			const html = urlPathHtml;
-			if (urlHrefs.length) {
+		const url2html = new Map<string, string>();
+		url2href.forEach((hrefs, urlPath) => {
+			let html = jetpack.read(urlPath);
+			if (hrefs.length) {
 				const reg = new RegExp(
-					`(?=<[^>]*id=['"](?:${urlHrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`,
+					`(?=<[^>]*id=['"](?:${hrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`,
 					"g"
 				);
 
 				const htmls = html.split(reg);
-				const delta = urlHrefs[0] == "firstHref" ? 0 : -1;
+				const delta = hrefs[0] == "firstHref" ? 0 : -1;
 				htmls.forEach((html, index) => {
 					if (index + delta >= 0) {
-						htmlMap.set(urlPath + "#" + urlHrefs[index + delta], html);
+						url2name.forEach((name, url) => {
+							url = url.replace(path.dirname(tocFile) + "/", "");
+							html = html.replaceAll(url, name);
+						});
+						url2html.set(urlPath + "#" + hrefs[index + delta], html);
 					}
 				});
 			} else {
-				htmlMap.set(urlPath, html);
+				url2name.forEach((name, url) => {
+					url = url.replace(path.dirname(tocFile) + "/", "");
+					html = html.replaceAll(url, name);
+				});
+				url2html.set(urlPath, html);
 			}
 		});
-		const setChapterHtml = (chapter: Chapter) => {
-			if (!chapter.urlHref && urlMap.get(chapter.urlPath).length > 1) {
+		const setHtml = (chapter: Chapter) => {
+			if (!chapter.urlHref && url2href.get(chapter.urlPath).length > 1) {
 				chapter.urlHref = "firstHref";
 				chapter.url = chapter.urlPath + "#" + chapter.urlHref;
 			}
-			chapter.html = htmlMap.get(chapter.url);
-			chapter.subItems.forEach(setChapterHtml);
+			chapter.html = url2html.get(chapter.url);
+			chapter.subItems.forEach(setHtml);
 		};
-		this.chapters.forEach(setChapterHtml);
+		this.chapters.forEach(setHtml);
 	}
 
 	async parseCover() {

@@ -5,6 +5,7 @@ export class NoteParser {
 		const parser = new NoteParser(originNote);
 		parser.parseImagePath(assetsPath, imageFormat, resize);
 		parser.parseFontNote();
+		parser.parseInnerLink();
 		return parser.content;
 	}
 
@@ -30,7 +31,10 @@ export class NoteParser {
 			if (!resize) {
 				this.content = this.content.replaceAll(/!\[\]\(([^)]*images[^)]*)\)/g, "![[$1]]");
 			} else {
-				this.content = this.content.replaceAll(/!\[\]\(([^)]*images[^)]*)\)/g, "![[$1|20]]");
+				this.content = this.content.replaceAll(
+					/!\[\]\(([^)]*images[^)]*)\)/g,
+					"![[$1|20]]"
+				);
 			}
 		}
 		if (imageFormat == "![[imagePath|caption]]") {
@@ -53,5 +57,10 @@ export class NoteParser {
 		// example: [^2]something is good.00264qed你说对吧 -> [^2]: something is good.00264qed你说对吧
 		// and, the string is from the begging of the line
 		this.content = this.content.replace(/^(\[\^\d+\])(.*)$/gm, "$1: $2");
+	}
+
+	parseInnerLink() {
+		this.content = this.content.replaceAll(/([^!])\[\s*([^\]]*?)\s*\]\(\s*([^)]*?)\s*\)/g,"$1[[$3\\|$2]]");
+
 	}
 }
