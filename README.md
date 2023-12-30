@@ -1,6 +1,6 @@
 # Epub Importer
 
-Import .epub file into your [Obsidian vault](https://obsidian.md/) as markdown notes.
+Import .epub file into your [Obsidian vault](https://obsidian.md/) as markdown notes. For more information, there are some text: [obsidian-epub-importer/wiki](https://github.com/aoout/obsidian-epub-importer/wiki).
 
 ## Usage
 
