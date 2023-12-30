@@ -1,6 +1,6 @@
 # Epub Importer
 
-Import .epub file into your vault as markdown notes.
+Import .epub file into your [Obsidian vault](https://obsidian.md/) as markdown notes.
 
 ## Usage
 
@@ -48,10 +48,14 @@ example:
 ```
 {{savePath}}/{{bookName}}/images
 ```
+# Helpful for Workflow
+
+- [obsidian-custom-sort](https://github.com/SebastianMC/obsidian-custom-sort)
+- [obsidian-remember-cursor-position](https://github.com/dy-sh/obsidian-remember-cursor-position)
 
 # Platform
 
-The function is tested based on Windows system. I don’t have an MAC.
+The function is tested based on Windows system. I don’t have a MacBook.
 
 # How to issue bugs
 
