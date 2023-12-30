@@ -40,10 +40,14 @@ export class EpubParser {
 	async init() {
 		this.tmpPath = jetpack.tmpDir().path();
 		try {
-			await jetpack
-				.createReadStream(this.epubPath)
-				.pipe(unzipper.Extract({ path: this.tmpPath }))
-				.promise();
+			if(new Path(this.epubPath).suffix == "epub"){
+				await jetpack
+					.createReadStream(this.epubPath)
+					.pipe(unzipper.Extract({ path: this.tmpPath }))
+					.promise();
+			}else{
+				jetpack.copy(this.epubPath,this.tmpPath);
+			}
 			await this.parseToc();
 			await this.parseCover();
 			await this.parseMeta();
@@ -97,7 +101,6 @@ export class EpubParser {
 					`(?=<[^>]*id=['"](?:${hrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`,
 					"g"
 				);
-
 				const htmls = html.split(reg);
 				const delta = hrefs[0] == "firstHref" ? 0 : -1;
 				htmls.forEach((html, index) => {
