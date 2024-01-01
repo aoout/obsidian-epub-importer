@@ -64,7 +64,7 @@ export default class EpubImporterPlugin extends Plugin {
 				let n = 0;
 				for (let i = 0; i < this.settings.libraries.length; i++) {
 					const results = jetpack.find(this.settings.libraries[i], {
-						matching: "**/**.epub"
+						matching: "**/**.epub",
 					});
 					for (let j = 0; j < results.length; j++) {
 						await this.import(jetpack.path(results[j]));
@@ -75,22 +75,31 @@ export default class EpubImporterPlugin extends Plugin {
 					new Notice(i18next.t("no book in libraries"));
 					console.log(i18next.t("no book in libraries"));
 				} else {
-					new Notice(i18next.t("translation:sync-libraries_r").replace("${n}",n.toString()));
-					console.log(i18next.t("translation:sync-libraries_r").replace("${n}",n.toString()));
+					new Notice(
+						i18next.t("translation:sync-libraries_r").replace("${n}", n.toString())
+					);
+					console.log(
+						i18next.t("translation:sync-libraries_r").replace("${n}", n.toString())
+					);
 				}
 			},
 		});
 		this.registerDomEvent(document, "drop", async (e) => {
-			//@ts-ignore
-			if(this.settings.byDrag && e.toElement.className == "nav-files-container node-insert-event"){
+			if (
+				this.settings.byDrag &&
+				//@ts-ignore
+				e.toElement.className == "nav-files-container node-insert-event"
+			) {
 				const files = e.dataTransfer.files;
 				//@ts-ignore
-				if(files.length == 1 && new Path(files[0].name).suffix == "epub"){
+				if (files.length == 1 && new Path(files[0].name).suffix == "epub") {
 					//@ts-ignore
 					await this.import(files[0].path);
-					jetpack.find(this.vaultPath,{
-						matching: "**/**.epub"
-					}).forEach(jetpack.remove);
+					jetpack
+						.find(this.vaultPath, {
+							matching: "**/**.epub",
+						})
+						.forEach(jetpack.remove);
 				}
 			}
 		});
@@ -280,13 +289,16 @@ export default class EpubImporterPlugin extends Plugin {
 			await this.app.vault.createFolder(notePath.string);
 			notePath = notePath.join(noteName);
 		}
-
-		const content = NoteParser.parse(
-			this.htmlToMarkdown(cpt.html),
-			this.assetsPath,
-			this.settings.imageFormat,
-			this.settings.imageResize
-		);
+		const content =
+			"---\n" +
+			stringifyYaml({ created_time: Date.now().toString() }) +
+			"\n---\n" +
+			NoteParser.parse(
+				this.htmlToMarkdown(cpt.html),
+				this.assetsPath,
+				this.settings.imageFormat,
+				this.settings.imageResize
+			);
 		if (!restricted) {
 			const notePathS = notePath.string + ".md";
 			if (!this.app.vault.getAbstractFileByPath(notePathS)) {
