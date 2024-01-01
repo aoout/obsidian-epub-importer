@@ -107,7 +107,7 @@ export class EpubParser {
 					if (index + delta >= 0) {
 						url2name.forEach((name, url) => {
 							url = url.replace(path.dirname(tocFile) + "/", "");
-							html = html.replaceAll(url, name);
+							if(html) html = html.replaceAll(url, name);
 						});
 						url2html.set(urlPath + "#" + hrefs[index + delta], html);
 					}
@@ -115,7 +115,7 @@ export class EpubParser {
 			} else {
 				url2name.forEach((name, url) => {
 					url = url.replace(path.dirname(tocFile) + "/", "");
-					html = html.replaceAll(url, name);
+					if(html) html = html.replaceAll(url, name);
 				});
 				url2html.set(urlPath, html);
 			}
