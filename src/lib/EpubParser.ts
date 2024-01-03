@@ -9,6 +9,7 @@ import jetpack from "fs-jetpack";
 import { Path, convertToValidFilename } from "../utils/path";
 
 export class Chapter {
+	parent: Chapter;
 	name: string;
 	url: string;
 	urlHref: string;
@@ -29,7 +30,12 @@ export class Chapter {
 export class EpubParser {
 	epubPath: string;
 	tmpPath: string;
+	toc: Chapter[];
 	chapters: Chapter[];
+	opfFilePath: string;
+	opfContent: any;
+	ncxFilePath: string;
+	ncxContent: any;
 	coverPath: string;
 	meta: Map<string, string>;
 
@@ -39,47 +45,87 @@ export class EpubParser {
 
 	async init() {
 		this.tmpPath = jetpack.tmpDir().path();
-		try {
-			if(new Path(this.epubPath).suffix == "epub"){
-				await jetpack
-					.createReadStream(this.epubPath)
-					.pipe(unzipper.Extract({ path: this.tmpPath }))
-					.promise();
-			}else{
-				jetpack.copy(this.epubPath,this.tmpPath);
+		if (new Path(this.epubPath).suffix == "epub") {
+			await jetpack
+				.createReadStream(this.epubPath)
+				.pipe(unzipper.Extract({ path: this.tmpPath }))
+				.promise();
+		} else {
+			jetpack.copy(this.epubPath, this.tmpPath);
+		}
+		[this.opfFilePath, this.opfContent] = await this.parseBySuffix("opf");
+		[this.ncxFilePath, this.ncxContent] = await this.parseBySuffix("ncx");
+		await this.parseToc();
+		await this.parseCover();
+		await this.parseMeta();
+	}
+
+	async parseBySuffix(suffix: string): Promise<[string, any]> {
+		const parser = new xml2js.Parser();
+		const file = path.join(
+			this.tmpPath,
+			jetpack.cwd(this.tmpPath).find({ matching: `**/**.${suffix}` })[0]
+		);
+		const data = jetpack.read(file);
+
+		return [file, await parser.parseStringPromise(data)] as const;
+	}
+
+	generateToc() {
+		const navPoints = this.ncxContent.ncx.navMap[0].navPoint;
+
+		const getToc = (navPoint: any) =>
+			new Chapter(
+				navPoint.navLabel[0].text[0],
+				path.dirname(this.ncxFilePath) + "/" + navPoint.content[0].$["src"],
+				navPoint["navPoint"] ? navPoint["navPoint"].map(getToc) : []
+			);
+
+		this.toc = navPoints.map(getToc);
+		this.chapters = [];
+		const getChapters = (chapter: Chapter, parent: null) => {
+			chapter.parent = parent;
+			this.chapters.push(chapter);
+			chapter.subItems.forEach(getChapters, chapter);
+		};
+		this.toc.forEach(getChapters);
+
+		const hrefs = [];
+		const items = this.opfContent.package.manifest[0].item;
+		items.forEach((item: any) => {
+			const href = item.$.href as string;
+			if (href.includes(".html") || href.includes(".xhtml")) {
+				hrefs.push(href);
 			}
-			await this.parseToc();
-			await this.parseCover();
-			await this.parseMeta();
-		} catch (err) {
-			throw new Error(`Parsing failed for epub from ${this.epubPath}`);
+		});
+
+		let k = 0;
+		for (let [i, j] = [0, 0]; i < this.chapters.length && j < hrefs.length; ) {
+			if (
+				this.chapters[i].url.replace(path.dirname(this.ncxFilePath) + "/", "") == hrefs[j]
+			) {
+				i++;
+				j++;
+			} else {
+
+				i--;
+				if (i >= 0) {
+					this.chapters[i].subItems.push(new Chapter("", path.dirname(this.opfFilePath) + "/" + hrefs[j]));
+				} else {
+					this.toc.splice(k, 0, new Chapter("", path.dirname(this.opfFilePath) + "/"+hrefs[j]));
+					k++;
+				}
+				j++;
+				i++;
+			}
 		}
 	}
 
 	async parseToc() {
-		const parser = new xml2js.Parser();
-		const tocFile = path.join(
-			this.tmpPath,
-			jetpack.cwd(this.tmpPath).find({ matching: "**/**.ncx" })[0]
-		);
-		const data = jetpack.read(tocFile);
-
-		const result = await parser.parseStringPromise(data);
-
-		const navPoints = result.ncx.navMap[0].navPoint;
-
-		const getChapter = (navPoint: any) =>
-			new Chapter(
-				navPoint.navLabel[0].text[0],
-				path.dirname(tocFile) + "/" + navPoint.content[0].$["src"],
-				navPoint["navPoint"] ? navPoint["navPoint"].map(getChapter) : []
-			);
-
-		this.chapters = navPoints.map(getChapter);
-
+		this.generateToc();
 		const url2href = new Map<string, string[]>();
 		const url2name = new Map<string, string>();
-		const initMap = (chapter: Chapter) => {
+		const initMaps = (chapter: Chapter) => {
 			if (!url2href.has(chapter.urlPath)) {
 				url2href.set(chapter.urlPath, chapter.urlHref ? [chapter.urlHref] : []);
 			} else {
@@ -89,9 +135,9 @@ export class EpubParser {
 				}
 			}
 			url2name.set(chapter.urlPath, convertToValidFilename(chapter.name));
-			chapter.subItems.forEach(initMap);
+			chapter.subItems.forEach(initMaps);
 		};
-		this.chapters.forEach(initMap);
+		this.toc.forEach(initMaps);
 
 		const url2html = new Map<string, string>();
 		url2href.forEach((hrefs, urlPath) => {
@@ -106,16 +152,16 @@ export class EpubParser {
 				htmls.forEach((html, index) => {
 					if (index + delta >= 0) {
 						url2name.forEach((name, url) => {
-							url = url.replace(path.dirname(tocFile) + "/", "");
-							if(html) html = html.replaceAll(url, name);
+							url = url.replace(path.dirname(this.ncxFilePath) + "/", "");
+							if (html) html = html.replaceAll(url, name);
 						});
 						url2html.set(urlPath + "#" + hrefs[index + delta], html);
 					}
 				});
 			} else {
 				url2name.forEach((name, url) => {
-					url = url.replace(path.dirname(tocFile) + "/", "");
-					if(html) html = html.replaceAll(url, name);
+					url = url.replace(path.dirname(this.ncxFilePath) + "/", "");
+					if (html) html = html.replaceAll(url, name);
 				});
 				url2html.set(urlPath, html);
 			}
@@ -128,23 +174,14 @@ export class EpubParser {
 			chapter.html = url2html.get(chapter.url);
 			chapter.subItems.forEach(setHtml);
 		};
-		this.chapters.forEach(setHtml);
+		this.toc.forEach(setHtml);
 	}
 
 	async parseCover() {
-		const parser = new xml2js.Parser();
-		const opfFile = path.join(
-			this.tmpPath,
-			jetpack.cwd(this.tmpPath).find({ matching: "**/**.opf" })[0]
-		);
-		const data = jetpack.read(opfFile);
-
-		const result = await parser.parseStringPromise(data);
-
-		for (let i = 0; i < result.package.manifest[0].item.length; i++) {
-			const item = result.package.manifest[0].item[i];
+		for (let i = 0; i < this.opfContent.package.manifest[0].item.length; i++) {
+			const item = this.opfContent.package.manifest[0].item[i];
 			if (item.$.id.indexOf("cover") !== -1) {
-				const opfParentPath = path.dirname(opfFile);
+				const opfParentPath = path.dirname(this.opfFilePath);
 				this.coverPath = path.join(opfParentPath, item.$.href);
 				break;
 			}

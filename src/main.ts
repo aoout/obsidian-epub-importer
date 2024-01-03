@@ -211,7 +211,10 @@ export default class EpubImporterPlugin extends Plugin {
 
 		if (granularity != 0) {
 			// when granularity>0, The entire book will be converted into a structured folder.
-			for (const [i, cpt] of this.parser.chapters.entries()) {
+			for (const [i, cpt] of this.parser.toc.entries()) {
+				if(cpt.name==""){
+					cpt.name = new Path(cpt.url).stem;
+				}
 				await this.Chapter2MD(cpt, folder.join(convertToValidFilename(cpt.name)), [i + 1]);
 			}
 			this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
@@ -230,7 +233,7 @@ export default class EpubImporterPlugin extends Plugin {
 					);
 				chapter.subItems.forEach(Chapter2MD2);
 			};
-			this.parser.chapters.forEach(Chapter2MD2);
+			this.parser.toc.forEach(Chapter2MD2);
 
 			content = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + content;
 			await this.app.vault.create(
@@ -269,6 +272,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	async Chapter2MD(cpt: Chapter, notePath: Path, serialNumber: number[]) {
+
 		if (this.settings.serialNumber) {
 			notePath.data = notePath.data.map((item, index, array) => {
 				if (index === array.length - 1) {
@@ -285,24 +289,24 @@ export default class EpubImporterPlugin extends Plugin {
 		const restricted = level > this.settings.granularity;
 		const noteName = notePath.name;
 		const folderPath = notePath;
-		if (level < this.settings.granularity && cpt.subItems.length) {
+		
+		if (level < this.settings.granularity && cpt.subItems.length && cpt.subItems.some((c)=>c.name!="")) {
 			await this.app.vault.createFolder(notePath.string);
 			notePath = notePath.join(noteName);
 		}
 		const content =
-			"---\n" +
-			stringifyYaml({ created_time: Date.now().toString() }) +
-			"\n---\n" +
 			NoteParser.parse(
 				this.htmlToMarkdown(cpt.html),
 				this.assetsPath,
 				this.settings.imageFormat,
 				this.settings.imageResize
 			);
-		if (!restricted) {
+		if (!restricted && (cpt.name!=""||serialNumber.length==1)) {
 			const notePathS = notePath.string + ".md";
 			if (!this.app.vault.getAbstractFileByPath(notePathS)) {
-				await this.app.vault.create(notePathS, content);
+				await this.app.vault.create(notePathS, "---\n" +
+				stringifyYaml({ created_time: Date.now().toString() }) +
+				"\n---\n" +content);
 				this.BookNote += `${"\t".repeat(level - 1)}- [[${notePath.string.replace(
 					/\\/g,
 					"/"
@@ -313,9 +317,14 @@ export default class EpubImporterPlugin extends Plugin {
 			let parentPath = notePath;
 			const delta = level - this.settings.granularity;
 			parentPath = parentPath.getParent(delta);
+			if(cpt.name==""){
+				parentPath = notePath;
+			}
+			
 			const parentFile = this.app.vault.getAbstractFileByPath(
 				parentPath.string + ".md"
 			) as TFile;
+
 			await this.app.vault.process(parentFile, (data) => {
 				return data + "\n\n" + content;
 			});
