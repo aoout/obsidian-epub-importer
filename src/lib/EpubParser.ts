@@ -45,7 +45,7 @@ export class EpubParser {
 
 	async init() {
 		this.tmpPath = jetpack.tmpDir().path();
-		if (new Path(this.epubPath).suffix == "epub") {
+		if (new Path(this.epubPath).suffix != "") {
 			await jetpack
 				.createReadStream(this.epubPath)
 				.pipe(unzipper.Extract({ path: this.tmpPath }))
@@ -100,6 +100,7 @@ export class EpubParser {
 		});
 
 		let k = 0;
+		this.chapters.push(new Chapter("9898989898","8989988"));
 		for (let [i, j] = [0, 0]; i < this.chapters.length && j < hrefs.length; ) {
 			if (
 				this.chapters[i].url.replace(path.dirname(this.ncxFilePath) + "/", "") == hrefs[j]
@@ -107,7 +108,6 @@ export class EpubParser {
 				i++;
 				j++;
 			} else {
-
 				i--;
 				if (i >= 0) {
 					this.chapters[i].subItems.push(new Chapter("", path.dirname(this.opfFilePath) + "/" + hrefs[j]));
@@ -119,6 +119,7 @@ export class EpubParser {
 				i++;
 			}
 		}
+		console.log(this.toc);
 	}
 
 	async parseToc() {
