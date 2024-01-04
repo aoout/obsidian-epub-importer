@@ -143,29 +143,32 @@ export class EpubParser {
 		const url2html = new Map<string, string>();
 		url2href.forEach((hrefs, urlPath) => {
 			let html = jetpack.read(urlPath);
-			if (hrefs.length) {
-				const reg = new RegExp(
-					`(?=<[^>]*id=['"](?:${hrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`,
-					"g"
-				);
-				const htmls = html.split(reg);
-				const delta = hrefs[0] == "firstHref" ? 0 : -1;
-				htmls.forEach((html, index) => {
-					if (index + delta >= 0) {
-						url2name.forEach((name, url) => {
-							url = url.replace(path.dirname(this.ncxFilePath) + "/", "");
-							if (html) html = html.replaceAll(url, name);
-						});
-						url2html.set(urlPath + "#" + hrefs[index + delta], html);
-					}
-				});
-			} else {
-				url2name.forEach((name, url) => {
-					url = url.replace(path.dirname(this.ncxFilePath) + "/", "");
-					if (html) html = html.replaceAll(url, name);
-				});
-				url2html.set(urlPath, html);
+			if(html){
+				if (hrefs.length) {
+					const reg = new RegExp(
+						`(?=<[^>]*id=['"](?:${hrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`,
+						"g"
+					);
+					const htmls = html.split(reg);
+					const delta = hrefs[0] == "firstHref" ? 0 : -1;
+					htmls.forEach((html, index) => {
+						if (index + delta >= 0) {
+							url2name.forEach((name, url) => {
+								url = url.replace(path.dirname(this.ncxFilePath) + "/", "");
+								if (html) html = html.replaceAll(url, name);
+							});
+							url2html.set(urlPath + "#" + hrefs[index + delta], html);
+						}
+					});
+				} else {
+					url2name.forEach((name, url) => {
+						url = url.replace(path.dirname(this.ncxFilePath) + "/", "");
+						if (html) html = html.replaceAll(url, name);
+					});
+					url2html.set(urlPath, html);
+				}
 			}
+			
 		});
 		const setHtml = (chapter: Chapter) => {
 			if (!chapter.urlHref && url2href.get(chapter.urlPath).length > 1) {
