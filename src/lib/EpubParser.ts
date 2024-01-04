@@ -21,7 +21,7 @@ export class Chapter {
 		this.name = name;
 		this.url = url;
 		const [urlPath, urlHref] = url.split("#");
-		this.urlHref = urlHref;
+		this.urlHref = urlHref ?? "";
 		this.urlPath = urlPath;
 		this.subItems = subItems;
 	}
@@ -74,147 +74,107 @@ export class EpubParser {
 	generateToc() {
 		const navPoints = this.ncxContent.ncx.navMap[0].navPoint;
 
-		const getToc = (navPoint: any) =>
+		const getToc = (navPoint) =>
 			new Chapter(
 				navPoint.navLabel[0].text[0],
-				path.dirname(this.ncxFilePath) + "/" + navPoint.content[0].$["src"],
-				navPoint["navPoint"] ? navPoint["navPoint"].map(getToc) : []
+				new Path(this.ncxFilePath).parent.join(navPoint.content[0].$["src"]).string,
+				navPoint["navPoint"]?.map(getToc) ?? []
 			);
 
 		this.toc = navPoints.map(getToc);
-		this.chapters = [];
-		const getChapters = (chapter: Chapter, parent: null) => {
-			chapter.parent = parent;
+		const getChapters = (chapter: Chapter) => {
 			this.chapters.push(chapter);
 			chapter.subItems.forEach(getChapters, chapter);
 		};
+		this.chapters = [];
 		this.toc.forEach(getChapters);
 
-		const hrefs = [];
-		const items = this.opfContent.package.manifest[0].item;
-		items.forEach((item: any) => {
-			const href = item.$.href as string;
-			if (href.includes(".html") || href.includes(".xhtml")) {
-				hrefs.push(href);
-			}
+		const hrefs: string[] = this.opfContent.package.manifest[0].item
+			.map((item) => item.$.href)
+			.filter((href) => [".html", ".xhtml"].some((sx) => href.includes(sx)))
+			.map((href) => new Path(this.opfFilePath).parent.join(href).string);
+
+		// create a mapping from chapters index to hrefs index.
+		const indexs = [];
+		this.chapters.forEach((cpt) => {
+			indexs.push(hrefs.indexOf(cpt.url));
 		});
 
 		let k = 0;
-		this.chapters.push(new Chapter("9898989898","8989988"));
-		for (let [i, j] = [0, 0]; i < this.chapters.length && j < hrefs.length; ) {
-			if (
-				this.chapters[i].url.replace(path.dirname(this.ncxFilePath) + "/", "") == hrefs[j]
-			) {
-				i++;
-				j++;
-			} else {
-				i--;
-				if (i >= 0) {
-					this.chapters[i].subItems.push(new Chapter("", path.dirname(this.opfFilePath) + "/" + hrefs[j]));
+		hrefs.forEach((href, hrefIndex) => {
+			if (!indexs.includes(hrefIndex)) {
+				// find the largest index among indexes smaller than its index.
+				const parent = indexs.indexOf(
+					[...indexs].sort((a, b) => b - a).find((v) => v < hrefIndex)
+				);
+				if (parent > 0) {
+					this.chapters[parent].subItems.push(new Chapter("", href));
 				} else {
-					this.toc.splice(k, 0, new Chapter("", path.dirname(this.opfFilePath) + "/"+hrefs[j]));
-					k++;
+					this.toc.splice(k++, 0, new Chapter("", href));
 				}
-				j++;
-				i++;
 			}
-		}
-		console.log(this.toc);
+		});
+
+		this.chapters = [];
+		this.toc.forEach(getChapters);
 	}
 
 	async parseToc() {
 		this.generateToc();
-		const url2href = new Map<string, string[]>();
-		const url2name = new Map<string, string>();
-		const initMaps = (chapter: Chapter) => {
-			if (!url2href.has(chapter.urlPath)) {
-				url2href.set(chapter.urlPath, chapter.urlHref ? [chapter.urlHref] : []);
-			} else {
-				url2href.get(chapter.urlPath).push(chapter.urlHref);
-				if (url2href.get(chapter.urlPath)[0] != "firstHref") {
-					url2href.get(chapter.urlPath).unshift("firstHref");
-				}
-			}
-			url2name.set(chapter.urlPath, convertToValidFilename(chapter.name));
-			chapter.subItems.forEach(initMaps);
-		};
-		this.toc.forEach(initMaps);
-
-		const url2html = new Map<string, string>();
-		url2href.forEach((hrefs, urlPath) => {
-			let html = jetpack.read(urlPath);
-			if(html){
-				if (hrefs.length) {
-					const reg = new RegExp(
-						`(?=<[^>]*id=['"](?:${hrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`,
-						"g"
-					);
-					const htmls = html.split(reg);
-					const delta = hrefs[0] == "firstHref" ? 0 : -1;
-					htmls.forEach((html, index) => {
-						if (index + delta >= 0) {
-							url2name.forEach((name, url) => {
-								url = url.replace(path.dirname(this.ncxFilePath) + "/", "");
-								if (html) html = html.replaceAll(url, name);
-							});
-							url2html.set(urlPath + "#" + hrefs[index + delta], html);
-						}
-					});
-				} else {
-					url2name.forEach((name, url) => {
-						url = url.replace(path.dirname(this.ncxFilePath) + "/", "");
-						if (html) html = html.replaceAll(url, name);
-					});
-					url2html.set(urlPath, html);
-				}
-			}
-			
+		const urls = [...new Set(this.chapters.map((cpt) => cpt.urlPath))];
+		const files = [];
+		urls.forEach((url) => {
+			const file = {
+				url: url,
+				names: [],
+				hrefs: [],
+				html: "",
+			};
+			this.chapters
+				.filter((cpt) => cpt.urlPath == url)
+				.forEach((cpt) => {
+					file.names.push(convertToValidFilename(cpt.name));
+					file.hrefs.push(cpt.urlHref);
+				});
+			const html = jetpack.read(url);
+			if (html) file.html = html;
+			files.push(file);
 		});
-		const setHtml = (chapter: Chapter) => {
-			if (!chapter.urlHref && url2href.get(chapter.urlPath).length > 1) {
-				chapter.urlHref = "firstHref";
-				chapter.url = chapter.urlPath + "#" + chapter.urlHref;
+		files.forEach((file) => {
+			if (!file.hrefs.length) {
+				this.chapters.find((c) => c.urlPath == file.url).html = file.html;
+			} else {
+				// example: <h2 class="title2" id="CHP5-2">抹香鲸和福卡恰面包</h2>
+				const reg = new RegExp(
+					`(?=<[^>]*id=['"](?:${file.hrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`,
+					"g"
+				);
+				const htmls = file.html.split(reg);
+				const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
+				htmls.forEach((html, i) => {
+					this.chapters.find((c) => c.url == file.url + hrefs[i]).html = html;
+				});
 			}
-			chapter.html = url2html.get(chapter.url);
-			chapter.subItems.forEach(setHtml);
-		};
-		this.toc.forEach(setHtml);
+		});
 	}
 
 	async parseCover() {
-		for (let i = 0; i < this.opfContent.package.manifest[0].item.length; i++) {
-			const item = this.opfContent.package.manifest[0].item[i];
-			if (item.$.id.indexOf("cover") !== -1) {
-				const opfParentPath = path.dirname(this.opfFilePath);
-				this.coverPath = path.join(opfParentPath, item.$.href);
-				break;
-			}
-		}
+		const coverItem = this.opfContent.package.manifest[0].item.find((item) =>
+			["cover", "Cover"].some((sx) => item.$.id.includes(sx))
+		);
+		if (coverItem)
+			this.coverPath = new Path(this.opfFilePath).parent.join(coverItem.$.href).string;
 	}
 
 	async parseMeta() {
-		new xml2js.Parser().parseString(
-			jetpack.read(
-				path.join(
-					this.tmpPath,
-					jetpack.cwd(this.tmpPath).find({ matching: "**/**.opf" })[0]
-				)
-			),
-			(err, result) => {
-				const meta = result.package.metadata[0];
-				const title = meta["dc:title"];
-				const author = meta["dc:creator"];
-				const publisher = meta["dc:publisher"];
-				const language = meta["dc:language"];
+		const meta = this.opfContent.package.metadata[0];
 
-				this.meta = new Map<string, string>();
-				this.meta.set("title", title ? title[0] : "");
-				this.meta.set("author", author ? author[0]["_"] : "");
-				this.meta.set("publisher", publisher ? publisher[0] : "");
-				this.meta.set("language", language ? language[0] : "");
+		this.meta = new Map<string, string>();
+		this.meta.set("title", meta["dc:title"]?.[0] ?? "");
+		this.meta.set("author", meta["dc:creator"]?.[0]?.["_"] ?? "");
+		this.meta.set("publisher", meta["dc:publisher"]?.[0] ?? "");
+		this.meta.set("language", meta["dc:language"]?.[0] ?? "");
 
-				this.meta.set("bookName", new Path(this.epubPath).stem);
-			}
-		);
+		this.meta.set("bookName", new Path(this.epubPath).stem);
 	}
 }
