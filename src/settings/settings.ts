@@ -4,12 +4,12 @@ export interface EpubImporterSettings {
 	byDrag: boolean;
 	savePath: string;
 	assetsPath: string;
+	granularity: number;
+	propertysTemplate: string;
 	serialNumber: boolean;
 	serialNumberDelta: number;
-	propertysTemplate: string;
-	granularity: number;
 	imageFormat: string;
-	imageResize: boolean,
+	imageResize: boolean;
 	autoOpenRightPanel: boolean;
 	allbooks: boolean;
 	removeDuplicateFolders: boolean;
@@ -21,14 +21,14 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	byDrag: false,
 	savePath: "",
 	assetsPath: "{{savePath}}/{{bookName}}/images",
-	serialNumber: false,
-	serialNumberDelta: 0,
+	granularity: 4,
 	propertysTemplate:
 		"title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
-	granularity: 4,
+	serialNumber: false,
+	serialNumberDelta: 0,
 	imageFormat: "![](imagePath)",
 	imageResize: false,
 	autoOpenRightPanel: false,
 	allbooks: false,
-	removeDuplicateFolders: false
+	removeDuplicateFolders: false,
 };
