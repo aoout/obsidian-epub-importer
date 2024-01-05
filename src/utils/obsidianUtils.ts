@@ -1,4 +1,4 @@
-import { App, TFile } from "obsidian";
+import { App, TFile, stringifyYaml } from "obsidian";
 
 export function getNotesWithTag(app: App, tag: string): TFile[] {
 	const files = app.vault.getMarkdownFiles();
@@ -11,4 +11,8 @@ export function getNotesWithTag(app: App, tag: string): TFile[] {
 		}
 	});
 	return files_with_tag;
+}
+
+export function tFrontmatter(propertys: any) {
+	return "---\n" + stringifyYaml(this.propertys) + "\n---";
 }

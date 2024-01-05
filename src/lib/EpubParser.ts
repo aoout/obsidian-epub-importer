@@ -6,25 +6,42 @@ import * as xml2js from "xml2js";
 import * as path from "path";
 import * as unzipper from "unzipper";
 import jetpack from "fs-jetpack";
-import { Path, convertToValidFilename } from "../utils/path";
+import { Path, tFile } from "../utils/path";
 
-export class Chapter {
-	parent: Chapter;
-	name: string;
-	url: string;
-	urlHref: string;
+export class Section{
+	name:string;
+	url:string;
 	urlPath: string;
-	subItems: Chapter[];
-	html: string;
-
-	constructor(name: string, url: string, subItems: Chapter[] = new Array<Chapter>()) {
+	urlHref:string;
+	html:string;
+	
+	constructor(name:string,url:string){
 		this.name = name;
 		this.url = url;
 		const [urlPath, urlHref] = url.split("#");
-		this.urlHref = urlHref ?? "";
 		this.urlPath = urlPath;
-		this.subItems = subItems;
+		this.urlHref = urlHref??"";
+		this.html = "";
 	}
+}
+
+export class Chapter {
+	sections: Section[];
+	subItems: Chapter[];
+	level: number;
+	parent: Chapter;
+
+	constructor(name: string, url: string, subItems: Chapter[] = new Array<Chapter>(),level=0,parent=null) {
+		this.sections = [new Section(name,url)];
+		this.subItems = subItems;
+		this.level = level;
+		this.parent = parent;
+	}
+
+	public get name() : string {
+		return this.sections[0].name ?? "";
+	}
+	
 }
 
 export class EpubParser {
@@ -32,6 +49,7 @@ export class EpubParser {
 	tmpPath: string;
 	toc: Chapter[];
 	chapters: Chapter[];
+	sections: Section[];
 	opfFilePath: string;
 	opfContent: any;
 	ncxFilePath: string;
@@ -74,14 +92,18 @@ export class EpubParser {
 	generateToc() {
 		const navPoints = this.ncxContent.ncx.navMap[0].navPoint;
 
-		const getToc = (navPoint) =>
-			new Chapter(
+		const getToc = (navPoint,level) =>
+		{
+			const cpt = new Chapter(
 				navPoint.navLabel[0].text[0],
 				new Path(this.ncxFilePath).parent.join(navPoint.content[0].$["src"]).string,
-				navPoint["navPoint"]?.map(getToc) ?? []
+				navPoint["navPoint"]?.map((pt)=>getToc(pt,level+1)) ?? [],
+				level
 			);
-
-		this.toc = navPoints.map(getToc);
+			cpt.subItems.forEach((sub)=>sub.parent=cpt);
+			return cpt;
+		};
+		this.toc = navPoints.map((pt)=>getToc(pt,0));
 		const getChapters = (chapter: Chapter) => {
 			this.chapters.push(chapter);
 			chapter.subItems.forEach(getChapters, chapter);
@@ -97,7 +119,7 @@ export class EpubParser {
 		// create a mapping from chapters index to hrefs index.
 		const indexs = [];
 		this.chapters.forEach((cpt) => {
-			indexs.push(hrefs.indexOf(cpt.url));
+			indexs.push(hrefs.indexOf(cpt.sections[0].url));
 		});
 
 		let k = 0;
@@ -107,21 +129,19 @@ export class EpubParser {
 				const parent = indexs.indexOf(
 					[...indexs].sort((a, b) => b - a).find((v) => v < hrefIndex)
 				);
-				if (parent > 0) {
-					this.chapters[parent].subItems.push(new Chapter("", href));
-				} else {
-					this.toc.splice(k++, 0, new Chapter("", href));
-				}
+				if (parent > 0) this.chapters[parent].sections.push(new Section(null,href));
+				else this.toc.splice(k++, 0, new Chapter(new Path(href).stem, href));
 			}
 		});
 
 		this.chapters = [];
 		this.toc.forEach(getChapters);
+		this.sections = this.chapters.flatMap((cpt)=>cpt.sections);
 	}
 
 	async parseToc() {
 		this.generateToc();
-		const urls = [...new Set(this.chapters.map((cpt) => cpt.urlPath))];
+		const urls = [...new Set(this.sections.map((st) => st.urlPath))];
 		const files = [];
 		urls.forEach((url) => {
 			const file = {
@@ -130,11 +150,11 @@ export class EpubParser {
 				hrefs: [],
 				html: "",
 			};
-			this.chapters
-				.filter((cpt) => cpt.urlPath == url)
-				.forEach((cpt) => {
-					file.names.push(convertToValidFilename(cpt.name));
-					file.hrefs.push(cpt.urlHref);
+			this.sections
+				.filter((st) => st.urlPath == url)
+				.forEach((st) => {
+					file.names.push(st.name?tFile(st.name):null);
+					file.hrefs.push(st.urlHref);
 				});
 			const html = jetpack.read(url);
 			if (html) file.html = html;
@@ -142,7 +162,7 @@ export class EpubParser {
 		});
 		files.forEach((file) => {
 			if (!file.hrefs.length) {
-				this.chapters.find((c) => c.urlPath == file.url).html = file.html;
+				this.sections.find((st) => st.urlPath == file.url).html = file.html;
 			} else {
 				// example: <h2 class="title2" id="CHP5-2">抹香鲸和福卡恰面包</h2>
 				const reg = new RegExp(
@@ -152,7 +172,7 @@ export class EpubParser {
 				const htmls = file.html.split(reg);
 				const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
 				htmls.forEach((html, i) => {
-					this.chapters.find((c) => c.url == file.url + hrefs[i]).html = html;
+					this.sections.find((c) => c.url == file.url + hrefs[i]).html = html;
 				});
 			}
 		});

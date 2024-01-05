@@ -1,4 +1,5 @@
-export function convertToValidFilename(string) {
+export function tFile(string) {
+	// convert string to a vaild filename on windows.
 	return string.replace(/[/|\\:*?"<>]/g, "");
 }
 
@@ -91,7 +92,7 @@ export class Path {
 	}
 	get string(): string {
 		const firstOne = this.data[0];
-		const result = this.data.map(convertToValidFilename);
+		const result = this.data.map(tFile);
 		if (firstOne.length == 2 && firstOne[1] == ":") {
 			result[0] = result[0] + ":";
 		}

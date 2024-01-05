@@ -8,8 +8,7 @@ import {
 	TFile,
 	WorkspaceLeaf,
 	htmlToMarkdown,
-	parseYaml,
-	stringifyYaml,
+	parseYaml
 } from "obsidian";
 import { Chapter, EpubParser } from "./lib/EpubParser";
 import { EpubImporterModal } from "./modal";
@@ -18,8 +17,8 @@ import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import jetpack from "fs-jetpack";
-import { getNotesWithTag } from "./utils/obsidianUtils";
-import { Path, convertToValidFilename } from "./utils/path";
+import { getNotesWithTag, tFrontmatter } from "./utils/obsidianUtils";
+import { Path } from "./utils/path";
 import i18next from "i18next";
 import { resources, translationLanguage } from "./i18n/i18next";
 
@@ -49,7 +48,7 @@ export default class EpubImporterPlugin extends Plugin {
 			name: i18next.t("import-epub"),
 			callback: () => {
 				new EpubImporterModal(this.app, this, async (result) => {
-					await this.import(result);
+					await this.importEpub(result);
 				}).open();
 			},
 		});
@@ -67,7 +66,7 @@ export default class EpubImporterPlugin extends Plugin {
 						matching: "**/**.epub",
 					});
 					for (let j = 0; j < results.length; j++) {
-						await this.import(jetpack.path(results[j]));
+						await this.importEpub(jetpack.path(results[j]));
 						n++;
 					}
 				}
@@ -94,7 +93,7 @@ export default class EpubImporterPlugin extends Plugin {
 				//@ts-ignore
 				if (files.length == 1 && new Path(files[0].name).suffix == "epub") {
 					//@ts-ignore
-					await this.import(files[0].path);
+					await this.importEpub(files[0].path);
 					jetpack
 						.find(this.vaultPath, {
 							matching: "**/**.epub",
@@ -106,9 +105,9 @@ export default class EpubImporterPlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on("file-open", (file) => {
 				if (!this.settings.autoOpenRightPanel) return;
-				const bookNotePath = this.findBookNote(new Path(file.path));
-				if (!bookNotePath) return this.activeLeaf.detach();
-				const bookName = bookNotePath.split("/")[bookNotePath.split("/").length - 2];
+				const mocPath = this.getMocPath(file);
+				if (!mocPath) return this.activeLeaf.detach();
+				const bookName = this.app.vault.getAbstractFileByPath(mocPath).parent.name;
 				if (this.activeBook == bookName) return;
 				if (this.activeLeaf) this.activeLeaf.detach();
 				this.activeBook = bookName;
@@ -116,7 +115,7 @@ export default class EpubImporterPlugin extends Plugin {
 				this.activeLeaf.setViewState({
 					type: "markdown",
 					state: {
-						file: bookNotePath,
+						file: mocPath,
 						mode: "preview",
 						backlinks: false,
 						source: false,
@@ -172,10 +171,9 @@ export default class EpubImporterPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	async import(epubPath: string) {
+	async importEpub(epubPath: string) {
 		const epubName = new Path(epubPath).stem;
-		const { assetsPath, propertysTemplate, savePath, tag, granularity, imageFormat } =
-			this.settings;
+		const { assetsPath, propertysTemplate, savePath, tag, granularity } = this.settings;
 		const savePathP = new Path(savePath);
 		const folder = savePathP.join(epubName);
 		const folderA = new Path("/", this.vaultPath, folder.string).string;
@@ -187,7 +185,6 @@ export default class EpubImporterPlugin extends Plugin {
 				return;
 			}
 		}
-
 		this.assetsPath = assetsPath
 			.replace("{{bookName}}", epubName)
 			.replace("{{savePath}}", savePath);
@@ -204,57 +201,49 @@ export default class EpubImporterPlugin extends Plugin {
 		this.propertys.tags = (this.propertys.tags ?? []).concat([tag]);
 
 		this.BookNote = "";
-
 		await this.app.vault.createFolder(folder.string);
 
 		this.copyImages();
 
-		if (granularity != 0) {
-			// when granularity>0, The entire book will be converted into a structured folder.
-			for (const [i, cpt] of this.parser.toc.entries()) {
-				if(cpt.name==""){
-					cpt.name = new Path(cpt.url).stem;
-				}
-				await this.Chapter2MD(cpt, folder.join(convertToValidFilename(cpt.name)), [i + 1]);
-			}
-			this.BookNote = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + this.BookNote;
-			await this.app.vault.create(folder.join(epubName + ".md").string, this.BookNote);
-		} else {
-			// when granularity=0, the The entire book will be converted into a note.
-			let content = "";
-			const Chapter2MD2 = (chapter: Chapter) => {
-				content +=
-					"\n\n" +
-					NoteParser.parse(
-						this.htmlToMarkdown(chapter.html),
-						this.assetsPath,
-						imageFormat,
-						this.settings.imageResize
-					);
-				chapter.subItems.forEach(Chapter2MD2);
-			};
-			this.parser.toc.forEach(Chapter2MD2);
+		[...this.parser.chapters]
+			.filter((cpt) => cpt.level > granularity)
+			.sort((a, b) => b.level - a.level)
+			.forEach((cpt) => cpt.parent.sections.push(...cpt.sections));
 
-			content = "---\n" + stringifyYaml(this.propertys) + "\n---\n" + content;
+		for (const cpt of this.parser.chapters.filter((cpt) => cpt.level <= granularity)) {
+			const paths = [cpt.name];
+			const getPaths = (cpt2: Chapter) => {
+				if (cpt2.parent) {
+					paths.unshift(cpt2.parent.name);
+					getPaths(cpt2.parent);
+				}
+			};
+			getPaths(cpt);
+			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(cpt.name);
+			const notePath = folder.join(...paths);
+			if (!this.app.vault.getAbstractFileByPath(notePath.parent.string)) {
+				await this.app.vault.createFolder(notePath.parent.string);
+			}
 			await this.app.vault.create(
-				Path.join(savePath, epubName, epubName + ".md", "/"),
-				content
+				notePath.string + ".md",
+				cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n")
 			);
+			this.BookNote += `${"\t".repeat(cpt.level)}- [[${notePath.string}|${cpt.name}]]\n`;
 		}
 
-		jetpack.remove(this.parser.tmpPath);
-		console.log(`Successfully imported ${epubName}`);
+		this.BookNote = tFrontmatter(this.propertys) + "\n" + this.BookNote;
+		await this.app.vault.create(folder.join(epubName).string + ".md", this.BookNote);
 	}
 
 	copyImages() {
 		const imagesPath = new Path("/", this.vaultPath, this.assetsPath);
 		jetpack
 			.find(this.parser.tmpPath, { matching: ["*.jpg", "*.jpeg", "*.png"] })
-			.forEach((file) => {
+			.forEach((file) =>
 				jetpack.copy(file, imagesPath.join(new Path(file).name).string, {
 					overwrite: true,
-				});
-			});
+				})
+			);
 		if (this.parser.coverPath) {
 			this.propertys.cover = new Path(
 				this.assetsPath,
@@ -263,93 +252,24 @@ export default class EpubImporterPlugin extends Plugin {
 		}
 	}
 
-	htmlToMarkdown(html: string): string {
+	htmlToMD(html: string): string {
 		let content = htmlToMarkdown(html ? html : "");
 		if (html && !content) {
 			content = html.replace(/<[^>]+>/g, "");
 		}
-		return content;
+		return NoteParser.parse(
+			content,
+			this.assetsPath,
+			this.settings.imageFormat,
+			this.settings.imageResize
+		);
 	}
 
-	async Chapter2MD(cpt: Chapter, notePath: Path, serialNumber: number[]) {
-
-		if (this.settings.serialNumber) {
-			notePath.data = notePath.data.map((item, index, array) => {
-				if (index === array.length - 1) {
-					const serialNumber2 = [...serialNumber];
-					serialNumber2[0] -= this.settings.serialNumberDelta;
-					return serialNumber2[0] >= 1 ? serialNumber2.join(".") + " " + item : item;
-				}
-				return item;
-			});
-		}
-
-		const level = serialNumber.length;
-		// restricted means that the file corresponding to the chapter will not be created.
-		const restricted = level > this.settings.granularity;
-		const noteName = notePath.name;
-		const folderPath = notePath;
-		
-		if (level < this.settings.granularity && cpt.subItems.length && cpt.subItems.some((c)=>c.name!="")) {
-			await this.app.vault.createFolder(notePath.string);
-			notePath = notePath.join(noteName);
-		}
-		const content =
-			NoteParser.parse(
-				this.htmlToMarkdown(cpt.html),
-				this.assetsPath,
-				this.settings.imageFormat,
-				this.settings.imageResize
-			);
-		if (!restricted && (cpt.name!=""||serialNumber.length==1)) {
-			const notePathS = notePath.string + ".md";
-			if (!this.app.vault.getAbstractFileByPath(notePathS)) {
-				await this.app.vault.create(notePathS, "---\n" +
-				stringifyYaml({ created_time: Date.now().toString() }) +
-				"\n---\n" +content);
-				this.BookNote += `${"\t".repeat(level - 1)}- [[${notePath.string.replace(
-					/\\/g,
-					"/"
-				)}|${noteName}]]\n`;
-			}
-		} else {
-			// for restricted chapters, their content will be appended to the notes of their parent chapter.
-			let parentPath = notePath;
-			const delta = level - this.settings.granularity;
-			parentPath = parentPath.getParent(delta);
-			if(cpt.name==""){
-				parentPath = notePath;
-			}
-			
-			const parentFile = this.app.vault.getAbstractFileByPath(
-				parentPath.string + ".md"
-			) as TFile;
-
-			await this.app.vault.process(parentFile, (data) => {
-				return data + "\n\n" + content;
-			});
-		}
-
-		for (const [i, item] of cpt.subItems.entries()) {
-			await this.Chapter2MD(
-				item,
-				folderPath.join(convertToValidFilename(item.name)),
-				serialNumber.concat([i + 1])
-			);
-		}
-	}
-
-	findBookNote(notePath: Path): string {
-		const epubName = notePath.getParent(
-			notePath.length - new Path(this.settings.savePath).length - 1
-		).name;
-
-		const bookNotePath = new Path(this.settings.savePath).join(
-			epubName,
-			epubName + ".md"
-		).string;
-		const bookNote = this.app.vault.getAbstractFileByPath(bookNotePath);
-		if (!bookNote) return;
-		return bookNotePath;
+	getMocPath(note: TFile): string {
+		return getNotesWithTag(this.app, this.settings.tag).find((n) =>
+			this.app.metadataCache
+				.getCache(n.path)
+				.links.some((link) => link.link + ".md" == note.path)
+		).path;
 	}
 }
