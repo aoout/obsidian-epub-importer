@@ -260,8 +260,7 @@ export default class EpubImporterPlugin extends Plugin {
 		return NoteParser.parse(
 			content,
 			this.assetsPath,
-			this.settings.imageFormat,
-			this.settings.imageResize
+			this.settings.imageFormat
 		);
 	}
 

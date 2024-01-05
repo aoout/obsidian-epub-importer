@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 export class NoteParser {
 	content: string;
-	static parse(originNote: string, assetsPath: string, imageFormat: string, resize: boolean) {
+	static parse(originNote: string, assetsPath: string, imageFormat: string) {
 		const parser = new NoteParser(originNote);
-		parser.parseImagePath(assetsPath, imageFormat, resize);
+		parser.parseImagePath(assetsPath, imageFormat);
 		parser.parseFontNote();
 		parser.parseInnerLink();
 		return parser.content;
@@ -13,7 +13,7 @@ export class NoteParser {
 		this.content = originNote;
 	}
 
-	parseImagePath(assetsPath: string, imageFormat: string, resize: boolean) {
+	parseImagePath(assetsPath: string, imageFormat: string) {
 		// TODO: Avoid accidentally damaging the text content
 
 		this.content = this.content
@@ -23,12 +23,6 @@ export class NoteParser {
 			assetsPath = assetsPath.replaceAll(" ", "%20");
 		}
 		if (imageFormat == "![[imagePath]]") {
-			if (resize) {
-				this.content = this.content.replaceAll(
-					/[^^]!\[\]\(([^)]*images[^)]*)\)/g,
-					"![[$1|20]]"
-				);
-			}
 			this.content = this.content.replaceAll(/!\[\]\(([^)]*images[^)]*)\)/g, "![[$1]]");
 		}
 		if (imageFormat == "![[imagePath|caption]]") {
