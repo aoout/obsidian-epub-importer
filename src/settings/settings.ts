@@ -5,7 +5,9 @@ export interface EpubImporterSettings {
 	savePath: string;
 	assetsPath: string;
 	granularity: number;
-	propertysTemplate: string;
+	mocName: string;
+	mocPropertysTemplate: string;
+	notePropertysTemplate: string;
 	imageFormat: string;
 	autoOpenRightPanel: boolean;
 	allbooks: boolean;
@@ -19,8 +21,10 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	savePath: "",
 	assetsPath: "{{savePath}}/{{bookName}}/images",
 	granularity: 4,
-	propertysTemplate:
+	mocName: "{{bookName}}",
+	mocPropertysTemplate:
 		"title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
+	notePropertysTemplate: "",
 	imageFormat: "![](imagePath)",
 	autoOpenRightPanel: false,
 	allbooks: false,

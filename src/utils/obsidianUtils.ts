@@ -14,5 +14,5 @@ export function getNotesWithTag(app: App, tag: string): TFile[] {
 }
 
 export function tFrontmatter(propertys: any) {
-	return "---\n" + stringifyYaml(this.propertys) + "\n---";
+	return "---\n" + stringifyYaml(propertys) + "\n---";
 }

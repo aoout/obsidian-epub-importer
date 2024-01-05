@@ -44,7 +44,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
-		this.containerEl.createEl("h2", { text:i18next.t("storage") });
+		this.containerEl.createEl("h2", { text: i18next.t("storage") });
 		new Setting(containerEl)
 			.setName(i18next.t("Save path_o"))
 			.setDesc(i18next.t("Save path"))
@@ -78,15 +78,35 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					});
 			});
 		new Setting(containerEl)
+			.setName("moc file name")
+			.setDesc("filename for moc file.")
+			.addText((text) =>
+				text.setValue(this.plugin.settings.mocName).onChange(async (value) => {
+					this.plugin.settings.mocName = value;
+					await this.plugin.saveSettings();
+				})
+			);
+		new Setting(containerEl)
 			.setName(i18next.t("Propertys template_o"))
 			.setDesc(i18next.t("Propertys template"))
 			.addTextArea((text) => {
-				text.setValue(this.plugin.settings.propertysTemplate).onChange(async (value) => {
-					this.plugin.settings.propertysTemplate = value;
+				text.setValue(this.plugin.settings.mocPropertysTemplate).onChange(async (value) => {
+					this.plugin.settings.mocPropertysTemplate = value;
 					await this.plugin.saveSettings();
 				});
 			});
-		
+		new Setting(containerEl)
+			.setName("notePropertysTemplate")
+			.setDesc("notePropertysTemplate")
+			.addTextArea((text) => {
+				text.setValue(this.plugin.settings.notePropertysTemplate).onChange(
+					async (value) => {
+						this.plugin.settings.notePropertysTemplate = value;
+						await this.plugin.saveSettings();
+					}
+				);
+			});
+
 		this.containerEl.createEl("h2", { text: i18next.t("content") });
 		new Setting(containerEl)
 			.setName(i18next.t("imageFormat_o"))

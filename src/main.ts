@@ -2,14 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-	Notice,
-	Plugin,
-	TFile,
-	WorkspaceLeaf,
-	htmlToMarkdown,
-	parseYaml
-} from "obsidian";
+import { Notice, Plugin, TFile, WorkspaceLeaf, htmlToMarkdown, parseYaml } from "obsidian";
 import { Chapter, EpubParser } from "./lib/EpubParser";
 import { EpubImporterModal } from "./modal";
 import { NoteParser } from "./lib/NoteParser";
@@ -173,7 +166,13 @@ export default class EpubImporterPlugin extends Plugin {
 
 	async importEpub(epubPath: string) {
 		const epubName = new Path(epubPath).stem;
-		const { assetsPath, propertysTemplate, savePath, tag, granularity } = this.settings;
+		const {
+			assetsPath,
+			mocPropertysTemplate: propertysTemplate,
+			savePath,
+			tag,
+			granularity,
+		} = this.settings;
 		const savePathP = new Path(savePath);
 		const folder = savePathP.join(epubName);
 		const folderA = new Path("/", this.vaultPath, folder.string).string;
@@ -226,13 +225,25 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 			await this.app.vault.create(
 				notePath.string + ".md",
-				cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n")
+				(this.settings.notePropertysTemplate
+					? tFrontmatter(
+						parseYaml(
+							this.settings.notePropertysTemplate.replace(
+								"{{created_time}}",
+								Date.now().toString()
+							)
+						)
+					  ) + "\n"
+					: "") + cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n")
 			);
 			this.BookNote += `${"\t".repeat(cpt.level)}- [[${notePath.string}|${cpt.name}]]\n`;
 		}
 
 		this.BookNote = tFrontmatter(this.propertys) + "\n" + this.BookNote;
-		await this.app.vault.create(folder.join(epubName).string + ".md", this.BookNote);
+		await this.app.vault.create(
+			folder.join(this.settings.mocName.replace("{{bookName}}", epubName)).string + ".md",
+			this.BookNote
+		);
 	}
 
 	copyImages() {
@@ -257,11 +268,7 @@ export default class EpubImporterPlugin extends Plugin {
 		if (html && !content) {
 			content = html.replace(/<[^>]+>/g, "");
 		}
-		return NoteParser.parse(
-			content,
-			this.assetsPath,
-			this.settings.imageFormat
-		);
+		return NoteParser.parse(content, this.assetsPath, this.settings.imageFormat);
 	}
 
 	getMocPath(note: TFile): string {
