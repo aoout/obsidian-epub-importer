@@ -86,28 +86,6 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
-		new Setting(containerEl)
-			.setName(i18next.t("Serial number_o"))
-			.setDesc(i18next.t("Serial number"))
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.serialNumber).onChange(async (value) => {
-					this.plugin.settings.serialNumber = value;
-					await this.plugin.saveSettings();
-				});
-			});
-		new Setting(containerEl)
-			.setName(i18next.t("serialNumberDelta_o"))
-			.setDesc(i18next.t("serialNumberDelta"))
-			.addSlider((slider) => {
-				slider
-					.setLimits(0, 10, 1)
-					.setDynamicTooltip()
-					.setValue(this.plugin.settings.serialNumberDelta)
-					.onChange(async (value) => {
-						this.plugin.settings.serialNumberDelta = value;
-						await this.plugin.saveSettings();
-					});
-			});
 		
 		this.containerEl.createEl("h2", { text: i18next.t("content") });
 		new Setting(containerEl)
@@ -126,15 +104,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
-		new Setting(containerEl)
-			.setName(i18next.t("imageResize_o"))
-			.setDesc(i18next.t("imageResize"))
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.imageResize).onChange(async (value) => {
-					this.plugin.settings.imageResize = value;
-					await this.plugin.saveSettings();
-				});
-			});
+
 		this.containerEl.createEl("h2", { text: i18next.t("helper") });
 		new Setting(containerEl)
 			.setName(i18next.t("Auto open right panel_o"))
