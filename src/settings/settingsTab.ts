@@ -97,7 +97,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 			});
 		new Setting(containerEl)
 			.setName("notePropertysTemplate")
-			.setDesc("notePropertysTemplate")
+			.setDesc("notePropertysTemplate.")
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.notePropertysTemplate).onChange(
 					async (value) => {

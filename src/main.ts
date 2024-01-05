@@ -244,6 +244,7 @@ export default class EpubImporterPlugin extends Plugin {
 			folder.join(this.settings.mocName.replace("{{bookName}}", epubName)).string + ".md",
 			this.BookNote
 		);
+		console.log(`Successfully imported ${epubName}`);
 	}
 
 	copyImages() {
@@ -276,6 +277,6 @@ export default class EpubImporterPlugin extends Plugin {
 			this.app.metadataCache
 				.getCache(n.path)
 				.links.some((link) => link.link + ".md" == note.path)
-		).path;
+		)?.path;
 	}
 }
