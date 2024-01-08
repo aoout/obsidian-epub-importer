@@ -185,15 +185,15 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 		}
 		this.assetsPath = assetsPath
-			.replace("{{bookName}}", epubName)
-			.replace("{{savePath}}", savePath);
+			.replaceAll("{{bookName}}", epubName)
+			.replaceAll("{{savePath}}", savePath);
 
 		this.parser = new EpubParser(epubPath);
 		await this.parser.init();
 
 		this.propertys = parseYaml(
 			Array.from(this.parser.meta).reduce(
-				(template, [key, value]) => template.replace(`{{${key}}}`, value),
+				(template, [key, value]) => template.replaceAll(`{{${key}}}`, value),
 				propertysTemplate
 			)
 		);
@@ -273,10 +273,12 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	getMocPath(note: TFile): string {
-		return getNotesWithTag(this.app, this.settings.tag).find((n) =>
-			this.app.metadataCache
+		const mocFiles = getNotesWithTag(this.app, this.settings.tag);
+		if(mocFiles.includes(note)) return note.path;
+		else return mocFiles.find((n) =>{
+			return this.app.metadataCache
 				.getCache(n.path)
-				.links.some((link) => link.link + ".md" == note.path)
-		)?.path;
+				.links.some((link) => link.link + ".md" == note.path);
+		})?.path;
 	}
 }
