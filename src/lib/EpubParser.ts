@@ -119,7 +119,7 @@ export class EpubParser {
 		// create a mapping from chapters index to hrefs index.
 		const indexs = [];
 		this.chapters.forEach((cpt) => {
-			indexs.push(hrefs.indexOf(cpt.sections[0].url));
+			indexs.push(hrefs.indexOf(cpt.sections[0].urlPath));
 		});
 
 		let k = 0;
@@ -170,6 +170,7 @@ export class EpubParser {
 					"g"
 				);
 				const htmls = file.html.split(reg);
+				if(file.hrefs[0]!="") htmls.shift();
 				const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
 				htmls.forEach((html, i) => {
 					this.sections.find((c) => c.url == file.url + hrefs[i]).html = html;
