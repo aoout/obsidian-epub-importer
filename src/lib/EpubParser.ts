@@ -78,7 +78,7 @@ export class EpubParser {
 					.pipe(unzipper.Extract({ path: this.tmpPath }))
 					.promise();
 			} else {
-				jetpack.copy(this.epubPath, this.tmpPath);
+				jetpack.copy(this.epubPath, this.tmpPath,{overwrite:true});
 			}
 			[this.opfFilePath, this.opfContent] = await this.parseBySuffix("opf");
 			[this.ncxFilePath, this.ncxContent] = await this.parseBySuffix("ncx");
