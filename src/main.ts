@@ -175,7 +175,7 @@ export default class EpubImporterPlugin extends Plugin {
 		} = this.settings;
 		const savePathP = new Path(savePath);
 		const folder = savePathP.join(epubName);
-		const folderA = new Path("/", this.vaultPath, folder.string).string;
+		const folderA = new Path(this.vaultPath, folder.string).string;
 		if (jetpack.exists(folderA)) {
 			if (this.settings.removeDuplicateFolders) {
 				jetpack.remove(folderA);
@@ -249,7 +249,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	copyImages() {
-		const imagesPath = new Path("/", this.vaultPath, this.assetsPath);
+		const imagesPath = new Path(this.vaultPath, this.assetsPath);
 		jetpack
 			.find(this.parser.tmpPath, { matching: ["*.jpg", "*.jpeg", "*.png"] })
 			.forEach((file) =>
