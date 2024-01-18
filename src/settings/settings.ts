@@ -12,6 +12,7 @@ export interface EpubImporterSettings {
 	autoOpenRightPanel: boolean;
 	allbooks: boolean;
 	removeDuplicateFolders: boolean;
+	moreLog: boolean;
 }
 
 export const DEFAULT_SETTINGS: EpubImporterSettings = {
@@ -29,4 +30,5 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	autoOpenRightPanel: false,
 	allbooks: false,
 	removeDuplicateFolders: false,
+	moreLog: false
 };

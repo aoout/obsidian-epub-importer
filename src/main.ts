@@ -188,8 +188,9 @@ export default class EpubImporterPlugin extends Plugin {
 			.replaceAll("{{bookName}}", epubName)
 			.replaceAll("{{savePath}}", savePath);
 
-		this.parser = new EpubParser(epubPath);
+		this.parser = new EpubParser(epubPath,this.settings.moreLog);
 		await this.parser.init();
+		if(this.settings.moreLog) console.log("toc is: ",this.parser.toc);
 
 		this.propertys = parseYaml(
 			Array.from(this.parser.meta).reduce(

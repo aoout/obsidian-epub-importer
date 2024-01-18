@@ -156,5 +156,16 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+		new Setting(containerEl)
+			.setName("more log")
+			.setDesc("more log")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.moreLog)
+					.onChange(async (value) => {
+						this.plugin.settings.moreLog = value;
+						await this.plugin.saveSettings();
+					});
+			});
 	}
 }

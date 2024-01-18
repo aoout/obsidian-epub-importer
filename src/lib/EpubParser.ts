@@ -51,6 +51,7 @@ export class Chapter {
 
 export class EpubParser {
 	epubPath: string;
+	moreLog: boolean;
 	tmpPath: string;
 	toc: Chapter[];
 	chapters: Chapter[];
@@ -62,13 +63,15 @@ export class EpubParser {
 	coverPath: string;
 	meta: Map<string, string>;
 
-	constructor(path: string) {
+	constructor(path: string, moreLog:boolean) {
 		this.epubPath = path;
+		this.moreLog = moreLog;
 	}
 
 	async init() {
 		try {
 			this.tmpPath = jetpack.tmpDir().path();
+			if(this.moreLog) console.log("tmp folder path is: ",this.tmpPath);
 			if (new Path(this.epubPath).suffix != "") {
 				await jetpack
 					.createReadStream(this.epubPath)
