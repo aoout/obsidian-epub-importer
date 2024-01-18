@@ -194,7 +194,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.propertys = parseYaml(
 			Array.from(this.parser.meta).reduce(
-				(template, [key, value]) => template.replaceAll(`{{${key}}}`, value),
+				(template, [key, value]) => template.replaceAll(`{{${key}}}`, value).replaceAll("[","【").replaceAll("]","】"),
 				propertysTemplate
 			)
 		);
