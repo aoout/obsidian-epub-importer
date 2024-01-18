@@ -8,19 +8,19 @@ import * as unzipper from "unzipper";
 import jetpack from "fs-jetpack";
 import { Path, tFile } from "../utils/path";
 
-export class Section{
-	name:string;
-	url:string;
+export class Section {
+	name: string;
+	url: string;
 	urlPath: string;
-	urlHref:string;
-	html:string;
-	
-	constructor(name:string,url:string){
+	urlHref: string;
+	html: string;
+
+	constructor(name: string, url: string) {
 		this.name = name;
 		this.url = url;
 		const [urlPath, urlHref] = url.split("#");
 		this.urlPath = urlPath;
-		this.urlHref = urlHref??"";
+		this.urlHref = urlHref ?? "";
 		this.html = "";
 	}
 }
@@ -31,17 +31,22 @@ export class Chapter {
 	level: number;
 	parent: Chapter;
 
-	constructor(name: string, url: string, subItems: Chapter[] = new Array<Chapter>(),level=0,parent=null) {
-		this.sections = [new Section(name,url)];
+	constructor(
+		name: string,
+		url: string,
+		subItems: Chapter[] = new Array<Chapter>(),
+		level = 0,
+		parent = null
+	) {
+		this.sections = [new Section(name, url)];
 		this.subItems = subItems;
 		this.level = level;
 		this.parent = parent;
 	}
 
-	public get name() : string {
+	public get name(): string {
 		return this.sections[0].name ?? "";
 	}
-	
 }
 
 export class EpubParser {
@@ -62,20 +67,25 @@ export class EpubParser {
 	}
 
 	async init() {
-		this.tmpPath = jetpack.tmpDir().path();
-		if (new Path(this.epubPath).suffix != "") {
-			await jetpack
-				.createReadStream(this.epubPath)
-				.pipe(unzipper.Extract({ path: this.tmpPath }))
-				.promise();
-		} else {
-			jetpack.copy(this.epubPath, this.tmpPath);
+		try {
+			this.tmpPath = jetpack.tmpDir().path();
+			if (new Path(this.epubPath).suffix != "") {
+				await jetpack
+					.createReadStream(this.epubPath)
+					.pipe(unzipper.Extract({ path: this.tmpPath }))
+					.promise();
+			} else {
+				jetpack.copy(this.epubPath, this.tmpPath);
+			}
+			[this.opfFilePath, this.opfContent] = await this.parseBySuffix("opf");
+			[this.ncxFilePath, this.ncxContent] = await this.parseBySuffix("ncx");
+			await this.parseToc();
+			await this.parseCover();
+			await this.parseMeta();
+		} catch (e){
+			console.log(e);
+			throw new Error("failed to parse the .epub file");
 		}
-		[this.opfFilePath, this.opfContent] = await this.parseBySuffix("opf");
-		[this.ncxFilePath, this.ncxContent] = await this.parseBySuffix("ncx");
-		await this.parseToc();
-		await this.parseCover();
-		await this.parseMeta();
 	}
 
 	async parseBySuffix(suffix: string): Promise<[string, any]> {
@@ -92,18 +102,17 @@ export class EpubParser {
 	generateToc() {
 		const navPoints = this.ncxContent.ncx.navMap[0].navPoint;
 
-		const getToc = (navPoint,level) =>
-		{
+		const getToc = (navPoint, level) => {
 			const cpt = new Chapter(
 				navPoint.navLabel[0].text[0],
 				new Path(this.ncxFilePath).parent.join(navPoint.content[0].$["src"]).string,
-				navPoint["navPoint"]?.map((pt)=>getToc(pt,level+1)) ?? [],
+				navPoint["navPoint"]?.map((pt) => getToc(pt, level + 1)) ?? [],
 				level
 			);
-			cpt.subItems.forEach((sub)=>sub.parent=cpt);
+			cpt.subItems.forEach((sub) => (sub.parent = cpt));
 			return cpt;
 		};
-		this.toc = navPoints.map((pt)=>getToc(pt,0));
+		this.toc = navPoints.map((pt) => getToc(pt, 0));
 		const getChapters = (chapter: Chapter) => {
 			this.chapters.push(chapter);
 			chapter.subItems.forEach(getChapters, chapter);
@@ -129,14 +138,14 @@ export class EpubParser {
 				const parent = indexs.indexOf(
 					[...indexs].sort((a, b) => b - a).find((v) => v < hrefIndex)
 				);
-				if (parent > 0) this.chapters[parent].sections.push(new Section(null,href));
+				if (parent > 0) this.chapters[parent].sections.push(new Section(null, href));
 				else this.toc.splice(k++, 0, new Chapter(new Path(href).stem, href));
 			}
 		});
 
 		this.chapters = [];
 		this.toc.forEach(getChapters);
-		this.sections = this.chapters.flatMap((cpt)=>cpt.sections);
+		this.sections = this.chapters.flatMap((cpt) => cpt.sections);
 	}
 
 	async parseToc() {
@@ -153,7 +162,7 @@ export class EpubParser {
 			this.sections
 				.filter((st) => st.urlPath == url)
 				.forEach((st) => {
-					file.names.push(st.name?tFile(st.name):null);
+					file.names.push(st.name ? tFile(st.name) : null);
 					file.hrefs.push(st.urlHref);
 				});
 			const html = jetpack.read(url);
@@ -170,7 +179,7 @@ export class EpubParser {
 					"g"
 				);
 				const htmls = file.html.split(reg);
-				if(file.hrefs[0]!="") htmls.shift();
+				if (file.hrefs[0] != "") htmls.shift();
 				const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
 				htmls.forEach((html, i) => {
 					this.sections.find((c) => c.url == file.url + hrefs[i]).html = html;

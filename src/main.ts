@@ -245,6 +245,7 @@ export default class EpubImporterPlugin extends Plugin {
 			this.BookNote
 		);
 		console.log(`Successfully imported ${epubName}`);
+		new Notice(`Successfully imported ${epubName}`);
 	}
 
 	copyImages() {
@@ -274,11 +275,12 @@ export default class EpubImporterPlugin extends Plugin {
 
 	getMocPath(note: TFile): string {
 		const mocFiles = getNotesWithTag(this.app, this.settings.tag);
-		if(mocFiles.includes(note)) return note.path;
-		else return mocFiles.find((n) =>{
-			return this.app.metadataCache
-				.getCache(n.path)
-				.links.some((link) => link.link + ".md" == note.path);
-		})?.path;
+		if (mocFiles.includes(note)) return note.path;
+		else
+			return mocFiles.find((n) => {
+				return this.app.metadataCache
+					.getCache(n.path)
+					.links.some((link) => link.link + ".md" == note.path);
+			})?.path;
 	}
 }
