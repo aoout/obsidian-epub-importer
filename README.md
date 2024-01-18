@@ -1,6 +1,6 @@
 # Epub Importer
 
-Import .epub file into your [Obsidian vault](https://obsidian.md/) as markdown notes. For more information, there are some text: [obsidian-epub-importer/wiki](https://github.com/aoout/obsidian-epub-importer/wiki).
+Import .epub file into your [Obsidian vault](https://obsidian.md/) as markdown notes. For more information, there are some text: [obsidian-epub-importer/wiki](https://github.com/aoout/obsidian-epub-importer/wiki). And there is a example vault: [mdReader](https://github.com/aoout/mdReader).
 
 ## Usage
 
@@ -50,18 +50,26 @@ example:
 ```
 # Helpful for Workflow
 
-- [obsidian-custom-sort](https://github.com/SebastianMC/obsidian-custom-sort)
-- [obsidian-remember-cursor-position](https://github.com/dy-sh/obsidian-remember-cursor-position)
+## [obsidian-custom-sort](https://github.com/SebastianMC/obsidian-custom-sort)
+
+This plug-in has powerful sorting capabilities and can keep our file explorer in order. If you want to know more information, you can see [wiki/How-to-sort-files](https://github.com/aoout/obsidian-epub-importer/wiki/How-to-sort-files%3F) and [Example Vault](https://github.com/aoout/mdReader).
+
+## [obsidian-remember-cursor-position](https://github.com/dy-sh/obsidian-remember-cursor-position)
+
+This plugin can record the position of the cursor and restore it when opening the same file again. However, unfortunately, what we want most is to record the position of the editor scroll.
+
+## How do you use epub importer
+
+Please share your usage and experience, feel free to write someting in [obsidian-epub-importer/discussions](https://github.com/aoout/obsidian-epub-importer/discussions).
 
 # Platform
 
-The function is tested based on Windows system. I don’t have a MacBook.
+The function is tested based on **Windows** system, so I'm not sure that the bugs on **linux** and **mac** will be fixed. If you are using **Linux** or **Mac**, _please use the corresponding tag on your issue to prompt me when creating an issue_.
+
+Mobile support is not possible as I cannot unzip the .epub file due to limitations.
 
 # How to issue bugs
 
-You should also upload the .epub file the same time when the bug occurred. 
+You should also upload the .epub file the same time when the bug occurred. If you have some trouble uploading files, you can send them directly to my email: wuz66280@gmail.com.
 
-Github does not support uploading files in .epub format. It doesn't matter. You just need to change its suffix to .zip and upload it.
-
->[!warning]
->Please do not compress it in a zip file and upload the zip file.
+I'm not going to implement every feature request, and if I don't think it fits my philosophy, then maybe I won't do it.
