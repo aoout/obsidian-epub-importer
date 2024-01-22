@@ -73,3 +73,25 @@ Mobile support is not possible as I cannot unzip the .epub file due to limitatio
 You should also upload the .epub file the same time when the bug occurred. If you have some trouble uploading files, you can send them directly to my email: wuz66280@gmail.com.
 
 I'm not going to implement every feature request, and if I don't think it fits my philosophy, then maybe I won't do it.
+
+# How to contribute
+
+`src/lib/NoteParser.ts` Used to parse footnotes and images via regular expressions.
+
+An example is shown here:
+
+```ts
+parseFontNote() {
+    // example: [[2]](ab0c_defg.html#hi_j0kl) -> [^2]
+    this.content = this.content.replace(/([^!])\[\[(\d+)\]\]\(.*?\)/g, "$1[^$2]");
+
+    // example: [2](ab0c_defg.html#hi_j0kl) -> [^2]
+    this.content = this.content.replace(/([^!])\[(\d+)\]\(.*?\)/g, "$1[^$2]");
+
+    // example: [^2]something is good.00264qed你说对吧 -> [^2]: something is good.00264qed你说对吧
+    // and, the string is from the begging of the line
+    this.content = this.content.replace(/^(\[\^\d+\])(.*?)$/gm, "$1: $2");
+	}
+```
+
+If you meet problems related to footnotes, image parsing, and you know regular expressions, maybe you can try to solve the problem yourself and open a pr.
