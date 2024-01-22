@@ -17,7 +17,7 @@ export class NoteParser {
 		// TODO: Avoid accidentally damaging the text content
 
 		this.content = this.content
-			.replaceAll(/!\[.*?\]\(([^)]*)\.(jpg|jpeg|png)\)/g, "![](images/$1.$2)")
+			.replaceAll(/!\[.*?\]\((.*?)\.(jpg|jpeg|png)\)/g, "![](images/$1.$2)")
 			.replaceAll(/!\[\].*?\(.*?([^\\/]*)\.(jpg|jpeg|png)\)/g, "![](images/$1.$2)");
 		if (imageFormat == "![](imagePath)") {
 			assetsPath = assetsPath.replaceAll(" ", "%20");
@@ -37,14 +37,14 @@ export class NoteParser {
 
 	parseFontNote() {
 		// example: [[2]](ab0c_defg.html#hi_j0kl) -> [^2]
-		this.content = this.content.replace(/([^!])\[\[(\d+)\]\]\(.*\)/g, "$1[^$2]");
+		this.content = this.content.replace(/([^!])\[\[(\d+)\]\]\(.*?\)/g, "$1[^$2]");
 
 		// example: [2](ab0c_defg.html#hi_j0kl) -> [^2]
-		this.content = this.content.replace(/([^!])\[(\d+)\]\(.*\)/g, "$1[^$2]");
+		this.content = this.content.replace(/([^!])\[(\d+)\]\(.*?\)/g, "$1[^$2]");
 
 		// example: [^2]something is good.00264qed你说对吧 -> [^2]: something is good.00264qed你说对吧
 		// and, the string is from the begging of the line
-		this.content = this.content.replace(/^(\[\^\d+\])(.*)$/gm, "$1: $2");
+		this.content = this.content.replace(/^(\[\^\d+\])(.*?)$/gm, "$1: $2");
 	}
 
 	parseInnerLink() {
