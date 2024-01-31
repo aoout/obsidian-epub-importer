@@ -185,7 +185,11 @@ export class EpubParser {
 				if (file.hrefs[0] != "") htmls.shift();
 				const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
 				htmls.forEach((html, i) => {
-					this.sections.find((c) => c.url == file.url + hrefs[i]).html = html;
+					try{
+						this.sections.find((c) => c.url == file.url + hrefs[i]).html = html;
+					}catch (e) {
+						console.warn("Some errors occurred when we split a .html/.xhtml file to sections");
+					}
 				});
 			}
 		});
