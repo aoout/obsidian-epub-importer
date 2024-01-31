@@ -178,10 +178,15 @@ export class EpubParser {
 			} else {
 				// example: <h2 class="title2" id="CHP5-2">抹香鲸和福卡恰面包</h2>
 				const reg = new RegExp(
-					`(?=<[^>]*id=['"](?:${file.hrefs.join("|")})['"][^>]*>[\\s\\S]*?<\\/[^>]*>)`,
+					`<.*?id=['"](?:${file.hrefs.join("|")})['"].*?>`,
 					"g"
 				);
-				const htmls = file.html.split(reg);
+				const split = (string, delimiter, n)=> {
+					const parts = string.split(delimiter);
+					if(n>parts.length) n=parts.length;
+					return parts.slice(0, n - 1).concat([parts.slice(n - 1).join(delimiter)]);
+				};
+				const htmls = split(file.html,reg,file.hrefs.length+1);
 				if (file.hrefs[0] != "") htmls.shift();
 				const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
 				htmls.forEach((html, i) => {
