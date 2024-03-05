@@ -246,6 +246,7 @@ export default class EpubImporterPlugin extends Plugin {
 			folder.join(this.settings.mocName.replace("{{bookName}}", epubName)).string + ".md",
 			this.BookNote
 		);
+		jetpack.remove(this.parser.tmpPath);
 		console.log(`Successfully imported ${epubName}`);
 		new Notice(`Successfully imported ${epubName}`);
 	}
