@@ -222,8 +222,10 @@ export default class EpubImporterPlugin extends Plugin {
 			getPaths(cpt);
 			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(cpt.name);
 			const notePath = folder.join(...paths);
-			if (!this.app.vault.getAbstractFileByPath(notePath.parent.string)) {
+			try{
 				await this.app.vault.createFolder(notePath.parent.string);
+			}catch(e){
+				//
 			}
 			await this.app.vault.create(
 				notePath.string + ".md",
