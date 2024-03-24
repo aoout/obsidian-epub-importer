@@ -87,15 +87,6 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				})
 			);
 		new Setting(containerEl)
-			.setName(i18next.t("Propertys template_o"))
-			.setDesc(i18next.t("Propertys template"))
-			.addTextArea((text) => {
-				text.setValue(this.plugin.settings.mocPropertysTemplate).onChange(async (value) => {
-					this.plugin.settings.mocPropertysTemplate = value;
-					await this.plugin.saveSettings();
-				});
-			});
-		new Setting(containerEl)
 			.setName("notePropertysTemplate")
 			.setDesc("notePropertysTemplate.")
 			.addTextArea((text) => {
@@ -105,6 +96,33 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}
 				);
+			});
+		new Setting(containerEl)
+			.setName("oneNote")
+			.setDesc("Convert the entire book into a single markdown file.")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.oneNote).onChange(async (value) => {
+					this.plugin.settings.oneNote = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		new Setting(containerEl)
+			.setName("oneFolder")
+			.setDesc("Place oneNote in a folder with the same name.")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.oneFolder).onChange(async (value) => {
+					this.plugin.settings.oneFolder = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		new Setting(containerEl)
+			.setName(i18next.t("Propertys template_o"))
+			.setDesc(i18next.t("Propertys template"))
+			.addTextArea((text) => {
+				text.setValue(this.plugin.settings.mocPropertysTemplate).onChange(async (value) => {
+					this.plugin.settings.mocPropertysTemplate = value;
+					await this.plugin.saveSettings();
+				});
 			});
 
 		this.containerEl.createEl("h2", { text: i18next.t("content") });

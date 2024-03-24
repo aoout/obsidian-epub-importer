@@ -13,6 +13,6 @@ export function getNotesWithTag(app: App, tag: string): TFile[] {
 	return files_with_tag;
 }
 
-export function tFrontmatter(propertys: any) {
+export function tFrontmatter(propertys: unknown) {
 	return "---\n" + stringifyYaml(propertys) + "\n---";
 }
