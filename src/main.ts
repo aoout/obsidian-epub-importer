@@ -205,6 +205,26 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.copyImages();
 
+		if(this.settings.oneNote){
+			[...this.parser.chapters]
+				.filter((cpt)=>cpt.level!=0)
+				.sort((a, b) => b.level - a.level)
+				.forEach((cpt) => cpt.parent.sections.push(...cpt.sections));
+			let content = "";
+			for(const cpt of this.parser.chapters.filter((cpt)=>cpt.level==0)){
+				content += cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n");
+			}
+			let notePath = folder;
+			if(this.settings.oneFolder){
+				notePath = folder.join(epubName);
+			}
+			await this.app.vault.create(
+				notePath.withSuffix("md").string,
+				tFrontmatter(this.propertys) + "\n" + content
+			);
+			return 0;
+		}
+
 		[...this.parser.chapters]
 			.filter((cpt) => cpt.level > granularity)
 			.sort((a, b) => b.level - a.level)
