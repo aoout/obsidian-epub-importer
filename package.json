@@ -43,6 +43,7 @@
 	"dependencies": {
 		"@lisandra-dev/create-obsidian-plugin": "^1.9.1",
 		"commit-and-tag-version": "^11.0.0",
+		"extract-zip": "^2.0.1",
 		"fs-jetpack": "^5.1.0",
 		"unzipper": "0.10.11",
 		"xml2js": "^0.6.2"

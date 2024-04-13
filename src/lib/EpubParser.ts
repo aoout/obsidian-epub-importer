@@ -4,7 +4,7 @@
 
 import * as xml2js from "xml2js";
 import * as path from "path";
-import * as unzipper from "unzipper";
+import extract from "extract-zip";
 import jetpack from "fs-jetpack";
 import { Path, tFile } from "../utils/path";
 
@@ -63,7 +63,7 @@ export class EpubParser {
 	coverPath: string;
 	meta: Map<string, string>;
 
-	constructor(path: string, moreLog:boolean) {
+	constructor(path: string, moreLog: boolean) {
 		this.epubPath = path;
 		this.moreLog = moreLog;
 	}
@@ -71,21 +71,18 @@ export class EpubParser {
 	async init() {
 		try {
 			this.tmpPath = jetpack.tmpDir().path();
-			if(this.moreLog) console.log("tmp folder path is: ",this.tmpPath);
+			if (this.moreLog) console.log("tmp folder path is: ", this.tmpPath);
 			if (new Path(this.epubPath).suffix != "") {
-				await jetpack
-					.createReadStream(this.epubPath)
-					.pipe(unzipper.Extract({ path: this.tmpPath }))
-					.promise();
+				await extract(this.epubPath, { dir: this.tmpPath });
 			} else {
-				jetpack.copy(this.epubPath, this.tmpPath,{overwrite:true});
+				jetpack.copy(this.epubPath, this.tmpPath, { overwrite: true });
 			}
 			[this.opfFilePath, this.opfContent] = await this.parseBySuffix("opf");
 			[this.ncxFilePath, this.ncxContent] = await this.parseBySuffix("ncx");
 			await this.parseToc();
 			await this.parseCover();
 			await this.parseMeta();
-		} catch (e){
+		} catch (e) {
 			console.log(e);
 			throw new Error("failed to parse the .epub file");
 		}
@@ -177,23 +174,22 @@ export class EpubParser {
 				this.sections.find((st) => st.urlPath == file.url).html = file.html;
 			} else {
 				// example: <h2 class="title2" id="CHP5-2">抹香鲸和福卡恰面包</h2>
-				const reg = new RegExp(
-					`<.*?id=['"](?:${file.hrefs.join("|")})['"].*?>`,
-					"g"
-				);
-				const split = (string, delimiter, n)=> {
+				const reg = new RegExp(`<.*?id=['"](?:${file.hrefs.join("|")})['"].*?>`, "g");
+				const split = (string, delimiter, n) => {
 					const parts = string.split(delimiter);
-					if(n>parts.length) n=parts.length;
+					if (n > parts.length) n = parts.length;
 					return parts.slice(0, n - 1).concat([parts.slice(n - 1).join(delimiter)]);
 				};
-				const htmls = split(file.html,reg,file.hrefs.length+1);
+				const htmls = split(file.html, reg, file.hrefs.length + 1);
 				if (file.hrefs[0] != "") htmls.shift();
 				const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
 				htmls.forEach((html, i) => {
-					try{
+					try {
 						this.sections.find((c) => c.url == file.url + hrefs[i]).html = html;
-					}catch (e) {
-						console.warn("Some errors occurred when we split a .html/.xhtml file to sections");
+					} catch (e) {
+						console.warn(
+							"Some errors occurred when we split a .html/.xhtml file to sections"
+						);
 					}
 				});
 			}
