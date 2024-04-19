@@ -198,7 +198,8 @@ export class EpubParser {
 
 	async parseCover() {
 		const coverItem = this.opfContent.package.manifest[0].item.find((item) =>
-			["cover", "Cover"].some((sx) => item.$.id.includes(sx))
+			["cover", "Cover"].some((sx) => item.$.id.includes(sx)) && 
+			["png","jpg","jpeg"].includes(new Path(item.$.href).suffix)
 		);
 		if (coverItem)
 			this.coverPath = new Path(this.opfFilePath).parent.join(coverItem.$.href).string;
