@@ -6,6 +6,7 @@ export class NoteParser {
 		parser.parseImagePath(assetsPath, imageFormat);
 		parser.parseFontNote();
 		parser.parseInnerLink();
+		parser.parseHttpLink();
 		return parser.content;
 	}
 
@@ -49,6 +50,9 @@ export class NoteParser {
 
 	parseInnerLink() {
 		this.content = this.content.replaceAll(/([^!])\[\s*([^\]]*?)\s*\]\(\s*([^)]*?)\s*\)/g,"$1[[$3\\|$2]]");
+	}
 
+	parseHttpLink() {
+		this.content = this.content.replaceAll(/\[\[(https:\/\/[^\]|]*?)(?:\|([^\]]*?))?]]/g,"[$2]($1)");
 	}
 }
