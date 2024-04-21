@@ -10,7 +10,7 @@ import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import jetpack from "fs-jetpack";
-import { getNotesWithTag, tFrontmatter } from "./utils/obsidianUtils";
+import { getNotesWithTag, tFrontmatter, templateWithVariables } from "./utils/obsidianUtils";
 import { Path } from "./utils/path";
 import i18next from "i18next";
 import { resources, translationLanguage } from "./i18n/i18next";
@@ -184,20 +184,17 @@ export default class EpubImporterPlugin extends Plugin {
 				return;
 			}
 		}
-		this.assetsPath = assetsPath
-			.replaceAll("{{bookName}}", epubName)
-			.replaceAll("{{savePath}}", savePath);
+		this.assetsPath = templateWithVariables(assetsPath, {
+			bookName: epubName,
+			savePath: savePath,
+		});
 
-		this.parser = new EpubParser(epubPath,this.settings.moreLog);
+		this.parser = new EpubParser(epubPath, this.settings.moreLog);
 		await this.parser.init();
-		if(this.settings.moreLog) console.log("toc is: ",this.parser.toc);
+		if (this.settings.moreLog) console.log("toc is: ", this.parser.toc);
 
-		this.propertys = parseYaml(
-			Array.from(this.parser.meta).reduce(
-				(template, [key, value]) => template.replaceAll(`{{${key}}}`, value).replaceAll("[","【").replaceAll("]","】"),
-				propertysTemplate
-			)
-		);
+		this.propertys = parseYaml(templateWithVariables(propertysTemplate, this.parser.meta));
+
 		this.propertys.tags = (this.propertys.tags ?? []).concat([tag]);
 
 		this.BookNote = "";
@@ -205,17 +202,17 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.copyImages();
 
-		if(this.settings.oneNote){
+		if (this.settings.oneNote) {
 			[...this.parser.chapters]
-				.filter((cpt)=>cpt.level!=0)
+				.filter((cpt) => cpt.level != 0)
 				.sort((a, b) => b.level - a.level)
 				.forEach((cpt) => cpt.parent.sections.push(...cpt.sections));
 			let content = "";
-			for(const cpt of this.parser.chapters.filter((cpt)=>cpt.level==0)){
+			for (const cpt of this.parser.chapters.filter((cpt) => cpt.level == 0)) {
 				content += cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n");
 			}
 			let notePath = folder;
-			if(this.settings.oneFolder){
+			if (this.settings.oneFolder) {
 				notePath = folder.join(epubName);
 			}
 			await this.app.vault.create(
@@ -231,7 +228,7 @@ export default class EpubImporterPlugin extends Plugin {
 			.forEach((cpt) => cpt.parent.sections.push(...cpt.sections));
 
 		for (const cpt of this.parser.chapters.filter((cpt) => cpt.level <= granularity)) {
-			if(cpt.name.startsWith("... ")) cpt.sections[0].name = cpt.name.replace("... ","");
+			if (cpt.name.startsWith("... ")) cpt.sections[0].name = cpt.name.replace("... ", "");
 			const paths = [cpt.name];
 			const getPaths = (cpt2: Chapter) => {
 				if (cpt2.parent) {
@@ -242,9 +239,9 @@ export default class EpubImporterPlugin extends Plugin {
 			getPaths(cpt);
 			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(cpt.name);
 			const notePath = folder.join(...paths);
-			try{
+			try {
 				await this.app.vault.createFolder(notePath.parent.string);
-			}catch(e){
+			} catch (e) {
 				//
 			}
 			await this.app.vault.create(
@@ -252,10 +249,9 @@ export default class EpubImporterPlugin extends Plugin {
 				(this.settings.notePropertysTemplate
 					? tFrontmatter(
 						parseYaml(
-							this.settings.notePropertysTemplate.replace(
-								"{{created_time}}",
-								Date.now().toString()
-							)
+							templateWithVariables(this.settings.notePropertysTemplate,{
+								created_time: Date.now().toString()
+							})
 						)
 					  ) + "\n"
 					: "") + cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n")
@@ -265,7 +261,11 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.BookNote = tFrontmatter(this.propertys) + "\n" + this.BookNote;
 		await this.app.vault.create(
-			folder.join(this.settings.mocName.replace("{{bookName}}", epubName)).string + ".md",
+			folder.join(
+				templateWithVariables(this.settings.mocName, {
+					bookName: epubName,
+				})
+			).string + ".md",
 			this.BookNote
 		);
 		jetpack.remove(this.parser.tmpPath);

@@ -16,3 +16,10 @@ export function getNotesWithTag(app: App, tag: string): TFile[] {
 export function tFrontmatter(propertys: unknown) {
 	return "---\n" + stringifyYaml(propertys) + "\n---";
 }
+
+export function templateWithVariables(template: string, variables: object) {
+	return Object.keys(variables).reduce(
+		(template, key) => template.replaceAll(`{{${key}}}`, variables[key]),
+		template
+	);
+}

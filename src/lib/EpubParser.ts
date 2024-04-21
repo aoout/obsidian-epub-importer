@@ -61,7 +61,7 @@ export class EpubParser {
 	ncxFilePath: string;
 	ncxContent: any;
 	coverPath: string;
-	meta: Map<string, string>;
+	meta: object;
 
 	constructor(path: string, moreLog: boolean) {
 		this.epubPath = path;
@@ -197,9 +197,10 @@ export class EpubParser {
 	}
 
 	async parseCover() {
-		const coverItem = this.opfContent.package.manifest[0].item.find((item) =>
-			["cover", "Cover"].some((sx) => item.$.id.includes(sx)) && 
-			["png","jpg","jpeg"].includes(new Path(item.$.href).suffix)
+		const coverItem = this.opfContent.package.manifest[0].item.find(
+			(item) =>
+				["cover", "Cover"].some((sx) => item.$.id.includes(sx)) &&
+				["png", "jpg", "jpeg"].includes(new Path(item.$.href).suffix)
 		);
 		if (coverItem)
 			this.coverPath = new Path(this.opfFilePath).parent.join(coverItem.$.href).string;
@@ -208,12 +209,12 @@ export class EpubParser {
 	async parseMeta() {
 		const meta = this.opfContent.package.metadata[0];
 
-		this.meta = new Map<string, string>();
-		this.meta.set("title", meta["dc:title"]?.[0] ?? "");
-		this.meta.set("author", meta["dc:creator"]?.[0]?.["_"] ?? "");
-		this.meta.set("publisher", meta["dc:publisher"]?.[0] ?? "");
-		this.meta.set("language", meta["dc:language"]?.[0] ?? "");
-
-		this.meta.set("bookName", new Path(this.epubPath).stem);
+		this.meta = {
+			title: meta["dc:title"]?.[0] ?? "",
+			author: meta["dc:creator"]?.[0]?.["_"] ?? "",
+			publisher: meta["dc:publisher"]?.[0] ?? "",
+			language: meta["dc:language"]?.[0] ?? "",
+			bookName: new Path(this.epubPath).stem,
+		};
 	}
 }
