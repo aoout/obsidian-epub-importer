@@ -99,7 +99,7 @@ export default class EpubImporterPlugin extends Plugin {
 			this.app.workspace.on("file-open", (file) => {
 				if (!this.settings.autoOpenRightPanel) return;
 				const mocPath = this.getMocPath(file);
-				if (!mocPath) return this.activeLeaf.detach();
+				if (!mocPath && file.basename != "highlights") return this.activeLeaf.detach();
 				const bookName = this.app.vault.getAbstractFileByPath(mocPath).parent.name;
 				if (this.activeBook == bookName) return;
 				if (this.activeLeaf) this.activeLeaf.detach();
