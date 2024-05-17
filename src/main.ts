@@ -40,7 +40,7 @@ export default class EpubImporterPlugin extends Plugin {
 			id: "import-epub",
 			name: i18next.t("import-epub"),
 			callback: () => {
-				new EpubImporterModal(this.app, this, async (result) => {
+				new EpubImporterModal(this.app, this.settings.libraries, async (result) => {
 					await this.importEpub(result);
 				}).open();
 			},
