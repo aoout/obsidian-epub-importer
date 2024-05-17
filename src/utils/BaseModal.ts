@@ -1,6 +1,6 @@
 import { SuggestModal, Notice, App } from "obsidian";
 
-export abstract class BaseModal extends SuggestModal<string> {
+export abstract class BaseInputModal extends SuggestModal<string> {
 	constructor(app: App, private onSubmit: (result: string) => void, enablePaste = false) {
 		super(app);
 		this.onSubmit = onSubmit;

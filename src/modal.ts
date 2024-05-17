@@ -1,8 +1,8 @@
 import { App } from "obsidian";
 import jetpack from "fs-jetpack";
-import { BaseModal } from "./utils/baseModal";
+import { BaseInputModal } from "./utils/baseModal";
 
-export class EpubImporterModal extends BaseModal {
+export class EpubImporterModal extends BaseInputModal {
 	libraries: string[];
 
 	constructor(app: App, libraries: string[], onSubmit: (result: string) => void) {
