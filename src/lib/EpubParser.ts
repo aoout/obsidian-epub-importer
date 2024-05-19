@@ -210,11 +210,11 @@ export class EpubParser {
 		const meta = this.opfContent.package.metadata[0];
 
 		this.meta = {
-			title: meta["dc:title"]?.[0] ?? "",
-			author: meta["dc:creator"]?.[0]?.["_"] ?? "",
-			publisher: meta["dc:publisher"]?.[0] ?? "",
-			language: meta["dc:language"]?.[0] ?? "",
-			bookName: new Path(this.epubPath).stem,
+			title: meta["dc:title"]?.[0] ? `"${meta["dc:title"]?.[0]}"` : "",
+			author: meta["dc:creator"]?.[0]?.["_"] ? `"${meta["dc:creator"]?.[0]?.["_"]}"` : "",
+			publisher: meta["dc:publisher"]?.[0] ? `"${meta["dc:publisher"]?.[0]}"` : "",
+			language: meta["dc:language"]?.[0] ? `"${meta["dc:language"]?.[0]}"` : "",
+			bookName: new Path(this.epubPath).stem ? `"${new Path(this.epubPath).stem}"` : "",
 		};
 	}
 }
