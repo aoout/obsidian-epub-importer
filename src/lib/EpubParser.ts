@@ -170,7 +170,7 @@ export class EpubParser {
 			files.push(file);
 		});
 		files.forEach((file) => {
-			if (!file.hrefs.length) {
+			if (!file.hrefs.length || (file.hrefs.length === 1 && file.hrefs[0] === "")) {
 				this.sections.find((st) => st.urlPath == file.url).html = file.html;
 			} else {
 				// example: <h2 class="title2" id="CHP5-2">抹香鲸和福卡恰面包</h2>
