@@ -24,6 +24,7 @@ export default class EpubImporterPlugin extends Plugin {
 	propertys: any;
 	activeBook: string;
 	activeLeaf: WorkspaceLeaf;
+	detachLeaf = false;
 	async onload() {
 		i18next.init({
 			lng: translationLanguage,
@@ -96,16 +97,27 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 		});
 		this.registerEvent(
-			this.app.workspace.on("file-open", (file) => {
+			this.app.workspace.on("file-open", async (file) => {
+				if (this.settings.leafID && !this.detachLeaf) {
+					this.detachLeaf = true;
+					this.activeLeaf = this.app.workspace.getLeafById(this.settings.leafID);
+					return;
+				}
 				if (!this.settings.autoOpenRightPanel) return;
 				if (!this.app.workspace.getActiveFile()) return;
 				const mocPath = this.getMocPath(file);
-				if (!mocPath && file.basename != "highlights") return this.activeLeaf.detach();
+				if (!mocPath && file.basename != "highlights") {
+					this.activeBook = "";
+					return this.activeLeaf.detach();
+				}
 				const bookName = this.app.vault.getAbstractFileByPath(mocPath).parent.name;
 				if (this.activeBook == bookName) return;
 				if (this.activeLeaf) this.activeLeaf.detach();
 				this.activeBook = bookName;
 				this.activeLeaf = this.app.workspace.getRightLeaf(false);
+				//@ts-ignore
+				this.settings.leafID = this.activeLeaf.id;
+				await this.saveSettings();
 				this.activeLeaf.setViewState({
 					type: "markdown",
 					state: {
@@ -117,12 +129,6 @@ export default class EpubImporterPlugin extends Plugin {
 				});
 				this.activeLeaf.setPinned(true);
 				this.app.workspace.revealLeaf(this.activeLeaf);
-			})
-		);
-
-		this.registerEvent(
-			this.app.workspace.on("quit", () => {
-				this.activeLeaf.detach();
 			})
 		);
 
@@ -148,13 +154,6 @@ export default class EpubImporterPlugin extends Plugin {
 				}
 			})
 		);
-	}
-	onunload() {
-		try {
-			this.activeLeaf.detach();
-		} catch (err) {
-			/* empty */
-		}
 	}
 
 	async loadSettings(): Promise<void> {
