@@ -11,7 +11,7 @@ import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import jetpack from "fs-jetpack";
 import { getNotesWithTag, tFrontmatter, templateWithVariables } from "./utils/obsidianUtils";
-import { Path } from "./utils/path";
+import Path from "./utils/path";
 import i18next from "i18next";
 import { resources, translationLanguage } from "./i18n/i18next";
 
@@ -85,7 +85,7 @@ export default class EpubImporterPlugin extends Plugin {
 			) {
 				const files = e.dataTransfer.files;
 				//@ts-ignore
-				if (files.length == 1 && new Path(files[0].name).suffix == "epub") {
+				if (files.length == 1 && Path.getName(files[0]).suffix() == "epub") {
 					//@ts-ignore
 					await this.importEpub(files[0].path);
 					jetpack
@@ -165,7 +165,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	async importEpub(epubPath: string) {
-		const epubName = new Path(epubPath).stem;
+		const epubName = Path.getStem(epubPath);
 		const {
 			assetsPath,
 			mocPropertysTemplate: propertysTemplate,
@@ -175,7 +175,7 @@ export default class EpubImporterPlugin extends Plugin {
 		} = this.settings;
 		const savePathP = new Path(savePath);
 		const folder = savePathP.join(epubName);
-		const folderA = new Path(this.vaultPath, folder.string).string;
+		const folderA = Path.fromList(this.vaultPath, folder.toString()).toString();
 		if (jetpack.exists(folderA)) {
 			if (this.settings.removeDuplicateFolders) {
 				jetpack.remove(folderA);
@@ -198,7 +198,7 @@ export default class EpubImporterPlugin extends Plugin {
 		this.propertys.tags = (this.propertys.tags ?? []).concat([tag]);
 
 		this.BookNote = "";
-		await this.app.vault.createFolder(folder.string);
+		await this.app.vault.createFolder(folder.toString());
 
 		this.copyImages();
 
@@ -211,12 +211,12 @@ export default class EpubImporterPlugin extends Plugin {
 			for (const cpt of this.parser.chapters.filter((cpt) => cpt.level == 0)) {
 				content += cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n");
 			}
-			let notePath = folder;
+			let notePath = folder.clone();
 			if (this.settings.oneFolder) {
-				notePath = folder.join(epubName);
+				notePath = folder.clone().join(epubName);
 			}
 			await this.app.vault.create(
-				notePath.withSuffix("md").string,
+				notePath.clone().withext("md").toString(),
 				tFrontmatter(this.propertys) + "\n" + content
 			);
 			return 0;
@@ -229,8 +229,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		for (const cpt of this.parser.chapters.filter((cpt) => cpt.level <= granularity)) {
 			if (cpt.name.startsWith("... ")) cpt.sections[0].name = cpt.name.replace("... ", "");
-			if (cpt.name.includes("/")) cpt.sections[0].name = cpt.name.replace("/", "&");
-			if (cpt.name.includes("\\")) cpt.sections[0].name = cpt.name.replace("\\", "&");
+
 			const paths = [cpt.name];
 			const getPaths = (cpt2: Chapter) => {
 				if (cpt2.parent) {
@@ -240,14 +239,15 @@ export default class EpubImporterPlugin extends Plugin {
 			};
 			getPaths(cpt);
 			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(cpt.name);
-			const notePath = folder.join(...paths);
+			const notePath = new Path(folder.toString(),"&").join(...paths);
 			try {
-				await this.app.vault.createFolder(notePath.parent.string);
+				await this.app.vault.createFolder(notePath.clone().parent().toString());
 			} catch (e) {
 				//
 			}
+
 			await this.app.vault.create(
-				notePath.string + ".md",
+				notePath.toString() + ".md",
 				(this.settings.notePropertysTemplate
 					? tFrontmatter(
 						parseYaml(
@@ -258,16 +258,16 @@ export default class EpubImporterPlugin extends Plugin {
 					  ) + "\n"
 					: "") + cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n")
 			);
-			this.BookNote += `${"\t".repeat(cpt.level)}- [[${notePath.string}|${cpt.name}]]\n`;
+			this.BookNote += `${"\t".repeat(cpt.level)}- [[${notePath.toString()}|${cpt.name}]]\n`;
 		}
 
 		this.BookNote = tFrontmatter(this.propertys) + "\n" + this.BookNote;
 		await this.app.vault.create(
-			folder.join(
+			folder.clone().join(
 				templateWithVariables(this.settings.mocName, {
 					bookName: epubName,
 				})
-			).string + ".md",
+			).toString() + ".md",
 			this.BookNote
 		);
 		jetpack.remove(this.parser.tmpPath);
@@ -276,19 +276,19 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	copyImages() {
-		const imagesPath = new Path(this.vaultPath, this.assetsPath);
+		const imagesPath = Path.fromList(this.vaultPath, this.assetsPath);
 		jetpack
 			.find(this.parser.tmpPath, { matching: ["*.jpg", "*.jpeg", "*.png"] })
 			.forEach((file) =>
-				jetpack.copy(file, imagesPath.join(new Path(file).name).string, {
+				jetpack.copy(file,Path.join(imagesPath.toString(),Path.getName(file)), {
 					overwrite: true,
 				})
 			);
 		if (this.parser.coverPath) {
-			this.propertys.cover = new Path(
+			this.propertys.cover = Path.fromList(
 				this.assetsPath,
-				new Path(this.parser.coverPath).name
-			).string;
+				Path.getName(this.parser.coverPath)
+			).toString();
 		}
 	}
 
