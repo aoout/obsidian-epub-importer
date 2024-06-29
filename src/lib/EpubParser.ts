@@ -6,7 +6,6 @@ import * as xml2js from "xml2js";
 import * as path from "path";
 import extract from "extract-zip";
 import jetpack from "fs-jetpack";
-import Path from "../utils/path";
 
 export class Section {
 	name: string;
@@ -72,7 +71,7 @@ export class EpubParser {
 		try {
 			this.tmpPath = jetpack.tmpDir().path();
 			if (this.moreLog) console.log("tmp folder path is: ", this.tmpPath);
-			if (Path.getExt(this.epubPath) != "") {
+			if (path.extname(this.epubPath) != "") {
 				await extract(this.epubPath, { dir: this.tmpPath });
 			} else {
 				jetpack.copy(this.epubPath, this.tmpPath, { overwrite: true });
@@ -105,7 +104,7 @@ export class EpubParser {
 		const getToc = (navPoint, level) => {
 			const cpt = new Chapter(
 				navPoint.navLabel[0].text[0],
-				new Path(this.ncxFilePath).parent().join(navPoint.content[0].$["src"]).toString(),
+				path.join(path.dirname(this.ncxFilePath), navPoint.content[0].$["src"]),
 				navPoint["navPoint"]?.map((pt) => getToc(pt, level + 1)) ?? [],
 				level
 			);
@@ -123,7 +122,7 @@ export class EpubParser {
 		const hrefs: string[] = this.opfContent.package.manifest[0].item
 			.map((item) => item.$.href)
 			.filter((href) => [".html", ".xhtml"].some((sx) => href.includes(sx)))
-			.map((href) => new Path(this.opfFilePath).parent().join(href).toString());
+			.map((href) => path.join(path.dirname(this.opfFilePath), href));
 
 		// create a mapping from chapters index to hrefs index.
 		const indexs = [];
@@ -139,7 +138,12 @@ export class EpubParser {
 					[...indexs].sort((a, b) => b - a).find((v) => v < hrefIndex)
 				);
 				if (parent > 0) this.chapters[parent].sections.push(new Section(null, href));
-				else this.toc.splice(k++, 0, new Chapter(new Path(href).stem(), href));
+				else
+					this.toc.splice(
+						k++,
+						0,
+						new Chapter(path.basename(href, path.extname(href)), href)
+					);
 			}
 		});
 
@@ -162,7 +166,7 @@ export class EpubParser {
 			this.sections
 				.filter((st) => st.urlPath == url)
 				.forEach((st) => {
-					file.names.push(st.name ?  Path.getName(st.name) : null);
+					file.names.push(st.name ? path.basename(st.name) : null);
 					file.hrefs.push(st.urlHref);
 				});
 			const html = jetpack.read(url);
@@ -200,10 +204,9 @@ export class EpubParser {
 		const coverItem = this.opfContent.package.manifest[0].item.find(
 			(item) =>
 				["cover", "Cover"].some((sx) => item.$.id.includes(sx)) &&
-				["png", "jpg", "jpeg"].includes(Path.getExt(item.$.href))
+				["png", "jpg", "jpeg"].includes(path.extname(item.$.href).slice(1))
 		);
-		if (coverItem)
-			this.coverPath = new Path(this.opfFilePath).parent().join(coverItem.$.href).toString();
+		if (coverItem) this.coverPath = path.join(path.dirname(this.opfFilePath), coverItem.$.href);
 	}
 
 	async parseMeta() {
@@ -214,7 +217,9 @@ export class EpubParser {
 			author: meta["dc:creator"]?.[0]?.["_"] ? `"${meta["dc:creator"]?.[0]?.["_"]}"` : "",
 			publisher: meta["dc:publisher"]?.[0] ? `"${meta["dc:publisher"]?.[0]}"` : "",
 			language: meta["dc:language"]?.[0] ? `"${meta["dc:language"]?.[0]}"` : "",
-			bookName: new Path(this.epubPath).stem() ? `"${Path.getStem(this.epubPath)}"` : "",
+			bookName: path.basename(this.epubPath, path.extname(this.epubPath))
+				? `"${path.basename(this.epubPath, path.extname(this.epubPath))}"`
+				: "",
 		};
 	}
 }
