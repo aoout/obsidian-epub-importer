@@ -21,7 +21,7 @@ export default class EpubImporterPlugin extends Plugin {
 	parser: EpubParser;
 	BookNote: string;
 	assetsPath: string;
-	propertys: any;
+	properties: any;
 	activeBook: string;
 	activeLeaf: WorkspaceLeaf;
 	detachLeaf = false;
@@ -33,7 +33,7 @@ export default class EpubImporterPlugin extends Plugin {
 			returnNull: false,
 		});
 
-		//@ts-ignore
+		//@ts-expect-error
 		this.vaultPath = this.app.vault.adapter.basePath;
 		await this.loadSettings();
 		this.addSettingTab(new EpubImporterSettingsTab(this.app, this));
@@ -50,43 +50,41 @@ export default class EpubImporterPlugin extends Plugin {
 			id: "sync-libraries",
 			name: i18next.t("sync-libraries"),
 			callback: async () => {
-				if (this.settings.libraries.length == 0) {
+				const { libraries } = this.settings;
+				if (!libraries.length) {
 					new Notice(i18next.t("no libraries"));
 					return;
 				}
-				let n = 0;
-				for (let i = 0; i < this.settings.libraries.length; i++) {
-					const results = jetpack.find(this.settings.libraries[i], {
-						matching: "**/**.epub",
-					});
-					for (let j = 0; j < results.length; j++) {
-						await this.importEpub(jetpack.path(results[j]));
-						n++;
-					}
+		
+				const results = libraries
+					.map(library => jetpack.find(library, { matching: "**/**.epub" }))
+					.flat();
+		
+				const bookCount = results.length;
+				for (const result of results) {
+					await this.importEpub(jetpack.path(result));
 				}
-				if (n == 0) {
+		
+				if (bookCount === 0) {
 					new Notice(i18next.t("no book in libraries"));
 					console.log(i18next.t("no book in libraries"));
 				} else {
-					new Notice(
-						i18next.t("translation:sync-libraries_r").replace("${n}", n.toString())
-					);
-					console.log(
-						i18next.t("translation:sync-libraries_r").replace("${n}", n.toString())
-					);
+					const message = i18next.t("translation:sync-libraries_r").replace("${n}", bookCount.toString());
+					new Notice(message);
+					console.log(message);
 				}
-			},
-		});
+			}
+		});		
+		
 		this.registerDomEvent(document, "drop", async (e) => {
 			if (
 				this.settings.byDrag &&
-				//@ts-ignore
+				//@ts-expect-error
 				e.toElement.className == "nav-files-container node-insert-event"
 			) {
 				const files = e.dataTransfer.files;
-				//@ts-ignore
 				if (files.length == 1 && path.extname(files[0].name) == ".epub") {
-					//@ts-ignore
+					//@ts-expect-error
 					await this.importEpub(files[0].path);
 					jetpack
 						.find(this.vaultPath, {
@@ -115,7 +113,7 @@ export default class EpubImporterPlugin extends Plugin {
 				if (this.activeLeaf) this.activeLeaf.detach();
 				this.activeBook = bookName;
 				this.activeLeaf = this.app.workspace.getRightLeaf(false);
-				//@ts-ignore
+				//@ts-expect-error
 				this.settings.leafID = this.activeLeaf.id;
 				await this.saveSettings();
 				this.activeLeaf.setViewState({
@@ -153,11 +151,11 @@ export default class EpubImporterPlugin extends Plugin {
 			tag,
 			granularity,
 		} = this.settings;
-		const folder = path.join(savePath, epubName);
-		const folderA = path.join(this.vaultPath, folder);
-		if (jetpack.exists(folderA)) {
+		const folderPath = path.join(savePath, epubName);
+		
+		if (jetpack.exists(path.join(this.vaultPath, folderPath))) {
 			if (this.settings.removeDuplicateFolders) {
-				jetpack.remove(folderA);
+				jetpack.remove(path.join(this.vaultPath, folderPath));
 			} else {
 				new Notice("Duplicate folder already exists.");
 				return;
@@ -172,12 +170,12 @@ export default class EpubImporterPlugin extends Plugin {
 		await this.parser.init();
 		if (this.settings.moreLog) console.log("toc is: ", this.parser.toc);
 
-		this.propertys = parseYaml(templateWithVariables(propertysTemplate, this.parser.meta));
+		this.properties = parseYaml(templateWithVariables(propertysTemplate, this.parser.meta));
 
-		this.propertys.tags = (this.propertys.tags ?? []).concat([tag]);
+		this.properties.tags = (this.properties.tags ?? []).concat([tag]);
 
 		this.BookNote = "";
-		await this.app.vault.createFolder(folder);
+		await this.app.vault.createFolder(folderPath);
 
 		this.copyImages();
 
@@ -190,13 +188,13 @@ export default class EpubImporterPlugin extends Plugin {
 			for (const cpt of this.parser.chapters.filter((cpt) => cpt.level == 0)) {
 				content += cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n");
 			}
-			let notePath = folder;
+			let notePath = folderPath;
 			if (this.settings.oneFolder) {
-				notePath = path.join(folder, epubName);
+				notePath = path.join(folderPath, epubName);
 			}
 			await this.app.vault.create(
 				notePath + ".md",
-				tFrontmatter(this.propertys) + "\n" + content
+				tFrontmatter(this.properties) + "\n" + content
 			);
 			return 0;
 		}
@@ -218,12 +216,8 @@ export default class EpubImporterPlugin extends Plugin {
 			};
 			getPaths(cpt);
 			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(cpt.name);
-			const notePath = path.join(folder, ...paths);
-			try {
-				await this.app.vault.createFolder(path.dirname(notePath));
-			} catch (e) {
-				//
-			}
+			const notePath = path.join(folderPath, ...paths);
+			await this.app.vault.createFolder(path.dirname(notePath)).catch(() => {/**/});
 
 			await this.app.vault.create(
 				notePath + ".md",
@@ -240,10 +234,10 @@ export default class EpubImporterPlugin extends Plugin {
 			this.BookNote += `${"\t".repeat(cpt.level)}- [[${notePath}|${cpt.name}]]\n`;
 		}
 
-		this.BookNote = tFrontmatter(this.propertys) + "\n" + this.BookNote;
+		this.BookNote = tFrontmatter(this.properties) + "\n" + this.BookNote;
 		await this.app.vault.create(
 			path.join(
-				folder,
+				folderPath,
 				templateWithVariables(this.settings.mocName, { bookName: epubName })
 			) + ".md",
 			this.BookNote
@@ -263,7 +257,7 @@ export default class EpubImporterPlugin extends Plugin {
 				})
 			);
 		if (this.parser.coverPath) {
-			this.propertys.cover = path.join(this.assetsPath, path.basename(this.parser.coverPath));
+			this.properties.cover = path.join(this.assetsPath, path.basename(this.parser.coverPath));
 		}
 	}
 

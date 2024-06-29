@@ -13,7 +13,7 @@ export abstract class BaseInputModal extends SuggestModal<string> {
 		this.inputEl.addEventListener("paste", (event) => {
 			const clipboardData = event.clipboardData;
 			if (clipboardData.files.length === 1) {
-				//@ts-ignore
+				//@ts-expect-error
 				const path = clipboardData.files[0].path;
 				this.inputEl.value = path;
 			}
