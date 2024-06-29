@@ -132,28 +132,6 @@ export default class EpubImporterPlugin extends Plugin {
 			})
 		);
 
-		this.registerEvent(
-			this.app.workspace.on("file-open", () => {
-				if (!this.settings.allbooks) return;
-				const files_with_tag = getNotesWithTag(this.app, this.settings.tag);
-				const allBooks = this.app.vault.getAbstractFileByPath("AllBooks.md");
-				if (allBooks && allBooks instanceof TFile) {
-					this.app.vault.modify(
-						allBooks,
-						files_with_tag
-							.map((file) => `- [[${file.path}|${file.parent?.name}]]`)
-							.join("\n")
-					);
-				} else {
-					this.app.vault.create(
-						"AllBooks.md",
-						files_with_tag
-							.map((file) => `[[${file.path}|${file.parent?.name}]]`)
-							.join("\n")
-					);
-				}
-			})
-		);
 	}
 
 	async loadSettings(): Promise<void> {
