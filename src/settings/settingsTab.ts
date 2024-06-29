@@ -153,15 +153,6 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
-		new Setting(containerEl)
-			.setName(i18next.t("AllBooks_o"))
-			.setDesc(i18next.t("AllBooks"))
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.allbooks).onChange(async (value) => {
-					this.plugin.settings.allbooks = value;
-					await this.plugin.saveSettings();
-				});
-			});
 		this.containerEl.createEl("h2", { text: i18next.t("developing") });
 		new Setting(containerEl)
 			.setName(i18next.t("Remove duplicate folders_o"))

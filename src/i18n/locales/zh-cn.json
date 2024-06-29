@@ -27,8 +27,6 @@
   "helper": "辅助",
   "Auto open right panel_o": "自动打开右栏",
   "Auto open right panel": "于一本书籍内浏览时，在右栏打开MOC文件，以供导航。",
-  "AllBooks_o": "AllBooks",
-  "AllBooks": "在根目录创建 AllBooks.md 文件。其将自动连接到每一本书籍。",
   "developing": "开发",
   "Remove duplicate folders_o": "删除重复文件夹",
   "Remove duplicate folders": "删除重复的文件夹（有风险，仅适用于了解此选项有用的用户或开发人员）。"
