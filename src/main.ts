@@ -165,7 +165,9 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	async importEpub(epubPath: string) {
-		const epubName = path.basename(epubPath, path.extname(epubPath));
+
+		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
+
 		const {
 			assetsPath,
 			mocPropertysTemplate: propertysTemplate,
