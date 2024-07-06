@@ -1,6 +1,6 @@
 {
 	"name": "epub-importer",
-	"version": "0.3.5",
+	"version": "0.3.6",
 	"description": "Import .epub file into Obsidian as markdown notes.",
 	"main": "lib/main.js",
 	"license": "MIT",
