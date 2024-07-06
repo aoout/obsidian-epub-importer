@@ -169,9 +169,13 @@ export class EpubParser {
 					file.names.push(st.name ? path.basename(st.name) : null);
 					file.hrefs.push(st.urlHref);
 				});
-			const html = jetpack.read(url);
-			if (html) file.html = html;
-			files.push(file);
+			try {
+				const html = jetpack.read(url);
+				if (html) file.html = html;
+				files.push(file);
+			} catch (error) {
+				console.error(`Error reading file at ${url}:`, error);
+			}
 		});
 		files.forEach((file) => {
 			if (!file.hrefs.length || (file.hrefs.length === 1 && file.hrefs[0] === "")) {
