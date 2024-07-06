@@ -131,7 +131,7 @@ export class EpubParser {
 
 		const hrefs: string[] = this.opfContent.package.manifest[0].item
 			.map((item) => item.$.href)
-			.filter((href) => [".html", ".xhtml"].some((sx) => href.includes(sx)))
+			.filter((href) => [".htm", ".html", ".xhtml"].some((sx) => href.includes(sx)))
 			.map((href) => path.join(path.dirname(this.opfFilePath), href));
 
 		// create a mapping from chapters index to hrefs index.
@@ -187,8 +187,9 @@ export class EpubParser {
 				console.error(`Error reading file at ${url}:`, error);
 			}
 		});
+		if(this.moreLog) console.log(files);
 		files.forEach((file) => {
-			if (!file.hrefs.length || (file.hrefs.length === 1 && file.hrefs[0] === "")) {
+			if (!file.hrefs.length || (file.hrefs.length === 1)) {
 				this.sections.find((st) => st.urlPath == file.url).html = file.html;
 			} else {
 				// example: <h2 class="title2" id="CHP5-2">抹香鲸和福卡恰面包</h2>
@@ -206,7 +207,7 @@ export class EpubParser {
 						this.sections.find((c) => c.url == file.url + hrefs[i]).html = html;
 					} catch (e) {
 						console.warn(
-							"Some errors occurred when we split a .html/.xhtml file to sections"
+							"Some errors occurred when we split a .htm/.html/.xhtml file to sections"
 						);
 					}
 				});
