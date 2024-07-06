@@ -77,7 +77,11 @@ export class EpubParser {
 				jetpack.copy(this.epubPath, this.tmpPath, { overwrite: true });
 			}
 			[this.opfFilePath, this.opfContent] = await this.parseBySuffix("opf");
-			[this.ncxFilePath, this.ncxContent] = await this.parseBySuffix("ncx");
+			try {
+				[this.ncxFilePath, this.ncxContent] = await this.parseBySuffix("ncx");
+			} catch (error) {
+				console.log("This epub does not have a .ncx file, parsing will be based on the .opf file content.");
+			}
 			await this.parseToc();
 			await this.parseCover();
 			await this.parseMeta();
@@ -99,7 +103,6 @@ export class EpubParser {
 	}
 
 	generateToc() {
-		const navPoints = this.ncxContent.ncx.navMap[0].navPoint;
 
 		const getToc = (navPoint, level) => {
 			const cpt = new Chapter(
@@ -111,13 +114,20 @@ export class EpubParser {
 			cpt.subItems.forEach((sub) => (sub.parent = cpt));
 			return cpt;
 		};
-		this.toc = navPoints.map((pt) => getToc(pt, 0));
+
 		const getChapters = (chapter: Chapter) => {
 			this.chapters.push(chapter);
 			chapter.subItems.forEach(getChapters, chapter);
 		};
+
+		this.toc = [];
 		this.chapters = [];
-		this.toc.forEach(getChapters);
+
+		if (this.ncxFilePath) {
+			const navPoints = this.ncxContent.ncx.navMap[0].navPoint;
+			this.toc = navPoints.map((pt) => getToc(pt, 0));
+			this.toc.forEach(getChapters);
+		}
 
 		const hrefs: string[] = this.opfContent.package.manifest[0].item
 			.map((item) => item.$.href)
