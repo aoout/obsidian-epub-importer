@@ -52,8 +52,8 @@ export class EpubParser {
 	epubPath: string;
 	moreLog: boolean;
 	tmpPath: string;
-	toc: Chapter[];
-	chapters: Chapter[];
+	toc: Chapter[] = [];
+	chapters: Chapter[] = [];
 	sections: Section[];
 	opfFilePath: string;
 	opfContent: any;
@@ -80,7 +80,9 @@ export class EpubParser {
 			try {
 				[this.ncxFilePath, this.ncxContent] = await this.parseBySuffix("ncx");
 			} catch (error) {
-				console.log("This epub does not have a .ncx file, parsing will be based on the .opf file content.");
+				console.log(
+					"This epub does not have a .ncx file, parsing will be based on the .opf file content."
+				);
 			}
 			await this.parseToc();
 			await this.parseCover();
@@ -95,15 +97,21 @@ export class EpubParser {
 		const parser = new xml2js.Parser();
 		const file = path.join(
 			this.tmpPath,
-			jetpack.cwd(this.tmpPath).find({ matching: `**/**.${suffix}` })[0]
+			jetpack.find(this.tmpPath, { matching: `**/*.${suffix}` })[0]
 		);
 		const data = jetpack.read(file);
-
-		return [file, await parser.parseStringPromise(data)] as const;
+		return [file, await parser.parseStringPromise(data)];
 	}
 
-	generateToc() {
+	updateChaptersByToc() {
+		const getChapters = (chapter: Chapter) => {
+			this.chapters.push(chapter);
+			chapter.subItems.forEach(getChapters, chapter);
+		};
+		this.toc.forEach(getChapters);
+	}
 
+	getTocByNavPoints(navPoints) {
 		const getToc = (navPoint, level) => {
 			const cpt = new Chapter(
 				navPoint.navLabel[0].text[0],
@@ -114,19 +122,14 @@ export class EpubParser {
 			cpt.subItems.forEach((sub) => (sub.parent = cpt));
 			return cpt;
 		};
+		return navPoints.map((pt) => getToc(pt, 0));
+	}
 
-		const getChapters = (chapter: Chapter) => {
-			this.chapters.push(chapter);
-			chapter.subItems.forEach(getChapters, chapter);
-		};
-
-		this.toc = [];
-		this.chapters = [];
-
+	generateToc() {
 		if (this.ncxFilePath) {
 			const navPoints = this.ncxContent.ncx.navMap[0].navPoint;
-			this.toc = navPoints.map((pt) => getToc(pt, 0));
-			this.toc.forEach(getChapters);
+			this.toc = this.getTocByNavPoints(navPoints);
+			this.updateChaptersByToc();
 		}
 
 		const hrefs: string[] = this.opfContent.package.manifest[0].item
@@ -157,8 +160,7 @@ export class EpubParser {
 			}
 		});
 
-		this.chapters = [];
-		this.toc.forEach(getChapters);
+		this.updateChaptersByToc();
 		this.sections = this.chapters.flatMap((cpt) => cpt.sections);
 	}
 
@@ -184,12 +186,15 @@ export class EpubParser {
 				if (html) file.html = html;
 				files.push(file);
 			} catch (error) {
-				console.error(`Error reading file at ${url}:`, error);
+				console.warn(`Error reading file at ${url}:`, error);
+				console.warn(
+					"The failure to read the file might be due to an invalid file path. If such errors are few in this parsing process, it could be because the epub contains some meaningless navPoints, or even advertisements. If this is the case, it will not cause any damage to the content of the book."
+				);
 			}
 		});
-		if(this.moreLog) console.log(files);
+		if (this.moreLog) console.log(files);
 		files.forEach((file) => {
-			if (!file.hrefs.length || (file.hrefs.length === 1)) {
+			if (!file.hrefs.length || file.hrefs.length === 1) {
 				this.sections.find((st) => st.urlPath == file.url).html = file.html;
 			} else {
 				// example: <h2 class="title2" id="CHP5-2">抹香鲸和福卡恰面包</h2>
@@ -226,15 +231,13 @@ export class EpubParser {
 
 	async parseMeta() {
 		const meta = this.opfContent.package.metadata[0];
-
+		const getValue = (key) => (meta[key]?.[0] ? meta[key][0] : "");
 		this.meta = {
-			title: meta["dc:title"]?.[0] ? `"${meta["dc:title"]?.[0]}"` : "",
-			author: meta["dc:creator"]?.[0]?.["_"] ? `"${meta["dc:creator"]?.[0]?.["_"]}"` : "",
-			publisher: meta["dc:publisher"]?.[0] ? `"${meta["dc:publisher"]?.[0]}"` : "",
-			language: meta["dc:language"]?.[0] ? `"${meta["dc:language"]?.[0]}"` : "",
-			bookName: path.basename(this.epubPath, path.extname(this.epubPath))
-				? `"${path.basename(this.epubPath, path.extname(this.epubPath))}"`
-				: "",
+			title: getValue("dc:title"),
+			publisher: getValue("dc:publisher"),
+			language: getValue("dc:language"),
+			author: meta["dc:creator"]?.[0]?.["_"] ? `"${meta["dc:creator"][0]["_"]}"` : "",
+			bookName: path.basename(this.epubPath, path.extname(this.epubPath)),
 		};
 	}
 }
