@@ -152,7 +152,7 @@ export default class EpubImporterPlugin extends Plugin {
 			granularity,
 		} = this.settings;
 		const folderPath = path.join(savePath, epubName);
-		
+
 		if (jetpack.exists(path.join(this.vaultPath, folderPath))) {
 			if (this.settings.removeDuplicateFolders) {
 				jetpack.remove(path.join(this.vaultPath, folderPath));
@@ -219,18 +219,23 @@ export default class EpubImporterPlugin extends Plugin {
 			const notePath = path.join(folderPath, ...paths);
 			await this.app.vault.createFolder(path.dirname(notePath)).catch(() => {/**/});
 
-			await this.app.vault.create(
-				notePath + ".md",
-				(this.settings.notePropertysTemplate
-					? tFrontmatter(
-						parseYaml(
-							templateWithVariables(this.settings.notePropertysTemplate, {
-								created_time: Date.now().toString(),
-							})
-						)
-					  ) + "\n"
-					: "") + cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n")
-			);
+			let content = "";
+			if (this.settings.notePropertysTemplate) {
+				const template = templateWithVariables(this.settings.notePropertysTemplate, {
+					created_time: Date.now().toString(),
+				});
+				const yaml = parseYaml(template);
+				content += tFrontmatter(yaml) + "\n";
+			}
+			content += cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n");
+			try {
+				await this.app.vault.create(notePath + ".md", content);
+			} catch (error) {
+				console.warn(`Failed to create file at ${notePath}.md: ${error}`);
+				console.warn(
+					"If such errors are few in this parsing process, it could be because the epub contains some repeated or wrong navPoints. If this is the case, it will not cause any damage to the content of the book."
+				);
+			}
 			this.BookNote += `${"\t".repeat(cpt.level)}- [[${notePath}|${cpt.name}]]\n`;
 		}
 
