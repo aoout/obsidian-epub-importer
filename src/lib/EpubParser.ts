@@ -100,10 +100,12 @@ export class EpubParser {
 			jetpack.find(this.tmpPath, { matching: `**/*.${suffix}` })[0]
 		);
 		const data = jetpack.read(file);
+
 		return [file, await parser.parseStringPromise(data)];
 	}
 
 	updateChaptersByToc() {
+		this.chapters = [];
 		const getChapters = (chapter: Chapter) => {
 			this.chapters.push(chapter);
 			chapter.subItems.forEach(getChapters, chapter);
