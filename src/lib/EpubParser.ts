@@ -95,7 +95,7 @@ export class EpubParser {
 
 	async parseBySuffix(suffix: string): Promise<[string, any]> {
 		const parser = new xml2js.Parser();
-		const file = path.join(
+		const file = path.posix.join(
 			this.tmpPath,
 			jetpack.cwd(this.tmpPath).find({ matching: `**/*.${suffix}` })[0]
 		);
@@ -117,7 +117,7 @@ export class EpubParser {
 		const getToc = (navPoint, level) => {
 			const cpt = new Chapter(
 				navPoint.navLabel[0].text[0],
-				path.join(path.dirname(this.ncxFilePath), navPoint.content[0].$["src"]),
+				path.posix.join(path.dirname(this.ncxFilePath), navPoint.content[0].$["src"]),
 				navPoint["navPoint"]?.map((pt) => getToc(pt, level + 1)) ?? [],
 				level
 			);
@@ -137,7 +137,7 @@ export class EpubParser {
 		const hrefs: string[] = this.opfContent.package.manifest[0].item
 			.map((item) => item.$.href)
 			.filter((href) => [".htm", ".html", ".xhtml"].some((sx) => href.includes(sx)))
-			.map((href) => path.join(path.dirname(this.opfFilePath), href));
+			.map((href) => path.posix.join(path.dirname(this.opfFilePath), href));
 
 		// create a mapping from chapters index to hrefs index.
 		const indexs = [];
@@ -228,7 +228,7 @@ export class EpubParser {
 				["cover", "Cover"].some((sx) => item.$.id.includes(sx)) &&
 				["png", "jpg", "jpeg"].includes(path.extname(item.$.href).slice(1))
 		);
-		if (coverItem) this.coverPath = path.join(path.dirname(this.opfFilePath), coverItem.$.href);
+		if (coverItem) this.coverPath = path.posix.join(path.dirname(this.opfFilePath), coverItem.$.href);
 	}
 
 	async parseMeta() {

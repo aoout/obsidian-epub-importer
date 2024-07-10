@@ -15,6 +15,7 @@ import * as path from "path";
 import i18next from "i18next";
 import { resources, translationLanguage } from "./i18n/i18next";
 
+
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
 	settings: EpubImporterSettings;
@@ -151,11 +152,11 @@ export default class EpubImporterPlugin extends Plugin {
 			tag,
 			granularity,
 		} = this.settings;
-		const folderPath = path.join(savePath, epubName);
+		const folderPath = path.posix.join(savePath, epubName);
 
-		if (jetpack.exists(path.join(this.vaultPath, folderPath))) {
+		if (jetpack.exists(path.posix.join(this.vaultPath, folderPath))) {
 			if (this.settings.removeDuplicateFolders) {
-				jetpack.remove(path.join(this.vaultPath, folderPath));
+				jetpack.remove(path.posix.join(this.vaultPath, folderPath));
 			} else {
 				new Notice("Duplicate folder already exists.");
 				return;
@@ -190,7 +191,7 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 			let notePath = folderPath;
 			if (this.settings.oneFolder) {
-				notePath = path.join(folderPath, epubName);
+				notePath = path.posix.join(folderPath, epubName);
 			}
 			await this.app.vault.create(
 				notePath + ".md",
@@ -216,7 +217,7 @@ export default class EpubImporterPlugin extends Plugin {
 			};
 			getPaths(cpt);
 			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(cpt.name);
-			const notePath = path.join(folderPath, ...paths);
+			const notePath = path.posix.join(folderPath, ...paths);
 			await this.app.vault.createFolder(path.dirname(notePath)).catch(() => {/**/});
 
 			let content = "";
@@ -241,7 +242,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 		this.BookNote = tFrontmatter(this.properties) + "\n" + this.BookNote;
 		await this.app.vault.create(
-			path.join(
+			path.posix.join(
 				folderPath,
 				templateWithVariables(this.settings.mocName, { bookName: epubName })
 			) + ".md",
@@ -253,16 +254,16 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	copyImages() {
-		const imagesPath = path.join(this.vaultPath, this.assetsPath);
+		const imagesPath = path.posix.join(this.vaultPath, this.assetsPath);
 		jetpack
 			.find(this.parser.tmpPath, { matching: ["*.jpg", "*.jpeg", "*.png"] })
 			.forEach((file) =>
-				jetpack.copy(file, path.join(imagesPath, path.basename(file)), {
+				jetpack.copy(file, path.posix.join(imagesPath, path.basename(file)), {
 					overwrite: true,
 				})
 			);
 		if (this.parser.coverPath) {
-			this.properties.cover = path.join(this.assetsPath, path.basename(this.parser.coverPath));
+			this.properties.cover = path.posix.join(this.assetsPath, path.basename(this.parser.coverPath));
 		}
 	}
 
