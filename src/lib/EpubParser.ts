@@ -97,7 +97,7 @@ export class EpubParser {
 		const parser = new xml2js.Parser();
 		const file = path.join(
 			this.tmpPath,
-			jetpack.find(this.tmpPath, { matching: `**/*.${suffix}` })[0]
+			jetpack.cwd(this.tmpPath).find({ matching: `**/*.${suffix}` })[0]
 		);
 		const data = jetpack.read(file);
 
