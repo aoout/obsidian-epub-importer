@@ -95,10 +95,7 @@ export class EpubParser {
 
 	async parseBySuffix(suffix: string): Promise<[string, any]> {
 		const parser = new xml2js.Parser();
-		const file = path.posix.join(
-			this.tmpPath,
-			jetpack.cwd(this.tmpPath).find({ matching: `**/*.${suffix}` })[0]
-		);
+		const file = jetpack.find(this.tmpPath, { matching: `**/*.${suffix}` })[0];
 		const data = jetpack.read(file);
 
 		return [file, await parser.parseStringPromise(data)];
