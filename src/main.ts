@@ -14,6 +14,7 @@ import { getNotesWithTag, tFrontmatter, templateWithVariables } from "./utils/ob
 import * as path from "path";
 import i18next from "i18next";
 import { resources, translationLanguage } from "./i18n/i18next";
+import { normalize } from "./utils/utils";
 
 
 export default class EpubImporterPlugin extends Plugin {
@@ -143,7 +144,7 @@ export default class EpubImporterPlugin extends Plugin {
 
 	async importEpub(epubPath: string) {
 
-		const epubName = path.basename(epubPath, path.extname(epubPath)).trim();
+		const epubName =  normalize(path.basename(epubPath, path.extname(epubPath)).trim());
 
 		const {
 			assetsPath,
@@ -208,7 +209,7 @@ export default class EpubImporterPlugin extends Plugin {
 		for (const cpt of this.parser.chapters.filter((cpt) => cpt.level <= granularity)) {
 			if (cpt.name.startsWith("... ")) cpt.sections[0].name = cpt.name.replace("... ", "");
 
-			const paths = [cpt.name];
+			const paths = [normalize(cpt.name)];
 			const getPaths = (cpt2: Chapter) => {
 				if (cpt2.parent) {
 					paths.unshift(cpt2.parent.name);
@@ -216,7 +217,7 @@ export default class EpubImporterPlugin extends Plugin {
 				}
 			};
 			getPaths(cpt);
-			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(cpt.name);
+			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(normalize(cpt.name));
 			const notePath = path.posix.join(folderPath, ...paths);
 			await this.app.vault.createFolder(path.dirname(notePath)).catch(() => {/**/});
 
