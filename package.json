@@ -1,51 +1,56 @@
 {
-	"name": "epub-importer",
-	"version": "0.3.7",
-	"description": "Import .epub file into Obsidian as markdown notes.",
-	"main": "lib/main.js",
-	"license": "MIT",
-	"scripts": {
-		"build": "obsidian-plugin build src/main.ts",
-		"dev": "node dev.js",
-		"lint:fix": "eslint --ext .ts,.js,.json src --fix",
-		"lint": "eslint --ext .ts src",
-		"bump": "node commit-and-tag-version.js",
-		"preexport": "npm run build",
-		"export": "node export.js",
-		"predeploy": "npm run bump",
-		"deploy": "npm run export"
-	},
-	"commit-and-tag-version": {
-		"t": ""
-	},
-	"devDependencies": {
-		"@types/node": "^20.8.6",
-		"@types/unzipper": "^0.10.9",
-		"@types/xml2js": "^0.4.12",
-		"@typescript-eslint/eslint-plugin": "^5.59.7",
-		"@typescript-eslint/parser": "^5.59.7",
-		"ansi-colors": "^4.1.3",
-		"builtin-modules": "^3.3.0",
-		"commander": "^10.0.1",
-		"dedent": "^0.7.0",
-		"dotenv": "^16.1.3",
-		"eslint": "^8.41.0",
-		"eslint-config-standard": "^17.0.0",
-		"eslint-plugin-import": "^2.27.5",
-		"eslint-plugin-json": "^3.1.0",
-		"eslint-plugin-jsonc": "^2.8.0",
-		"eslint-plugin-node": "^11.1.0",
-		"eslint-plugin-promise": "^6.1.1",
-		"obsidian": "latest",
-		"obsidian-plugin-cli": "latest",
-		"typescript": "^5.0.4"
-	},
-	"dependencies": {
-		"@lisandra-dev/create-obsidian-plugin": "^1.9.1",
-		"commit-and-tag-version": "^11.0.0",
-		"extract-zip": "^2.0.1",
-		"fs-jetpack": "^5.1.0",
-		"unzipper": "0.10.11",
-		"xml2js": "^0.6.2"
-	}
+  "name": "epub-importer",
+  "version": "0.3.7",
+  "description": "Import .epub file into Obsidian as markdown notes.",
+  "main": "lib/main.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "obsidian-plugin build src/main.ts",
+    "dev": "node dev.js",
+    "lint:fix": "eslint --ext .ts,.js,.json src --fix",
+    "lint": "eslint --ext .ts src",
+    "bump": "node commit-and-tag-version.js",
+    "preexport": "npm run build",
+    "export": "node export.js",
+    "predeploy": "npm run bump",
+    "deploy": "npm run export",
+    "test": "jest"
+  },
+  "commit-and-tag-version": {
+    "t": ""
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.8.6",
+    "@types/unzipper": "^0.10.9",
+    "@types/xml2js": "^0.4.12",
+    "@typescript-eslint/eslint-plugin": "^5.59.7",
+    "@typescript-eslint/parser": "^5.59.7",
+    "ansi-colors": "^4.1.3",
+    "builtin-modules": "^3.3.0",
+    "commander": "^10.0.1",
+    "dedent": "^0.7.0",
+    "dotenv": "^16.1.3",
+    "eslint": "^8.41.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-json": "^3.1.0",
+    "eslint-plugin-jsonc": "^2.8.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "jest": "^29.7.0",
+    "obsidian": "latest",
+    "obsidian-plugin-cli": "latest",
+    "ts-jest": "^29.2.2",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@lisandra-dev/create-obsidian-plugin": "^1.9.1",
+    "commit-and-tag-version": "^11.0.0",
+    "extract-zip": "^2.0.1",
+    "fs-jetpack": "^5.1.0",
+    "ts-node": "^10.9.2",
+    "unzipper": "0.10.11",
+    "xml2js": "^0.6.2"
+  }
 }
