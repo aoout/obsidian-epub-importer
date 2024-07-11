@@ -1,10 +1,9 @@
-import { EpubParser } from "../lib/EpubParser";
-import * as path from "path";
 import jetpack from "fs-jetpack";
+import * as path from "path";
+import { EpubParser } from "../lib/EpubParser";
 
-describe("",()=>{
-	test("",async ()=>{
-
+describe("testing EpubImporter", () => {
+	test("parsing for .epub should be successful", async () => {
 		const epubsDir = path.join(__dirname, "epubs");
 
 		const files = jetpack.find(epubsDir);
