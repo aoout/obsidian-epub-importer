@@ -4,18 +4,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Notice, Plugin, TFile, WorkspaceLeaf, htmlToMarkdown, parseYaml } from "obsidian";
 import { Chapter, EpubParser } from "./lib/EpubParser";
-import { EpubImporterModal } from "./modal";
 import { NoteParser } from "./lib/NoteParser";
+import { EpubImporterModal } from "./modal";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 
 import jetpack from "fs-jetpack";
-import { getNotesWithTag, tFrontmatter, templateWithVariables } from "./utils/obsidianUtils";
-import * as path from "path";
 import i18next from "i18next";
+import beautify from "js-beautify";
+import * as path from "path";
 import { resources, translationLanguage } from "./i18n/i18next";
+import { getNotesWithTag, tFrontmatter, templateWithVariables } from "./utils/obsidianUtils";
 import { normalize } from "./utils/utils";
-
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
@@ -57,27 +57,29 @@ export default class EpubImporterPlugin extends Plugin {
 					new Notice(i18next.t("no libraries"));
 					return;
 				}
-		
+
 				const results = libraries
-					.map(library => jetpack.find(library, { matching: "**/**.epub" }))
+					.map((library) => jetpack.find(library, { matching: "**/**.epub" }))
 					.flat();
-		
+
 				const bookCount = results.length;
 				for (const result of results) {
 					await this.importEpub(jetpack.path(result));
 				}
-		
+
 				if (bookCount === 0) {
 					new Notice(i18next.t("no book in libraries"));
 					console.log(i18next.t("no book in libraries"));
 				} else {
-					const message = i18next.t("translation:sync-libraries_r").replace("${n}", bookCount.toString());
+					const message = i18next
+						.t("translation:sync-libraries_r")
+						.replace("${n}", bookCount.toString());
 					new Notice(message);
 					console.log(message);
 				}
-			}
-		});		
-		
+			},
+		});
+
 		this.registerDomEvent(document, "drop", async (e) => {
 			if (
 				this.settings.byDrag &&
@@ -131,7 +133,6 @@ export default class EpubImporterPlugin extends Plugin {
 				this.app.workspace.revealLeaf(this.activeLeaf);
 			})
 		);
-
 	}
 
 	async loadSettings(): Promise<void> {
@@ -143,8 +144,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	async importEpub(epubPath: string) {
-
-		const epubName =  normalize(path.basename(epubPath, path.extname(epubPath)).trim());
+		const epubName = normalize(path.basename(epubPath, path.extname(epubPath)).trim());
 
 		const {
 			assetsPath,
@@ -217,9 +217,12 @@ export default class EpubImporterPlugin extends Plugin {
 				}
 			};
 			getPaths(cpt);
-			if (cpt.level < granularity && cpt.subItems.length != 0) paths.push(normalize(cpt.name));
+			if (cpt.level < granularity && cpt.subItems.length != 0)
+				paths.push(normalize(cpt.name));
 			const notePath = path.posix.join(folderPath, ...paths);
-			await this.app.vault.createFolder(path.dirname(notePath)).catch(() => {/**/});
+			await this.app.vault.createFolder(path.dirname(notePath)).catch(() => {
+				/**/
+			});
 
 			let content = "";
 			if (this.settings.notePropertysTemplate) {
@@ -264,11 +267,18 @@ export default class EpubImporterPlugin extends Plugin {
 				})
 			);
 		if (this.parser.coverPath) {
-			this.properties.cover = path.posix.join(this.assetsPath, path.basename(this.parser.coverPath));
+			this.properties.cover = path.posix.join(
+				this.assetsPath,
+				path.basename(this.parser.coverPath)
+			);
 		}
 	}
 
 	htmlToMD(htmlString: string): string {
+		if (this.settings.reformatting) {
+			htmlString = beautify.html(htmlString, { indent_size: 0 });
+		}
+
 		// Remove empty tables to prevent errors in the htmlToMarkdown function
 		const domParser = new DOMParser();
 		const htmlDocument = domParser.parseFromString(htmlString, "text/html");
@@ -310,4 +320,4 @@ export default class EpubImporterPlugin extends Plugin {
 					.links.some((link) => link.link + ".md" == note.path);
 			})?.path;
 	}
-} 
+}
