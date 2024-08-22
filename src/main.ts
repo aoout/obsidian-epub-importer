@@ -268,12 +268,36 @@ export default class EpubImporterPlugin extends Plugin {
 		}
 	}
 
-	htmlToMD(html: string): string {
-		let content = htmlToMarkdown(html ? html : "");
-		if (html && !content) {
-			content = html.replace(/<[^>]+>/g, "");
+	htmlToMD(htmlString: string): string {
+		// Remove empty tables to prevent errors in the htmlToMarkdown function
+		const domParser = new DOMParser();
+		const htmlDocument = domParser.parseFromString(htmlString, "text/html");
+		const tables = htmlDocument.querySelectorAll("table");
+
+		function isTableEmpty(tableElement) {
+			const childCount = tableElement.childElementCount;
+			if (childCount == 0) {
+				return true;
+			} else {
+				let totalChildCount = 0;
+				for (let i = 0; i < childCount; i++) {
+					totalChildCount += tableElement.children[i].childElementCount;
+				}
+				return totalChildCount == 0;
+			}
 		}
-		return NoteParser.parse(content, this.assetsPath, this.settings.imageFormat);
+
+		tables.forEach((tableElement) => {
+			if (isTableEmpty(tableElement)) {
+				tableElement.remove();
+			}
+		});
+
+		let markdownContent = htmlToMarkdown(htmlDocument ? htmlString : "");
+		if (htmlString && !markdownContent) {
+			markdownContent = htmlString.replace(/<[^>]+>/g, "");
+		}
+		return NoteParser.parse(markdownContent, this.assetsPath, this.settings.imageFormat);
 	}
 
 	getMocPath(note: TFile): string {
@@ -286,4 +310,4 @@ export default class EpubImporterPlugin extends Plugin {
 					.links.some((link) => link.link + ".md" == note.path);
 			})?.path;
 	}
-}
+} 
