@@ -293,8 +293,6 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 		});
 
-		htmlString = htmlDocument.body.innerHTML;
-
 		let markdownContent = htmlToMarkdown(htmlDocument ? htmlString : "");
 		if (htmlString && !markdownContent) {
 			markdownContent = htmlString.replace(/<[^>]+>/g, "");
