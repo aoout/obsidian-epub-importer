@@ -49,10 +49,16 @@ export class NoteParser {
 	}
 
 	parseInnerLink() {
-		this.content = this.content.replaceAll(/([^!])\[\s*([^\]]*?)\s*\]\(\s*([^)]*?)\s*\)/g,"$1[[$3\\|$2]]");
+		this.content = this.content.replaceAll(
+			/([^!])\[\s*([^\]]*?)\s*\]\(\s*([^)]*?)\s*\)/g,
+			"$1[[$3\\|$2]]"
+		);
 	}
 
 	parseHttpLink() {
-		this.content = this.content.replaceAll(/\[\[(https:\/\/[^\]|]*?)(?:\|([^\]]*?))?]]/g,"[$2]($1)");
+		this.content = this.content.replaceAll(
+			/\[\[(https:\/\/[^\]|]*?)(?:\|([^\]]*?))?]]/g,
+			"[$2]($1)"
+		);
 	}
 }

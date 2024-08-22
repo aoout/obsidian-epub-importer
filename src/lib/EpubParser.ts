@@ -2,10 +2,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import * as xml2js from "xml2js";
-import * as path from "path";
 import extract from "extract-zip";
 import jetpack from "fs-jetpack";
+import * as path from "path";
+import * as xml2js from "xml2js";
 
 export class Section {
 	name: string;
@@ -225,7 +225,8 @@ export class EpubParser {
 				["cover", "Cover"].some((sx) => item.$.id.includes(sx)) &&
 				["png", "jpg", "jpeg"].includes(path.extname(item.$.href).slice(1))
 		);
-		if (coverItem) this.coverPath = path.posix.join(path.dirname(this.opfFilePath), coverItem.$.href);
+		if (coverItem)
+			this.coverPath = path.posix.join(path.dirname(this.opfFilePath), coverItem.$.href);
 	}
 
 	async parseMeta() {
