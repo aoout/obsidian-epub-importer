@@ -142,6 +142,15 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+		new Setting(containerEl)
+			.setName("reformatting")
+			.setDesc("reformatting")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.reformatting).onChange(async (value) => {
+					this.plugin.settings.reformatting = value;
+					await this.plugin.saveSettings();
+				});
+			});
 
 		this.containerEl.createEl("h2", { text: i18next.t("helper") });
 		new Setting(containerEl)

@@ -15,6 +15,7 @@ import * as path from "path";
 import i18next from "i18next";
 import { resources, translationLanguage } from "./i18n/i18next";
 import { normalize } from "./utils/utils";
+import beautify from "js-beautify";
 
 
 export default class EpubImporterPlugin extends Plugin {
@@ -269,6 +270,10 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	htmlToMD(htmlString: string): string {
+		if(this.settings.reformatting){
+			htmlString = beautify.html(htmlString,{"indent_size":0});
+		}
+		
 		// Remove empty tables to prevent errors in the htmlToMarkdown function
 		const domParser = new DOMParser();
 		const htmlDocument = domParser.parseFromString(htmlString, "text/html");
