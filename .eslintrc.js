@@ -28,14 +28,6 @@ module.exports = {
 		"linebreak-style": ["error", "windows"],
 		quotes: ["error", "double"],
 		semi: ["error", "always"],
-		"jsonc/sort-keys": [
-			"error",
-			"asc",
-			{
-				caseSensitive: false,
-				natural: false,
-			},
-		],
 		"@typescript-eslint/ban-ts-comment": "off",
 	},
 };

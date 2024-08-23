@@ -78,8 +78,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					});
 			});
 		new Setting(containerEl)
-			.setName("moc file name")
-			.setDesc("filename for moc file.")
+			.setName(i18next.t("Moc fileName_o"))
+			.setDesc(i18next.t("Moc fileName"))
 			.addText((text) =>
 				text.setValue(this.plugin.settings.mocName).onChange(async (value) => {
 					this.plugin.settings.mocName = value;
@@ -87,8 +87,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				})
 			);
 		new Setting(containerEl)
-			.setName("notePropertysTemplate")
-			.setDesc("notePropertysTemplate.")
+			.setName(i18next.t("notePropertysTemplate_o"))
+			.setDesc(i18next.t("notePropertysTemplate"))
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.notePropertysTemplate).onChange(
 					async (value) => {
@@ -98,8 +98,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				);
 			});
 		new Setting(containerEl)
-			.setName("oneNote")
-			.setDesc("Convert the entire book into a single markdown file.")
+			.setName(i18next.t("oneNote_o"))
+			.setDesc(i18next.t("oneNote"))
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.oneNote).onChange(async (value) => {
 					this.plugin.settings.oneNote = value;
@@ -107,8 +107,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 		new Setting(containerEl)
-			.setName("oneFolder")
-			.setDesc("Place oneNote in a folder with the same name.")
+			.setName(i18next.t("oneFolder_o"))
+			.setDesc(i18next.t("oneFolder"))
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.oneFolder).onChange(async (value) => {
 					this.plugin.settings.oneFolder = value;
@@ -143,8 +143,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					})
 			);
 		new Setting(containerEl)
-			.setName("reformatting")
-			.setDesc("reformatting")
+			.setName(i18next.t("reformatting_o"))
+			.setDesc(i18next.t("reformatting"))
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.reformatting).onChange(async (value) => {
 					this.plugin.settings.reformatting = value;
@@ -175,8 +175,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					});
 			});
 		new Setting(containerEl)
-			.setName("more log")
-			.setDesc("more log")
+			.setName(i18next.t("more log_o"))
+			.setDesc(i18next.t("more log"))
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.moreLog)
