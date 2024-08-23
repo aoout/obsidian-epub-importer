@@ -150,12 +150,17 @@ export class EpubParser {
 					[...indexs].sort((a, b) => b - a).find((v) => v < hrefIndex)
 				);
 				if (parent > 0) this.chapters[parent].sections.push(new Section(null, href));
-				else
+				else {
+					const html = jetpack.read(href);
+					const parser = new DOMParser();
+					const title = parser.parseFromString(html, "text/html").title;
+
 					this.toc.splice(
 						k++,
 						0,
-						new Chapter(path.basename(href, path.extname(href)), href)
+						new Chapter(title ? title : path.basename(href, path.extname(href)), href)
 					);
+				}
 			}
 		});
 
