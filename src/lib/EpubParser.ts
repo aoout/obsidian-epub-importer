@@ -6,23 +6,22 @@ import extract from "extract-zip";
 import jetpack from "fs-jetpack";
 import * as path from "path";
 import * as xml2js from "xml2js";
-import { normalize } from "../utils/utils";
 
 export class Section {
-    name: string;
-    url: string;
-    urlPath: string;
-    urlHref: string;
-    html: string;
+	name: string;
+	url: string;
+	urlPath: string;
+	urlHref: string;
+	html: string;
 
-    constructor(name: string, url: string) {
-        this.name = normalize(name);
-        this.url = url;
-        const [urlPath, urlHref] = url.split("#");
-        this.urlPath = urlPath;
-        this.urlHref = urlHref ?? "";
-        this.html = "";
-    }
+	constructor(name: string, url: string) {
+		this.name = name;
+		this.url = url;
+		const [urlPath, urlHref] = url.split("#");
+		this.urlPath = urlPath;
+		this.urlHref = urlHref ?? "";
+		this.html = "";
+	}
 }
 
 export class Chapter {
@@ -183,7 +182,7 @@ export class EpubParser {
 			this.sections
 				.filter((st) => st.urlPath == url)
 				.forEach((st) => {
-					file.names.push(normalize(st.name ? path.basename(st.name) : null));
+					file.names.push(st.name ? path.basename(st.name) : null);
 					file.hrefs.push(st.urlHref);
 				});
 			try {
