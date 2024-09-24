@@ -219,7 +219,7 @@ export default class EpubImporterPlugin extends Plugin {
 			getPaths(cpt);
 			if (cpt.level < granularity && cpt.subItems.length != 0)
 				paths.push(normalize(cpt.name));
-			const notePath = path.posix.join(folderPath, ...paths);
+			const notePath = path.posix.join(folderPath, ...paths.map(normalize));
 			await this.app.vault.createFolder(path.dirname(notePath)).catch(() => {
 				/**/
 			});
