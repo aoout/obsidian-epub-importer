@@ -151,6 +151,88 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+		const regexContainer = this.containerEl.createDiv();
+		new Setting(regexContainer)
+			.setName(i18next.t("add_regex_o"))
+			.setDesc(i18next.t("add_regex"))
+			.addButton((button) => {
+				button.setButtonText("add")
+					.onClick(() => {
+						let pattern = "";
+						let replacement = "";
+						const regexSetting = new Setting(regexContainer)
+							.addText((text) => {
+								text.setPlaceholder("regex")
+									.onChange((value) => {
+										pattern = value;
+									});
+							})
+							.addText((text) => {
+								text.setPlaceholder("replacement")
+									.onChange((value) => {
+										replacement = value;
+									});
+							})
+							.addButton((button) => {
+								button.setButtonText("confirm")
+									.onClick(async () => {
+										const timestamp = Date.now();
+										this.plugin.settings.regexPatterns.push({ timestamp, pattern, replacement });
+										await this.plugin.saveSettings();
+										regexSetting.settingEl.querySelectorAll("button").forEach((btn) => {
+											if (btn.innerText === "confirm") {
+												btn.remove();
+											}
+											if (btn.innerText === "cancel") {
+												btn.innerText = "remove";
+											}
+										});
+									});
+							})
+							.addButton((button) => {
+								button.setButtonText("cancel")
+									.onClick(() => {
+										regexSetting.settingEl.remove();
+									});
+							});
+					});
+			});
+		this.plugin.settings.regexPatterns.forEach((pattern) => {
+			const regexSetting = new Setting(regexContainer)
+				.addText((text) => {
+					text.setPlaceholder("regex")
+						.setValue(pattern.pattern)
+						.onChange(async (value) => {
+							const targetPattern = this.plugin.settings.regexPatterns.find(p => p.timestamp === pattern.timestamp);
+							if (targetPattern) {
+								targetPattern.pattern = value;
+								await this.plugin.saveSettings();
+							}
+						});
+				})
+				.addText((text) => {
+					text.setPlaceholder("replacement")
+						.setValue(pattern.replacement)
+						.onChange(async (value) => {
+							const targetPattern = this.plugin.settings.regexPatterns.find(p => p.timestamp === pattern.timestamp);
+							if (targetPattern) {
+								targetPattern.replacement = value;
+								await this.plugin.saveSettings();
+							}
+						});
+				})
+				.addButton((button) => {
+					button.setButtonText("remove")
+						.onClick(async () => {
+							const targetIndex = this.plugin.settings.regexPatterns.findIndex(p => p.timestamp === pattern.timestamp);
+							if (targetIndex !== -1) {
+								this.plugin.settings.regexPatterns.splice(targetIndex, 1);
+								regexSetting.settingEl.remove();
+								await this.plugin.saveSettings();
+							}
+						});
+				});
+		});
 
 		this.containerEl.createEl("h2", { text: i18next.t("helper") });
 		new Setting(containerEl)

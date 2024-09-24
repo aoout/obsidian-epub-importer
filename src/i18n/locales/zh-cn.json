@@ -34,6 +34,8 @@
   "imageFormat": "图片的格式，标注现在仅支持中文。",
   "reformatting_o": "再格式化",
   "reformatting": "对内容重新排版. 这可能会破坏图书原本的排版。",
+  "add_regex_o": "增添正则表达式",
+  "add_regex": "增添一个用户定义正则表达式。",
   "helper": "辅助",
   "Auto open right panel_o": "自动打开右栏",
   "Auto open right panel": "于一本书籍内浏览时，在右栏打开MOC文件，以供导航。",
