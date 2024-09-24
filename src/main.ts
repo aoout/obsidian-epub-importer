@@ -209,7 +209,7 @@ export default class EpubImporterPlugin extends Plugin {
 		for (const cpt of this.parser.chapters.filter((cpt) => cpt.level <= granularity)) {
 			if (cpt.name.startsWith("... ")) cpt.sections[0].name = cpt.name.replace("... ", "");
 
-			const paths = [normalize(cpt.name)];
+			const paths = [cpt.name];
 			const getPaths = (cpt2: Chapter) => {
 				if (cpt2.parent) {
 					paths.unshift(cpt2.parent.name);
