@@ -307,7 +307,7 @@ export default class EpubImporterPlugin extends Plugin {
 		if (htmlString && !markdownContent) {
 			markdownContent = htmlString.replace(/<[^>]+>/g, "");
 		}
-		return NoteParser.parse(markdownContent, this.assetsPath, this.settings.imageFormat);
+		return NoteParser.parse(markdownContent, this.assetsPath, this.settings.imageFormat, this.settings.regexPatterns);
 	}
 
 	getMocPath(note: TFile): string {

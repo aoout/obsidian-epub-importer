@@ -1,12 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+
+import { RegexPattern } from "../settings/settings";
+
 export class NoteParser {
 	content: string;
-	static parse(originNote: string, assetsPath: string, imageFormat: string) {
+	static parse(originNote: string, assetsPath: string, imageFormat: string, userRegexes: RegexPattern[]) {
 		const parser = new NoteParser(originNote);
 		parser.parseImagePath(assetsPath, imageFormat);
 		parser.parseFontNote();
 		parser.parseInnerLink();
 		parser.parseHttpLink();
+		parser.applyUserRegexes(userRegexes);
 		return parser.content;
 	}
 
@@ -60,5 +64,11 @@ export class NoteParser {
 			/\[\[(https:\/\/[^\]|]*?)(?:\|([^\]]*?))?]]/g,
 			"[$2]($1)"
 		);
+	}
+
+	applyUserRegexes(userRegexes: RegexPattern[]) {
+		for (const userRegex of userRegexes) {
+			this.content = this.content.replaceAll(new RegExp(userRegex.pattern, "g"), userRegex.replacement);
+		}
 	}
 }
