@@ -11,7 +11,7 @@ so you can read the book directly in obsidian, and make some marks, make some li
 
 ![](assets/demo.gif)
 
-Or, you can add some `libraries`` in settings, and epubs under the paths will come out when you type the command.
+Or, you can add some `libraries` in settings, and epubs under the paths will come out when you type the command.
 
 ### Propertys template
 
