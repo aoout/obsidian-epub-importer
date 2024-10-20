@@ -1,11 +1,11 @@
-import { App } from "obsidian";
 import jetpack from "fs-jetpack";
+import { App } from "obsidian";
 import { BaseInputModal } from "../utils/BaseInputModal";
 
 export class ZipImporterModal extends BaseInputModal {
 	backupPath: string;
 
-	constructor(app: App, backupPath:string,onSubmit: (result: string) => void) {
+	constructor(app: App, backupPath: string, onSubmit: (result: string) => void) {
 		super(app, onSubmit, true);
 		this.backupPath = backupPath;
 		this.listenForEnter(this.validatePath);
@@ -17,7 +17,7 @@ export class ZipImporterModal extends BaseInputModal {
 
 	getSuggestions(query: string): string[] | Promise<string[]> {
 		console.log(this.backupPath);
-		const result = jetpack.find(this.backupPath,{matching:"**/*.zip"});
+		const result = jetpack.find(this.backupPath, { matching: "**/*.zip" });
 		return result.filter((path) => path.includes(query));
 	}
 

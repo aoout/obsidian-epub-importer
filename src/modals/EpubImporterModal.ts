@@ -1,5 +1,5 @@
-import { App } from "obsidian";
 import jetpack from "fs-jetpack";
+import { App } from "obsidian";
 import { BaseInputModal } from "../utils/BaseInputModal";
 
 export class EpubImporterModal extends BaseInputModal {

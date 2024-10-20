@@ -6,21 +6,19 @@ import { Notice, Plugin, TFile, WorkspaceLeaf, htmlToMarkdown, parseYaml } from 
 import { Chapter, EpubParser } from "./lib/EpubParser";
 import { NoteParser } from "./lib/NoteParser";
 import { EpubImporterModal } from "./modals/EpubImporterModal";
+import { ZipExporterModal } from "./modals/ZipExporterModal";
+import { ZipImporterModal } from "./modals/ZipImporterModal";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
+import { getNotesWithTag, tFrontmatter, templateWithVariables } from "./utils/obsidianUtils";
+import { normalize } from "./utils/utils";
 
+import AdmZip from "adm-zip";
 import jetpack from "fs-jetpack";
 import i18next from "i18next";
 import beautify from "js-beautify";
 import * as path from "path";
 import { resources, translationLanguage } from "./i18n/i18next";
-import { ZipExporterModal } from "./modals/ZipExporterModal";
-import { getNotesWithTag, tFrontmatter, templateWithVariables } from "./utils/obsidianUtils";
-import { normalize } from "./utils/utils";
-
-
-import AdmZip from "adm-zip";
-import { ZipImporterModal } from "./modals/ZipImporterModal";
 
 export default class EpubImporterPlugin extends Plugin {
 	vaultPath: string;
@@ -89,27 +87,34 @@ export default class EpubImporterPlugin extends Plugin {
 			id: "export-book",
 			name: "export a book to .zip format",
 			callback: () => {
-				new ZipExporterModal(this.app,this.settings.tag,(bookName)=>{
-					const bookPath = path.posix.join(this.vaultPath,this.settings.savePath, bookName);
+				new ZipExporterModal(this.app, this.settings.tag, (bookName) => {
+					const bookPath = path.posix.join(
+						this.vaultPath,
+						this.settings.savePath,
+						bookName
+					);
 					const zip = new AdmZip();
 					zip.addLocalFolder(bookPath);
-					const exportPath = path.posix.join(this.settings.backupPath, bookName+".zip");
+					const exportPath = path.posix.join(this.settings.backupPath, bookName + ".zip");
 					zip.writeZip(exportPath);
 				}).open();
-			}
+			},
 		});
 
 		this.addCommand({
 			id: "import-book",
 			name: "import a book from .zip format",
 			callback: () => {
-				new ZipImporterModal(this.app,this.settings.backupPath,(zipPath)=>{
-					const bookPath = path.posix.join(this.vaultPath,this.settings.savePath, path.basename(zipPath).split(".zip")[0]);
+				new ZipImporterModal(this.app, this.settings.backupPath, (zipPath) => {
+					const bookPath = path.posix.join(
+						this.vaultPath,
+						this.settings.savePath,
+						path.basename(zipPath).split(".zip")[0]
+					);
 					const zip = new AdmZip(zipPath);
 					zip.extractAllTo(bookPath);
 				}).open();
-				
-			}
+			},
 		});
 
 		this.registerDomEvent(document, "drop", async (e) => {
@@ -339,7 +344,12 @@ export default class EpubImporterPlugin extends Plugin {
 		if (htmlString && !markdownContent) {
 			markdownContent = htmlString.replace(/<[^>]+>/g, "");
 		}
-		return NoteParser.parse(markdownContent, this.assetsPath, this.settings.imageFormat, this.settings.regexPatterns);
+		return NoteParser.parse(
+			markdownContent,
+			this.assetsPath,
+			this.settings.imageFormat,
+			this.settings.regexPatterns
+		);
 	}
 
 	getMocPath(note: TFile): string {
