@@ -12,7 +12,7 @@ export class ZipImporterModal extends BaseInputModal {
 	}
 
 	validatePath(path: string): boolean {
-		return true;
+		return jetpack.exists(path) === "file" && path.endsWith(".zip");
 	}
 
 	getSuggestions(query: string): string[] | Promise<string[]> {

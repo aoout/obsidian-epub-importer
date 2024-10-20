@@ -11,11 +11,7 @@ export class ZipExporterModal extends BaseInputModal {
 		super(app, onSubmit, true);
 		this.app = app;
 		this.tag = tag;
-		this.listenForEnter(this.validatePath);
-	}
-
-	validatePath(path: string): boolean {
-		return true;
+		this.listenForEnter();
 	}
 
 	getSuggestions(query: string): string[] | Promise<string[]> {
@@ -29,6 +25,6 @@ export class ZipExporterModal extends BaseInputModal {
 	}
 
 	onChooseSuggestion(item: string) {
-		this.trySubmit(item, this.validatePath);
+		this.trySubmit(item);
 	}
 }
