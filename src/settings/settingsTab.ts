@@ -63,6 +63,15 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+		new Setting(containerEl)
+			.setName("backupPath")
+			.setDesc("backupPath")
+			.addText((text) =>
+				text.setValue(this.plugin.settings.backupPath).onChange(async (value) => {
+					this.plugin.settings.backupPath = value;
+					await this.plugin.saveSettings();
+				})
+			);
 		this.containerEl.createEl("h2", { text: i18next.t("display") });
 		new Setting(containerEl)
 			.setName(i18next.t("Hierarchy depth_o"))

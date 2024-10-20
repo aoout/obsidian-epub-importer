@@ -20,6 +20,7 @@
     "t": ""
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.8.6",
     "@types/unzipper": "^0.10.9",
@@ -47,6 +48,7 @@
   "dependencies": {
     "@lisandra-dev/create-obsidian-plugin": "^1.9.1",
     "@types/js-beautify": "^1.14.3",
+    "adm-zip": "^0.5.16",
     "commit-and-tag-version": "^11.0.0",
     "extract-zip": "^2.0.1",
     "fs-jetpack": "^5.1.0",

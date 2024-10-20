@@ -10,6 +10,7 @@ export interface EpubImporterSettings {
 	byDrag: boolean;
 	savePath: string;
 	assetsPath: string;
+	backupPath: string;
 	granularity: number;
 	mocName: string;
 	notePropertysTemplate: string;
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	byDrag: false,
 	savePath: "",
 	assetsPath: "{{savePath}}/{{bookName}}/images",
+	backupPath: "",
 	granularity: 4,
 	mocName: "{{bookName}}",
 	notePropertysTemplate: "",
