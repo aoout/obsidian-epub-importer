@@ -20,7 +20,7 @@ export abstract class BaseInputModal extends SuggestModal<string> {
 		});
 	}
 
-	listenForEnter(validate: (value: string) => boolean) {
+	listenForEnter(validate: (value: string) => boolean = () => true) {
 		this.inputEl.addEventListener("keyup", (event) => {
 			if (event.key === "Enter" && this.inputEl.value) {
 				this.trySubmit(this.inputEl.value, validate);
@@ -28,7 +28,7 @@ export abstract class BaseInputModal extends SuggestModal<string> {
 		});
 	}
 
-	trySubmit(value: string, validate: (value: string) => boolean) {
+	trySubmit(value: string, validate: (value: string) => boolean = () => true) {
 		if (validate(value)) {
 			this.onSubmit(value);
 			this.close();
