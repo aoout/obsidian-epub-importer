@@ -84,8 +84,8 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "export-book",
-			name: "export a book to .zip format",
+			id: "export-zip",
+			name: "Export a book to the backup directory in .zip format",
 			callback: () => {
 				new ZipExporterModal(this.app, this.settings.tag, (bookName) => {
 					const bookPath = path.posix.join(
@@ -102,8 +102,8 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "import-book",
-			name: "import a book from .zip format",
+			id: "import-zip",
+			name: "Import a .zip book from the backup directory into the vault in .zip format",
 			callback: () => {
 				new ZipImporterModal(this.app, this.settings.backupPath, (zipPath) => {
 					const bookPath = path.posix.join(

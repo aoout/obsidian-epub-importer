@@ -64,8 +64,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				})
 			);
 		new Setting(containerEl)
-			.setName("backupPath")
-			.setDesc("backupPath")
+			.setName("backup directory Path")
+			.setDesc("The plugin will use this directory to back up books in .zip format.")
 			.addText((text) =>
 				text.setValue(this.plugin.settings.backupPath).onChange(async (value) => {
 					this.plugin.settings.backupPath = value;
