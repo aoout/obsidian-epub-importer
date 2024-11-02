@@ -25,7 +25,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
-		this.containerEl.createEl("h2", { text: i18next.t("import") });
+		new Setting(containerEl).setName(i18next.t("import")).setHeading();
 		new Setting(containerEl)
 			.setName(i18next.t("Library_o"))
 			.setDesc(i18next.t("Library"))
@@ -44,7 +44,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
-		this.containerEl.createEl("h2", { text: i18next.t("storage") });
+		new Setting(containerEl).setName(i18next.t("storage")).setHeading();
 		new Setting(containerEl)
 			.setName(i18next.t("Save path_o"))
 			.setDesc(i18next.t("Save path"))
@@ -72,7 +72,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
-		this.containerEl.createEl("h2", { text: i18next.t("display") });
+		new Setting(containerEl).setName(i18next.t("display")).setHeading();
 		new Setting(containerEl)
 			.setName(i18next.t("Hierarchy depth_o"))
 			.setDesc(i18next.t("Hierarchy depth"))
@@ -134,7 +134,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 
-		this.containerEl.createEl("h2", { text: i18next.t("content") });
+		new Setting(containerEl).setName(i18next.t("content")).setHeading();
 		new Setting(containerEl)
 			.setName(i18next.t("imageFormat_o"))
 			.setDesc(i18next.t("imageFormat"))
@@ -243,7 +243,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 		});
 
-		this.containerEl.createEl("h2", { text: i18next.t("helper") });
+		new Setting(containerEl).setName(i18next.t("helper")).setHeading();
 		new Setting(containerEl)
 			.setName(i18next.t("Auto open right panel_o"))
 			.setDesc(i18next.t("Auto open right panel"))
@@ -253,7 +253,7 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
-		this.containerEl.createEl("h2", { text: i18next.t("developing") });
+		new Setting(containerEl).setName(i18next.t("developing")).setHeading();
 		new Setting(containerEl)
 			.setName(i18next.t("Remove duplicate folders_o"))
 			.setDesc(i18next.t("Remove duplicate folders"))
