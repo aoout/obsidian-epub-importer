@@ -24,6 +24,7 @@ export interface EpubImporterSettings {
 	removeDuplicateFolders: boolean;
 	moreLog: boolean;
 	leafID: string;
+	booknavIntegration: boolean;
 }
 
 export const DEFAULT_SETTINGS: EpubImporterSettings = {
@@ -46,5 +47,6 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	autoOpenRightPanel: false,
 	removeDuplicateFolders: false,
 	moreLog: false,
-	leafID: ""
+	leafID: "",
+	booknavIntegration: false
 };
