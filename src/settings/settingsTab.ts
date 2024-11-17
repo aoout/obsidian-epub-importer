@@ -276,5 +276,18 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+
+		new Setting(containerEl).setName("Experimental").setHeading();
+		new Setting(containerEl)
+			.setName("Booknav integration")
+			.setDesc("Insert the booknav code block at the bottom of each note.")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.booknavIntegration)
+					.onChange(async (value) => {
+						this.plugin.settings.booknavIntegration = value;
+						await this.plugin.saveSettings();
+					});
+			});
 	}
 }

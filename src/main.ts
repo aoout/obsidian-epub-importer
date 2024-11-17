@@ -243,7 +243,8 @@ export default class EpubImporterPlugin extends Plugin {
 			.sort((a, b) => b.level - a.level)
 			.forEach((cpt) => cpt.parent.sections.push(...cpt.sections));
 
-		for (const cpt of this.parser.chapters.filter((cpt) => cpt.level <= granularity)) {
+		const filteredChapters = this.parser.chapters.filter((cpt) => cpt.level <= granularity);
+		for (const [index, cpt] of filteredChapters.entries()) {
 			if (cpt.name.startsWith("... ")) cpt.sections[0].name = cpt.name.replace("... ", "");
 
 			const paths = [cpt.name];
@@ -270,6 +271,19 @@ export default class EpubImporterPlugin extends Plugin {
 				content += tFrontmatter(yaml) + "\n";
 			}
 			content += cpt.sections.map((st) => this.htmlToMD(st.html)).join("\n\n");
+			if(this.settings.booknavIntegration){
+				content += "\n\n```booknav\n"
+				if (index > 0) {
+					const prevCpt = filteredChapters[index - 1];
+					content += `[[${prevCpt.name}|prev]]\n`;
+				}
+				if (index < filteredChapters.length - 1) {
+					const nextCpt = filteredChapters[index + 1];
+					content += `[[${nextCpt.name}|next]]\n`;
+				}
+				content += "```"
+			}
+			
 			try {
 				await this.app.vault.create(notePath + ".md", content);
 			} catch (error) {
