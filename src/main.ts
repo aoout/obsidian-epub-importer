@@ -2,9 +2,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Notice, Plugin, TFile, WorkspaceLeaf, htmlToMarkdown, parseYaml } from "obsidian";
+import { Notice, Plugin, TFile, WorkspaceLeaf, parseYaml } from "obsidian";
 import { Chapter, EpubParser } from "./lib/EpubParser";
-import { NoteParser } from "./lib/NoteParser";
+import { create } from "./lib/TurndownService";
 import { EpubImporterModal } from "./modals/EpubImporterModal";
 import { ZipExporterModal } from "./modals/ZipExporterModal";
 import { ZipImporterModal } from "./modals/ZipImporterModal";
@@ -18,6 +18,7 @@ import jetpack from "fs-jetpack";
 import i18next from "i18next";
 import beautify from "js-beautify";
 import * as path from "path";
+import TurndownService from "turndown";
 import { resources, translationLanguage } from "./i18n/i18next";
 
 export default class EpubImporterPlugin extends Plugin {
@@ -354,16 +355,13 @@ export default class EpubImporterPlugin extends Plugin {
 			}
 		});
 
-		let markdownContent = htmlToMarkdown(htmlDocument ? htmlString : "");
+		var turndownService = create(this.assetsPath, this.settings.imageFormat);
+		
+		let markdownContent = turndownService.turndown(htmlString) ?? "";
 		if (htmlString && !markdownContent) {
 			markdownContent = htmlString.replace(/<[^>]+>/g, "");
 		}
-		return NoteParser.parse(
-			markdownContent,
-			this.assetsPath,
-			this.settings.imageFormat,
-			this.settings.regexPatterns
-		);
+		return markdownContent;
 	}
 
 	getMocPath(note: TFile): string {

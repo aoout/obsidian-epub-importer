@@ -19,7 +19,6 @@ export interface EpubImporterSettings {
 	mocPropertysTemplate: string;
 	imageFormat: string;
 	reformatting: boolean;
-	regexPatterns: RegexPattern[];
 	autoOpenRightPanel: boolean;
 	removeDuplicateFolders: boolean;
 	moreLog: boolean;
@@ -43,7 +42,6 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 		"title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
 	imageFormat: "![](imagePath)",
 	reformatting: false,
-	regexPatterns: [],
 	autoOpenRightPanel: false,
 	removeDuplicateFolders: false,
 	moreLog: false,

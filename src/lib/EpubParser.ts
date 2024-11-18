@@ -18,25 +18,6 @@ const findProperty = (obj: any, propertyName: string): any => {
 	return null;
 };
 
-
-export class Preprocessor {
-    transform(html: string): string {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        
-        const images = doc.getElementsByTagName("img");
-        for (const img of images) {
-            const src = img.getAttribute("src");
-            // 排除以 http:// 或 https:// 开头的在线图片
-            if (!src?.startsWith("http://") && !src?.startsWith("https://")) {
-                img.setAttribute("alt", "More work needed");
-            }
-        }
-
-        return doc.documentElement.outerHTML;
-    }
-}
-
 /*
  * Section class represents a content unit in an EPUB book
  * 
@@ -253,11 +234,9 @@ export class NCXParser {
  */
 class ContentSplitter {
     private sections: Section[];
-    private htmlTransformer: Preprocessor;
 
     constructor(sections: Section[]) {
         this.sections = sections;
-        this.htmlTransformer = new Preprocessor();
     }
 
     // Process section content from files
@@ -282,7 +261,7 @@ class ContentSplitter {
             try {
                 const html = jetpack.read(url);
                 if (html) {
-                    file.html = this.htmlTransformer.transform(html);
+                    file.html = html;
                 }
                 files.push(file);
             } catch (error) {
