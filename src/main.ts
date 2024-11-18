@@ -361,6 +361,22 @@ export default class EpubImporterPlugin extends Plugin {
 		if (htmlString && !markdownContent) {
 			markdownContent = htmlString.replace(/<[^>]+>/g, "");
 		}
+		// Promote heading levels until there is a level 1 heading
+		const hasH1 = /^# [^\n]+/m.test(markdownContent);
+		if (!hasH1) {
+			// Find the highest level heading
+			const headingMatch = markdownContent.match(/^(#{1,6}) [^\n]+/m);
+			if (headingMatch) {
+				const highestLevel = headingMatch[1].length;
+				const levelDiff = highestLevel - 1;
+				// Promote all headings by the appropriate level
+				markdownContent = markdownContent.replace(
+					/^(#{1,6}) /gm,
+					(match, hashes) => '#'.repeat(Math.max(1, hashes.length - levelDiff)) + ' '
+				);
+			}
+		}
+
 		return markdownContent;
 	}
 
