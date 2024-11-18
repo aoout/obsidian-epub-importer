@@ -18,27 +18,37 @@ export class NoteParser {
 		this.content = originNote;
 	}
 
-	parseImagePath(assetsPath: string, imageFormat: string) {
-		// TODO: Avoid accidentally damaging the text content
+parseImagePath(assetsPath: string, imageFormat: string) {
+    // First, convert image paths to use the 'images' directory and remove unnecessary path parts
+    this.content = this.content.replaceAll(
+        /!\[More work needed\]\(.*\/(.*?)\.(jpg|jpeg|png)\)/g, 
+        (match, p1, p2) => {
+            return `![More work needed](${assetsPath}/${p1}.${p2})`;
+        }
+    );
 
-		this.content = this.content
-			.replaceAll(/!\[.*?\]\((.*?)\.(jpg|jpeg|png)\)/g, "![](images/$1.$2)")
-			.replaceAll(/!\[\].*?\(.*?([^\\/]*)\.(jpg|jpeg|png)\)/g, "![](images/$1.$2)");
-		if (imageFormat == "![](imagePath)") {
-			assetsPath = assetsPath.replaceAll(" ", "%20");
-		}
-		if (imageFormat == "![[imagePath]]") {
-			this.content = this.content.replaceAll(/!\[\]\(([^)]*images[^)]*)\)/g, "![[$1]]");
-		}
-		if (imageFormat == "![[imagePath|caption]]") {
-			this.content = this.content.replaceAll(/!\[\]\(([^)]*images[^)]*)\)/g, "![[$1]]");
-			this.content = this.content.replaceAll(
-				/!\[\[(.*images.*)\]\]\n+(\**图.*)\n/g,
-				"![[$1|$2]]\n"
-			);
-		}
-		this.content = this.content.replaceAll(/images/g, assetsPath);
-	}
+    // Handle URL encoding of spaces in standard Markdown format
+    if (imageFormat === "![](imagePath)") {
+        this.content = this.content.replaceAll(
+            /!\[More work needed\]\(${assetsPath}\/images\/(.*?)\.(jpg|jpeg|png)\)/g,
+            (match, p1, p2) => {
+                const cleanedPath = p1.replace(/.*\/\.\.\//, '');
+                return `![More work needed](${assetsPath.replaceAll(" ", "%20")}/${cleanedPath}.${p2})`;
+            }
+        );
+    }
+
+    // Convert to Obsidian's wikilink format and replace paths
+    if (imageFormat === "![[imagePath]]") {
+        this.content = this.content.replaceAll(
+            /!\[More work needed\]\(${assetsPath}\/images\/(.*?)\.(jpg|jpeg|png)\)/g,
+            (match, p1, p2) => {
+                const cleanedPath = p1.replace(/.*\/\.\.\//, '');
+                return `![[${assetsPath}/${cleanedPath}.${p2}]]`;
+            }
+        );
+    }
+}
 
 	parseFontNote() {
 		// example: [[2]](ab0c_defg.html#hi_j0kl) -> [^2]
