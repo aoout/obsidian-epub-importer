@@ -7,6 +7,17 @@ import jetpack from "fs-jetpack";
 import * as path from "path";
 import * as xml2js from "xml2js";
 
+const findProperty = (obj: any, propertyName: string): any => {
+	if (obj[propertyName]) return obj[propertyName];
+	for (const key in obj) {
+		if (typeof obj[key] === 'object' && obj[key] !== null) {
+			const result = findProperty(obj[key], propertyName);
+			if (result) return result;
+		}
+	}
+	return null;
+};
+
 export class Section {
 	name: string;
 	url: string;
@@ -139,8 +150,9 @@ export class EpubParser {
 			this.toc = this.getTocByNavPoints(navPoints);
 			this.updateChaptersByToc();
 		}
+		const manifest = findProperty(this.opfContent, 'manifest')[0];
 
-		const hrefs: string[] = this.opfContent.package.manifest[0].item
+		const hrefs: string[] = manifest.item
 			.map((item) => item.$.href)
 			.filter((href) => [".htm", ".html", ".xhtml"].some((sx) => href.includes(sx)))
 			.map((href) => path.posix.join(path.dirname(this.opfFilePath), href));
@@ -234,7 +246,8 @@ export class EpubParser {
 	}
 
 	async parseCover() {
-		const coverItem = this.opfContent.package.manifest[0].item.find(
+		const manifest = findProperty(this.opfContent, "manifest")[0].item;
+		const coverItem = manifest.find(
 			(item) =>
 				["cover", "Cover"].some((sx) => item.$.id.includes(sx)) &&
 				["png", "jpg", "jpeg"].includes(path.extname(item.$.href).slice(1))
@@ -244,7 +257,7 @@ export class EpubParser {
 	}
 
 	async parseMeta() {
-		const meta = this.opfContent.package.metadata[0];
+		const meta = findProperty(this.opfContent, "metadata")[0];
 		const getValue = (key) => (meta[key]?.[0] ? meta[key][0] : "");
 		this.meta = {
 			title: getValue("dc:title"),
