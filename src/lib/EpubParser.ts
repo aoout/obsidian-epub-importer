@@ -298,23 +298,42 @@ class ContentSplitter {
 
     // Split section content by anchors
     private splitContentByAnchors(file) {
-        const reg = new RegExp(`<.*?id=['"](?:${file.hrefs.join("|")})['"].*?>`, "g");
-        const htmls = this.splitHtmlByDelimiter(file.html, reg, file.hrefs.length + 1);
-        if (file.hrefs[0] != "") htmls.shift();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(file.html, "text/html");
+        const htmls: string[] = [];
+        let currentHtml = "";
+        let currentNode = doc.body.firstChild;
+
+        while (currentNode) {
+            if (currentNode.nodeType === Node.ELEMENT_NODE) {
+                const element = currentNode as Element;
+                const id = element.getAttribute("id");
+                
+                if (id && file.hrefs.includes(id)) {
+                    if (currentHtml) {
+                        htmls.push(currentHtml);
+                        currentHtml = "";
+                    }
+                }
+            }
+            
+            currentHtml += (currentNode as Element).outerHTML || currentNode.textContent;
+            currentNode = currentNode.nextSibling;
+        }
+
+        if (currentHtml) {
+            htmls.push(currentHtml);
+        }
+
+        if (file.hrefs[0] != "") {
+            htmls.shift();
+        }
 
         const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
         this.distributeHtmlToSections(file, htmls, hrefs);
     }
 
-    // Split HTML content
-    private splitHtmlByDelimiter(html: string, delimiter: RegExp, n: number): string[] {
-        const parts = html.split(delimiter);
-        return n > parts.length
-            ? parts
-            : [...parts.slice(0, n - 1), parts.slice(n - 1).join(String(delimiter))];
-    }
-
-    // Assign split content to sections
+    // Assign split content to sections  
     private distributeHtmlToSections(file, htmls: string[], hrefs: string[]) {
         htmls.forEach((html, i) => {
             try {
