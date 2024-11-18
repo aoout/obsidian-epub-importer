@@ -473,7 +473,6 @@ export class EpubParser {
     private async parseToc() {
         this.initializeToc();
         const urls = [...new Set(this.sections.map((st) => st.urlPath))];
-        if (this.moreLog) console.log(urls);
         const contentSplitter = new ContentSplitter(this.sections);
         await contentSplitter.extractSectionContent();
     }
