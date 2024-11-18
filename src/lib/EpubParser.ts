@@ -112,16 +112,25 @@ export class EpubParser {
 
 	getTocByNavPoints(navPoints) {
 		const getToc = (navPoint, level) => {
-			const cpt = new Chapter(
-				navPoint.navLabel[0].text[0],
-				path.posix.join(path.dirname(this.ncxFilePath), navPoint.content[0].$["src"]),
-				navPoint["navPoint"]?.map((pt) => getToc(pt, level + 1)) ?? [],
-				level
-			);
+			let title = navPoint.navLabel?.[0]?.text?.[0];
+			if (!title) {
+				const filePath = path.posix.join(path.dirname(this.ncxFilePath), navPoint.content[0].$["src"]);
+				const html = jetpack.read(filePath);
+				const parser = new DOMParser();
+				title = parser.parseFromString(html, "text/html").title;
+				if (!title) {
+					title = path.basename(filePath, path.extname(filePath)) ?? "";
+				}
+			}
+			if (!title) return null;
+			
+			const filePath = path.posix.join(path.dirname(this.ncxFilePath), navPoint.content[0].$["src"]);
+			const subItems = navPoint["navPoint"]?.map((pt) => getToc(pt, level + 1)) ?? [];
+			const cpt = new Chapter(title, filePath, subItems, level);
 			cpt.subItems.forEach((sub) => (sub.parent = cpt));
 			return cpt;
 		};
-		return navPoints.map((pt) => getToc(pt, 0));
+		return navPoints.map((pt) => getToc(pt, 0)).filter(Boolean);
 	}
 
 	generateToc() {
