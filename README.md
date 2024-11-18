@@ -1,21 +1,30 @@
 # Epub Importer
 
-Import .epub file into your [Obsidian vault](https://obsidian.md/) as markdown notes. For more information, there are some text: [obsidian-epub-importer/wiki](https://github.com/aoout/obsidian-epub-importer/wiki). And there is a example vault: [mdReader](https://github.com/aoout/mdReader).
+[中文文档](README.zh-CN.md)
 
-## Usage
+A plugin that converts EPUB files into markdown notes for your [Obsidian vault](https://obsidian.md/). This allows you to read, annotate and link your ebooks directly within Obsidian.
 
-Run `Epub Importer: Import epub to your vault` command, and input the absolute path to .epub file you want to import it into your obsidian vault.
+For detailed information, check out the [Wiki](https://github.com/aoout/obsidian-epub-importer/wiki) or explore our [Example Vault](https://github.com/aoout/mdReader).
 
-Then, the .epub file will be converted to a folder and some notes, 
-so you can read the book directly in obsidian, and make some marks, make some links and notes.
+## Getting Started
 
-![](assets/demo.gif)
+There are two ways to import EPUB files:
 
-Or, you can add some `libraries` in settings, and epubs under the paths will come out when you type the command.
+1. Run the command `Epub Importer: Import epub to your vault` and provide the absolute path to your EPUB file.
 
-### Propertys template
+2. Configure `libraries` paths in settings - when you run the import command, all EPUB files from these paths will be available for selection.
 
-all available variables:
+Once imported, the EPUB will be converted into a folder containing markdown notes, allowing you to:
+- Read the book directly in Obsidian
+- Add annotations and highlights
+- Create links between notes
+- Organize your reading materials
+
+![Plugin Demo](assets/demo.gif)
+
+### Property Template
+
+All available variables:
 
 ```
 - {{bookName}}
@@ -25,7 +34,7 @@ all available variables:
 - {{language}}
 ```
 
-example:
+Example:
 
 ```
 title: {{bookName}}
@@ -34,42 +43,49 @@ publisher: {{publisher}}
 status: false
 ```
 
-### AssetsPath template
+### Assets Path Template
 
-all available variables:
+All available variables:
 
 ```
 - {{savePath}}
 - {{bookName}}
 ```
 
-example:
+Example:
 
 ```
 {{savePath}}/{{bookName}}/images
 ```
-# Helpful for Workflow
+# Platform Support
 
-## [obsidian-custom-sort](https://github.com/SebastianMC/obsidian-custom-sort)
+- **Windows**: Fully tested and supported
+- **Linux/Mac**: Limited testing - if you encounter issues, please use appropriate tags when creating issues
+- **Mobile**: Not supported due to technical limitations with .epub file handling
 
-This plug-in has powerful sorting capabilities and can keep our file explorer in order. If you want to know more information, you can see [wiki/How-to-sort-files](https://github.com/aoout/obsidian-epub-importer/wiki/How-to-sort-files%3F) and [Example Vault](https://github.com/aoout/mdReader).
+# Recommended Companion Plugins
 
-## [obsidian-remember-cursor-position](https://github.com/dy-sh/obsidian-remember-cursor-position)
+## File Organization
+[obsidian-custom-sort](https://github.com/SebastianMC/obsidian-custom-sort)
+- Powerful sorting capabilities for file explorer
+- Helps maintain organized library structure
+- See [wiki/How-to-sort-files](https://github.com/aoout/obsidian-epub-importer/wiki/How-to-sort-files%3F) and [Example Vault](https://github.com/aoout/mdReader) for setup guides
 
-This plugin can record the position of the cursor and restore it when opening the same file again. However, unfortunately, what we want most is to record the position of the editor scroll.
+## Reading Experience
+[obsidian-remember-cursor-position](https://github.com/dy-sh/obsidian-remember-cursor-position)
+- Remembers and restores cursor position between sessions
+- Note: Currently does not support remembering scroll position
 
-## How do you use epub importer
+# Community & Support
 
-Please share your usage and experience, feel free to write someting in [obsidian-epub-importer/discussions](https://github.com/aoout/obsidian-epub-importer/discussions).
+## Share Your Experience
+We'd love to hear how you use this plugin! Share your stories and workflows in our [discussions](https://github.com/aoout/obsidian-epub-importer/discussions).
 
-# Platform
+## Reporting Issues
+When reporting bugs:
+1. Always include the problematic .epub file
+2. If file upload is difficult, email to: wuz66280@gmail.com
+3. For Linux/Mac users, please use appropriate platform tags
 
-The function is tested based on **Windows** system, so I'm not sure that the bugs on **linux** and **mac** will be fixed. If you are using **Linux** or **Mac**, _please use the corresponding tag on your issue to prompt me when creating an issue_.
-
-Mobile support is not possible as I cannot unzip the .epub file due to limitations.
-
-# How to issue bugs
-
-You should also upload the .epub file the same time when the bug occurred. If you have some trouble uploading files, you can send them directly to my email: wuz66280@gmail.com.
-
-I'm not going to implement every feature request, and if I don't think it fits my philosophy, then maybe I won't do it.
+## Feature Requests
+Please note that feature requests are evaluated based on alignment with the plugin's core philosophy and may not all be implemented.
