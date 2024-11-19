@@ -1,9 +1,3 @@
-export interface RegexPattern {
-	timestamp: number;
-	pattern: string;
-	replacement: string;
-}
-
 export interface EpubImporterSettings {
 	tag: string;
 	libraries: string[];
@@ -14,8 +8,6 @@ export interface EpubImporterSettings {
 	granularity: number;
 	mocName: string;
 	notePropertysTemplate: string;
-	oneNote: boolean;
-	oneFolder: boolean;
 	mocPropertysTemplate: string;
 	imageFormat: string;
 	reformatting: boolean;
@@ -36,8 +28,6 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	granularity: 4,
 	mocName: "{{bookName}}",
 	notePropertysTemplate: "",
-	oneNote: false,
-	oneFolder: true,
 	mocPropertysTemplate:
 		"title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
 	imageFormat: "![](imagePath)",

@@ -107,24 +107,6 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				);
 			});
 		new Setting(containerEl)
-			.setName(i18next.t("oneNote_o"))
-			.setDesc(i18next.t("oneNote"))
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.oneNote).onChange(async (value) => {
-					this.plugin.settings.oneNote = value;
-					await this.plugin.saveSettings();
-				});
-			});
-		new Setting(containerEl)
-			.setName(i18next.t("oneFolder_o"))
-			.setDesc(i18next.t("oneFolder"))
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.oneFolder).onChange(async (value) => {
-					this.plugin.settings.oneFolder = value;
-					await this.plugin.saveSettings();
-				});
-			});
-		new Setting(containerEl)
 			.setName(i18next.t("Propertys template_o"))
 			.setDesc(i18next.t("Propertys template"))
 			.addTextArea((text) => {

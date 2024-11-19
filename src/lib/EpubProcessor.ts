@@ -34,7 +34,7 @@ export default class EpubProcessor {
 
         this.copyImages();
 
-        if (this.settings.oneNote) {
+        if (this.settings.granularity === 0) {
             await this.createSingleNote(epubName, folderPath);
         } else {
             await this.createChapterNotes(folderPath, epubName);
@@ -81,9 +81,7 @@ export default class EpubProcessor {
         this.mergeChapters();
         const content = this.generateSingleNoteContent();
 
-        const notePath = this.settings.oneFolder ?
-            path.posix.join(folderPath, epubName) :
-            folderPath;
+        const notePath = path.posix.join(folderPath, epubName);
 
         await this.app.vault.create(
             notePath + ".md",
