@@ -1,6 +1,6 @@
 import jetpack from "fs-jetpack";
 import * as path from "path";
-import { EpubParser } from "../lib/EpubParser";
+import { EpubParser } from "../lib/EpubParser/EpubParser";
 
 describe("testing EpubImporter", () => {
 	test("parsing for .epub should be successful", async () => {
