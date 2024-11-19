@@ -96,15 +96,13 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				})
 			);
 		new Setting(containerEl)
-			.setName(i18next.t("notePropertysTemplate_o"))
-			.setDesc(i18next.t("notePropertysTemplate"))
+			.setName(i18next.t("noteTemplate_o"))
+			.setDesc(i18next.t("noteTemplate"))
 			.addTextArea((text) => {
-				text.setValue(this.plugin.settings.notePropertysTemplate).onChange(
-					async (value) => {
-						this.plugin.settings.notePropertysTemplate = value;
-						await this.plugin.saveSettings();
-					}
-				);
+				text.setValue(this.plugin.settings.noteTemplate).onChange(async (value) => {
+					this.plugin.settings.noteTemplate = value;
+					await this.plugin.saveSettings();
+				});
 			});
 		new Setting(containerEl)
 			.setName(i18next.t("Propertys template_o"))
@@ -172,19 +170,6 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.moreLog)
 					.onChange(async (value) => {
 						this.plugin.settings.moreLog = value;
-						await this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(containerEl).setName("Experimental").setHeading();
-		new Setting(containerEl)
-			.setName("Booknav integration")
-			.setDesc("Insert the booknav code block at the bottom of each note.")
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.booknavIntegration)
-					.onChange(async (value) => {
-						this.plugin.settings.booknavIntegration = value;
 						await this.plugin.saveSettings();
 					});
 			});

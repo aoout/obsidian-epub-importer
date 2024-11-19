@@ -7,7 +7,7 @@ export interface EpubImporterSettings {
 	backupPath: string;
 	granularity: number;
 	mocName: string;
-	notePropertysTemplate: string;
+	noteTemplate: string;
 	mocPropertysTemplate: string;
 	imageFormat: string;
 	reformatting: boolean;
@@ -15,7 +15,6 @@ export interface EpubImporterSettings {
 	removeDuplicateFolders: boolean;
 	moreLog: boolean;
 	leafID: string;
-	booknavIntegration: boolean;
 }
 
 export const DEFAULT_SETTINGS: EpubImporterSettings = {
@@ -27,7 +26,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	backupPath: "",
 	granularity: 4,
 	mocName: "{{bookName}}",
-	notePropertysTemplate: "",
+	noteTemplate: "",
 	mocPropertysTemplate:
 		"title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
 	imageFormat: "![](imagePath)",
@@ -35,6 +34,5 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	autoOpenRightPanel: false,
 	removeDuplicateFolders: false,
 	moreLog: false,
-	leafID: "",
-	booknavIntegration: false
+	leafID: ""
 };

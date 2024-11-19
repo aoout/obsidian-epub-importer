@@ -165,32 +165,27 @@ export default class EpubProcessor {
     private generateChapterContent(chapter: Chapter, index: number, allChapters: Chapter[]): string {
         let content = "";
 
-        if (this.settings.notePropertysTemplate) {
-            const template = templateWithVariables(this.settings.notePropertysTemplate, {
+        if (this.settings.noteTemplate) {
+            const chapterContent = chapter.sections.map(st => this.htmlToMD(st.html)).join("\n\n");
+            content = templateWithVariables(this.settings.noteTemplate, {
                 created_time: Date.now().toString(),
+                content: chapterContent,
+                prev: index > 0 ? allChapters[index - 1].name : "",
+                next: index < allChapters.length - 1 ? allChapters[index + 1].name : "",
+                chapter_name: chapter.name,
+                chapter_level: chapter.level.toString(),
+                chapter_index: (index + 1).toString(),
+                book_name: this.parser.meta["title"] || "",
+                book_author: this.parser.meta["author"] || "",
+                book_publisher: this.parser.meta["publisher"] || "",
+                book_language: this.parser.meta["language"] || "",
+                book_rights: this.parser.meta["rights"] || "",
+                book_description: this.parser.meta["description"] || "",
+                total_chars: chapterContent.length.toString()
             });
-            content += tFrontmatter(parseYaml(template)) + "\n";
-        }
-
-        content += chapter.sections.map(st => this.htmlToMD(st.html)).join("\n\n");
-
-        if (this.settings.booknavIntegration) {
-            content += this.generateBookNav(index, allChapters);
         }
 
         return content;
-    }
-
-    private generateBookNav(index: number, chapters: Chapter[]): string {
-        let nav = "\n\n```booknav\n";
-        if (index > 0) {
-            nav += `[[${chapters[index - 1].name}|prev]]\n`;
-        }
-        if (index < chapters.length - 1) {
-            nav += `[[${chapters[index + 1].name}|next]]\n`;
-        }
-        nav += "```";
-        return nav;
     }
 
     private async createMocFile(folderPath: string, epubName: string) {
