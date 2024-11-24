@@ -16,7 +16,6 @@ export class ZipImporterModal extends BaseInputModal {
 	}
 
 	getSuggestions(query: string): string[] | Promise<string[]> {
-		console.log(this.backupPath);
 		const result = jetpack.find(this.backupPath, { matching: "**/*.zip" });
 		return result.filter((path) => path.includes(query));
 	}

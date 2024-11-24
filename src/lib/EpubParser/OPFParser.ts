@@ -13,7 +13,7 @@ export class OPFParser {
     }
 
     getHtmlFiles(): string[] {
-        const manifest = findProperty(this.content, 'manifest')[0];
+        const manifest = findProperty(this.content, "manifest")[0];
         return manifest.item
             .map((item) => item.$.href)
             .filter((href) => [".htm", ".html", ".xhtml"].some((sx) => href.includes(sx)))
