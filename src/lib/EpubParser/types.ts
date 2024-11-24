@@ -18,8 +18,8 @@ export class Section {
 export class Chapter {
     sections: Section[];
     subItems: Chapter[];
-    level: number;
-    parent: Chapter;
+    level = 0;
+    parent: Chapter = null;
 
     constructor(
         name: string,
