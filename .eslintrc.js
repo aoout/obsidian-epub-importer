@@ -24,8 +24,8 @@ module.exports = {
 	},
 	plugins: ["@typescript-eslint"],
 	rules: {
-		indent: ["error", "tab"],
-		"linebreak-style": ["error", "windows"],
+		indent: "off",
+		"linebreak-style": "off",
 		quotes: ["error", "double"],
 		semi: ["error", "always"],
 		"@typescript-eslint/ban-ts-comment": "off",
