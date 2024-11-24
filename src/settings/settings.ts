@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	backupPath: "",
 	granularity: 4,
 	mocName: "{{bookName}}",
-	noteTemplate: "",
+	noteTemplate: "{{content}}",
 	mocPropertysTemplate:
 		"title: {{bookName}}\nauthor: {{author}}\npublisher: {{publisher}}\nstatus: false",
 	imageFormat: "![](imagePath)",
