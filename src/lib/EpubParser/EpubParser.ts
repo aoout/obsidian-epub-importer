@@ -169,7 +169,7 @@ export class EpubParser {
 		const hrefs = this.opfParser.getHtmlFiles();
 		const hrefIndex = hrefs.indexOf(href);
 		console.log("indexs:",indexs);
-		const parentIndex = indexs.findIndex(idx => idx < hrefIndex);
+		const parentIndex = indexs.findLastIndex(idx => idx < hrefIndex);
 
 		if (parentIndex >= 0) {
 			if (this.moreLog) console.log("Adding unmapped file to existing chapter:", this.chapters[parentIndex].sections[0].urlPath);
