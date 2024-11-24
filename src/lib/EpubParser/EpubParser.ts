@@ -83,6 +83,7 @@ export class EpubParser {
 
 	private async parseToc() {
 		this.initializeToc();
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const urls = [...new Set(this.sections.map((st) => st.urlPath))];
 		const contentSplitter = new ContentSplitter(this.sections);
 		await contentSplitter.extractSectionContent();

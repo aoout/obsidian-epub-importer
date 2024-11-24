@@ -3,22 +3,23 @@ import { EpubImporterSettings } from "../settings/settings";
 import EpubParser, { Chapter } from "./EpubParser";
 import * as path from "path";
 import { normalize } from "../utils/utils";
-import { Notice, parseYaml } from "obsidian";
+import { App, Notice, parseYaml } from "obsidian";
 import jetpack from "fs-jetpack";
 import beautify from "js-beautify";
 import { create } from "./TurndownService";
 import { templateWithVariables, tFrontmatter } from "../utils/obsidianUtils";
 
 export default class EpubProcessor {
-    private app: any;
+    private app: App;
     private settings: EpubImporterSettings;
     private vaultPath: string;
     private parser: EpubParser;
-    private BookNote: string = "";
+    private BookNote = "";
     private assetsPath: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private properties: any;
 
-    constructor(app: any, settings: EpubImporterSettings, vaultPath: string) {
+    constructor(app: App, settings: EpubImporterSettings, vaultPath: string) {
         this.app = app;
         this.settings = settings;
         this.vaultPath = vaultPath;
@@ -248,7 +249,7 @@ export default class EpubProcessor {
                 const levelDiff = headingMatch[1].length - 1;
                 markdown = markdown.replace(
                     /^(#{1,6}) /gm,
-                    (_, hashes) => '#'.repeat(Math.max(1, hashes.length - levelDiff)) + ' '
+                    (_, hashes) => "#".repeat(Math.max(1, hashes.length - levelDiff)) + " "
                 );
             }
         }
