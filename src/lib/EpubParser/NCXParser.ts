@@ -3,6 +3,7 @@
 import * as path from "path";
 import jetpack from "fs-jetpack";
 import { Chapter } from "./types";
+import { findProperty } from "./utils";
 
 export class NCXParser {
     filePath: string;
@@ -14,7 +15,7 @@ export class NCXParser {
     }
 
     getToc(): Chapter[] {
-        const navPoints = this.content.ncx.navMap[0].navPoint;
+        const navPoints = findProperty(this.content, ["navPoint", "navpoint"]);
 
         const getToc = (navPoint, level) => {
             const title = navPoint.navLabel?.[0]?.text?.[0] || (() => {
