@@ -19,7 +19,7 @@ export class NCXParser {
 
         const getToc = (navPoint, level) => {
             const title = navPoint.navLabel?.[0]?.text?.[0] || (() => {
-                const filePath = path.posix.join(path.dirname(this.filePath), navPoint.content[0].$["src"]);
+                const filePath = path.posix.join(path.dirname(this.filePath), navPoint.content[0].$["src"].replace(/%20/g, " "));
                 const html = jetpack.read(filePath);
                 return new DOMParser().parseFromString(html, "text/html").title ||
                     path.basename(filePath, path.extname(filePath)) || "";
@@ -27,7 +27,7 @@ export class NCXParser {
 
             if (!title) return null;
 
-            const filePath = path.posix.join(path.dirname(this.filePath), navPoint.content[0].$["src"]);
+            const filePath = path.posix.join(path.dirname(this.filePath), navPoint.content[0].$["src"].replace(/%20/g, " "));
             const subItems = navPoint["navPoint"]?.map(pt => getToc(pt, level + 1)) || [];
             const chapter = new Chapter(title, filePath, subItems, level);
             subItems.forEach(sub => sub.parent = chapter);
@@ -37,4 +37,4 @@ export class NCXParser {
 
         return navPoints.map(pt => getToc(pt, 0)).filter(Boolean);
     }
-} 
+}
