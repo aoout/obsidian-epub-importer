@@ -31,14 +31,26 @@ export class OPFParser {
     }
 
     getMeta(): object {
-        const meta = findProperty(this.content, "metadata")[0];
-        const getValue = (key) =>  `"${meta[key]?.[0]}"` ?? "";
-
-        return {
-            title: getValue("dc:title"),
-            publisher: getValue("dc:publisher"),
-            language: getValue("dc:language"),
-            author: meta["dc:creator"]?.[0]?.["_"] ? `"${meta["dc:creator"][0]["_"]}"` : "",
+        const meta = findProperty(this.content, "metadata")?.[0] ?? {};
+        const defaultMeta = {
+            title: "",
+            publisher: "",
+            language: "",
+            author: ""
         };
+
+        try {
+            const getValue = (key: string): string => 
+                meta[key]?.[0] ? `"${meta[key][0]}"` : "";
+
+            return {
+                title: getValue("dc:title"),
+                publisher: getValue("dc:publisher"),
+                language: getValue("dc:language"), 
+                author: meta["dc:creator"]?.[0]?.["_"] ? `"${meta["dc:creator"][0]["_"]}"` : ""
+            };
+        } catch {
+            return defaultMeta;
+        }
     }
 } 
