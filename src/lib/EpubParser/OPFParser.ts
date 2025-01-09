@@ -32,7 +32,7 @@ export class OPFParser {
 
     getMeta(): object {
         const meta = findProperty(this.content, "metadata")[0];
-        const getValue = (key) => meta[key]?.[0] ?? "";
+        const getValue = (key) =>  `"${meta[key]?.[0]}"` ?? "";
 
         return {
             title: getValue("dc:title"),
