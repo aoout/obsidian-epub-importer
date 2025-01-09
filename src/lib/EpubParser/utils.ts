@@ -5,6 +5,13 @@ export const findProperty = (obj: any, propertyNames: string | string[]): any =>
     
     for (const name of names) {
         if (obj[name]) return obj[name];
+        
+        for (const key in obj) {
+            const parts = key.split(':');
+            if (parts.length === 2 && parts[1] === name && obj[key]) {
+                return obj[key];
+            }
+        }
     }
     
     if (Array.isArray(obj)) {
@@ -23,4 +30,4 @@ export const findProperty = (obj: any, propertyNames: string | string[]): any =>
         }
     }
     return null;
-}; 
+};
