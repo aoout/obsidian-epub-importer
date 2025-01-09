@@ -69,34 +69,50 @@ export class ContentSplitter {
         const doc = parser.parseFromString(file.html, "text/html");
         const htmls: string[] = [];
         let currentHtml = "";
-        let currentNode = doc.body.firstChild;
+        let currentAnchorIndex = -1;
 
-        while (currentNode) {
-            if (currentNode.nodeType === Node.ELEMENT_NODE) {
-                const element = currentNode as Element;
+        const processNode = (node: Node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const element = node as Element;
                 const id = element.getAttribute("id");
                 
                 if (id && file.hrefs.includes(id)) {
-                    if (currentHtml) {
+                    if (currentHtml && currentAnchorIndex >= 0) {
                         htmls.push(currentHtml);
-                        currentHtml = "";
                     }
+                    currentHtml = "";
+                    currentAnchorIndex = file.hrefs.indexOf(id);
                 }
+
+                currentHtml += (node as Element).outerHTML;
+            } else if (node.nodeType === Node.TEXT_NODE) {
+                currentHtml += node.textContent;
             }
-            
-            currentHtml += (currentNode as Element).outerHTML || currentNode.textContent;
-            currentNode = currentNode.nextSibling;
-        }
+
+            if (node.hasChildNodes()) {
+                node.childNodes.forEach(child => {
+                    processNode(child);
+                });
+            }
+        };
+
+        processNode(doc.body);
 
         if (currentHtml) {
             htmls.push(currentHtml);
         }
 
-        if (file.hrefs[0] != "") {
-            htmls.shift();
+        const hrefs = file.hrefs.map(href => href ? "#" + href : "");
+        
+        if (htmls.length !== file.hrefs.length) {
+            file.hrefs.forEach((href, index) => {
+                const element = doc.getElementById(href);
+                if (!element) {
+                    console.warn(`锚点 ${href} (索引 ${index}) 未找到`);
+                }
+            });
         }
 
-        const hrefs = file.hrefs.map((href) => (href ? "#" + href : ""));
         this.distributeHtmlToSections(file, htmls, hrefs);
     }
 
