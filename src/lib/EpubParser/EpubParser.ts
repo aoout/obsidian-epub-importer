@@ -23,6 +23,7 @@ export class EpubParser {
 	toc: Chapter[] = [];
 	chapters: Chapter[] = [];
 	sections: Section[];
+	existingTitles: Set<string> = new Set();
 
 	moreLog: boolean;
 
@@ -177,9 +178,18 @@ export class EpubParser {
 		} else {
 			if (this.moreLog) console.log("Creating new chapter for unmapped file:", href);
 			const html = jetpack.read(href);
-			const title = new DOMParser()
+			let title = new DOMParser()
 				.parseFromString(html, "text/html")
 				.title || path.basename(href, path.extname(href));
+
+	
+			let suffix = 1;
+			let originalTitle = title;
+			while (this.existingTitles.has(title)) {
+				title = `${originalTitle} (${suffix})`;
+				suffix++;
+			}
+			this.existingTitles.add(title);
 
 			this.toc.splice(k, 0, new Chapter(title, href));
 		}
