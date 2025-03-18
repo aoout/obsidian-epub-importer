@@ -1,36 +1,35 @@
-name: Release Obsidian Plugin
+name: Release Obsidian plugin
+
 on:
-  workflow_dispatch:
-    inputs:
-      bump:
-        default: false
-        description: "Bump version based on semantic release"
-        type: boolean
-        required: false
-      beta:
-        default: false
-        description: "Beta release"
-        type: boolean
-        required: false
   push:
     tags:
       - "*"
 
-permissions:
-  contents: write
 jobs:
-  release:
-    if: (github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && !inputs.bump)
-    uses: mara-li/reusable-workflows/.github/workflows/obsidian-plugin-release.yaml@main
-    with:
-      PLUGIN_NAME: "EpubImporter"
-    secrets: 
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  bump-version:
-    if: ${{ inputs.bump }}
-    uses: mara-li/reusable-workflows/.github/workflows/obsidian-plugin-bump-version.yaml@main
-    with:
-      PLUGIN_NAME: EpubImporter
-      BETA: ${{ inputs.beta }}
-    secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+
+      - name: Build plugin
+        run: |
+          npm install
+          npm run build
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+
+          gh release create "$tag" \
+            --title="$tag" \
+            --draft \
+            main.js manifest.json styles.css

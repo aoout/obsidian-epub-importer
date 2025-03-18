@@ -61,19 +61,6 @@ if (opt.beta) {
 			type: "json",
 		},
 	];
-	commitAndTagVersion({
-		infile: "CHANGELOG-beta.md",
-		bumpFiles: bumpFiles,
-		prerelease: "",
-		dryRun: opt.dryRun,
-		tagPrefix: "",
-	})
-		.then(() => {
-			console.log("Done");
-		})
-		.catch((err) => {
-			console.error(err);
-		});
 } else {
 	const versionBumped = opt.releaseAs
 		? c.info("Release as " + c.underline(opt.releaseAs))
@@ -98,17 +85,4 @@ if (opt.beta) {
 			type: "json",
 		},
 	];
-	commitAndTagVersion({
-		infile: "CHANGELOG.md",
-		bumpFiles: bumpFiles,
-		dryRun: opt.dryRun,
-		tagPrefix: "",
-		releaseAs: opt.releaseAs,
-	})
-		.then(() => {
-			console.log("Done");
-		})
-		.catch((err) => {
-			console.error(err);
-		});
 }
