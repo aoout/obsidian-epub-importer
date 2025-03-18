@@ -1,259 +1,187 @@
-
 import { EpubImporterSettings } from "../settings/settings";
 import EpubParser, { Chapter } from "./EpubParser";
-import * as path from "path";
-import { normalize } from "../utils/utils";
 import { App, Notice, parseYaml } from "obsidian";
 import jetpack from "fs-jetpack";
 import beautify from "js-beautify";
 import { create } from "./TurndownService";
-import { templateWithVariables, tFrontmatter } from "../utils/obsidianUtils";
+import * as path from "path";
+import { normalize } from "../utils/utils";
+import { templateWithVariables, tFrontmatter } from "../utils/obsidianUtils"
 
 export default class EpubProcessor {
-    private app: App;
-    private settings: EpubImporterSettings;
-    private vaultPath: string;
-    private parser: EpubParser;
-    private BookNote = "";
-    private assetsPath: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private properties: any;
+  private parser?: EpubParser;
+  private properties: Record<string, any> = {};
+  private bookNote;
+  private assetsPath;
 
-    constructor(app: App, settings: EpubImporterSettings, vaultPath: string) {
-        this.app = app;
-        this.settings = settings;
-        this.vaultPath = vaultPath;
+  constructor(
+    private readonly app: App,
+    private readonly settings: EpubImporterSettings,
+    private readonly vaultPath: string
+  ) {}
+
+  async importEpub(epubPath: string) {
+    this.bookNote = "";
+    this.assetsPath = "";
+    const epubName = normalize(path.basename(epubPath, path.extname(epubPath)));
+    const folderPath = await this.initImport(epubPath, epubName);
+    if (!folderPath) return;
+
+    this.copyImages(folderPath);
+    await this.processNotes(epubName, folderPath);
+    jetpack.remove(this.parser!.tmpPath);
+    this.showSuccessNotice(epubName);
+  }
+
+  private async initImport(epubPath: string, epubName: string): Promise<string | null> {
+    const folderPath = this.resolveFolderPath(epubName);
+    if (!folderPath) return null;
+
+    await this.app.vault.createFolder(folderPath);
+    this.parser = new EpubParser(epubPath, this.settings.moreLog);
+    await this.parser.init();
+    this.properties = this.parseProperties(epubName);
+    if (this.settings.moreLog) console.log("toc:", this.parser.toc);
+    return folderPath;
+  }
+
+  private async processNotes(epubName: string, folderPath: string) {
+    this.mergeChapters(this.settings.granularity);
+    const chapters = this.parser!.chapters.filter(c => c.level <= this.settings.granularity);
+
+    this.settings.granularity === 0
+      ? await this.createFile(`${folderPath}/${epubName}.md`, this.generateContent(chapters))
+      : await this.processChapters(epubName, folderPath, chapters);
+  }
+
+  private async processChapters(epubName: string, folderPath: string, chapters: Chapter[]) {
+    for (const [i, chapter] of chapters.entries()) {
+      const notePath = await this.createChapterNote(chapter, folderPath, i, chapters);
+      this.bookNote += `${"\t".repeat(chapter.level)}- [[${notePath}|${chapter.name}]]\n`;
     }
+    await this.createFile(
+      `${folderPath}/${templateWithVariables(this.settings.mocName, { bookName: epubName })}.md`,
+      this.bookNote
+    );
+  }
 
-    async importEpub(epubPath: string) {
-        const epubName = normalize(path.basename(epubPath, path.extname(epubPath)).trim());
-        const folderPath = this.setupFolderPath(epubName);
-        if (!folderPath) return;
+  private async createChapterNote(chapter: Chapter, folderPath: string, index: number, chapters: Chapter[]) {
+    const notePath = path.posix.join(folderPath, ...this.getChapterPaths(chapter));
+    await this.ensureFolder(path.dirname(notePath));
 
-        await this.initializeParser(epubPath, epubName);
-        await this.createBookFolder(folderPath);
+    const content = this.settings.noteTemplate
+      ? templateWithVariables(this.settings.noteTemplate, this.getChapterMetadata(chapter, index, chapters))
+      : this.generateContent([chapter]);
 
-        this.copyImages();
+    await this.app.vault.create(`${notePath}.md`, content);
+    return notePath;
+  }
 
-        if (this.settings.granularity === 0) {
-            await this.createSingleNote(epubName, folderPath);
-        } else {
-            await this.createChapterNotes(folderPath, epubName);
-        }
+  private async createFile(filePath: string, content: string) {
+    await this.app.vault.create(filePath, `${tFrontmatter(this.properties)}\n${content}`).catch(error => 
+      console.warn(`Failed to create ${filePath}: ${error}`));
+  }
 
-        jetpack.remove(this.parser.tmpPath);
-        this.showSuccessNotice(epubName);
+  private generateContent(chapters: Chapter[]): string {
+    return chapters
+      .flatMap(c => c.sections.map(s => this.htmlToMD(s.html)))
+      .join("\n\n");
+  }
+
+  private mergeChapters(maxLevel = 0) {
+    this.parser!.chapters
+      .filter(c => c.level > maxLevel)
+      .sort((a, b) => b.level - a.level)
+      .forEach(c => c.parent?.sections.push(...c.sections));
+  }
+
+  private getChapterPaths(chapter: Chapter): string[] {
+    const paths = this.buildPathArray(chapter);
+    return chapter.level < this.settings.granularity && chapter.subItems.length
+      ? [...paths, normalize(chapter.name)]
+      : paths;
+  }
+
+  private buildPathArray(chapter: Chapter): string[] {
+    const paths: string[] = [];
+    let current: Chapter | undefined = chapter;
+    while (current) {
+      paths.unshift(normalize(current.name));
+      current = current.parent;
     }
+    return paths;
+  }
 
-    private setupFolderPath(epubName: string): string | null {
-        const folderPath = path.posix.join(this.settings.savePath, normalize(epubName));
+  private getChapterMetadata(chapter: Chapter, index: number, chapters: Chapter[]): Record<string, string> {
+    const content = this.generateContent([chapter]);
+    return {
+      created_time: Date.now().toString(),
+      content,
+      prev: index > 0 ? chapters[index - 1].name : "",
+      next: index < chapters.length - 1 ? chapters[index + 1].name : "",
+      chapter_name: chapter.name,
+      chapter_level: chapter.level.toString(),
+      chapter_index: (index + 1).toString(),
+      ...this.parser!.meta,
+      total_chars: content.length.toString(),
+    };
+  }
 
-        if (jetpack.exists(path.posix.join(this.vaultPath, folderPath))) {
-            if (this.settings.removeDuplicateFolders) {
-                jetpack.remove(path.posix.join(this.vaultPath, folderPath));
-            } else {
-                new Notice("Duplicate folder already exists.");
-                return null;
-            }
-        }
-        return folderPath;
+  private parseProperties(epubName: string): Record<string, any> {
+    const props = parseYaml(templateWithVariables(this.settings.mocPropertysTemplate, this.parser!.meta));
+    props.tags = [...(props.tags ?? []), this.settings.tag];
+    return props;
+  }
+
+  private copyImages(folderPath: string) {
+    this.assetsPath = path.posix.join(this.vaultPath, templateWithVariables(this.settings.assetsPath, {
+      bookName: path.basename(folderPath),
+      savePath: this.settings.savePath,
+    }));
+
+    jetpack.find(this.parser!.tmpPath, { matching: ["*.{jpg,jpeg,png}"] })
+      .forEach(file => jetpack.copy(file, path.posix.join(this.assetsPath, path.basename(file)), { overwrite: true }));
+
+    if (this.parser!.coverPath) {
+      this.properties.cover = path.posix.join(this.assetsPath, path.basename(this.parser!.coverPath));
     }
+  }
 
-    private async createBookFolder(folderPath: string) {
-        await this.app.vault.createFolder(folderPath);
+  private htmlToMD(html: string): string {
+    if (this.settings.reformatting) html = beautify.html(html, { indent_size: 0 });
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    doc.querySelectorAll("table:empty").forEach(table => table.remove());
+
+    return this.normalizeHeadings(
+      create(this.assetsPath, this.settings.imageFormat).turndown(html) || html.replace(/<[^>]+>/g, "")
+    );
+  }
+
+  private normalizeHeadings(markdown: string): string {
+    if (!/^# /m.test(markdown) && /^(#{1,6}) /m.test(markdown)) {
+      const levelDiff = markdown.match(/^(#{1,6}) /m)![1].length - 1;
+      return markdown.replace(/^(#{1,6}) /gm, (_, h) => "#".repeat(Math.max(1, h.length - levelDiff)) + " ");
     }
+    return markdown;
+  }
 
-    private async initializeParser(epubPath: string, epubName: string) {
-        this.assetsPath = templateWithVariables(this.settings.assetsPath, {
-            bookName: epubName,
-            savePath: this.settings.savePath,
-        });
+  private resolveFolderPath(epubName: string): string | null {
+    const folderPath = path.posix.join(this.settings.savePath, epubName);
+    const fullPath = path.posix.join(this.vaultPath, folderPath);
+    return jetpack.exists(fullPath)
+      ? this.settings.removeDuplicateFolders
+        ? (jetpack.remove(fullPath), folderPath)
+        : (new Notice("Duplicate folder exists"), null)
+      : folderPath;
+  }
 
-        this.parser = new EpubParser(epubPath, this.settings.moreLog);
-        await this.parser.init();
-        if (this.settings.moreLog) console.log("toc is: ", this.parser.toc);
+  private async ensureFolder(folderPath: string) {
+    await this.app.vault.createFolder(folderPath).catch(() => {});
+  }
 
-        this.properties = parseYaml(templateWithVariables(this.settings.mocPropertysTemplate, this.parser.meta));
-        this.properties.tags = (this.properties.tags ?? []).concat([this.settings.tag]);
-        this.BookNote = "";
-    }
-
-    private async createSingleNote(epubName: string, folderPath: string) {
-        this.mergeChapters();
-        const content = this.generateSingleNoteContent();
-
-        const notePath = path.posix.join(folderPath, epubName);
-
-        await this.app.vault.create(
-            notePath + ".md",
-            tFrontmatter(this.properties) + "\n" + content
-        );
-    }
-
-    private mergeChapters() {
-        [...this.parser.chapters]
-            .filter(cpt => cpt.level != 0)
-            .sort((a, b) => b.level - a.level)
-            .forEach(cpt => cpt.parent.sections.push(...cpt.sections));
-    }
-
-    private generateSingleNoteContent(): string {
-        return this.parser.chapters
-            .filter(cpt => cpt.level == 0)
-            .map(cpt => cpt.sections.map(st => this.htmlToMD(st.html)).join("\n\n"))
-            .join("\n\n");
-    }
-
-    private async createChapterNotes(folderPath: string, epubName: string) {
-        this.mergeChaptersByGranularity();
-        const filteredChapters = this.parser.chapters.filter(cpt => cpt.level <= this.settings.granularity);
-
-        for (const [index, chapter] of filteredChapters.entries()) {
-            const notePath = await this.createChapterNote(chapter, folderPath, index, filteredChapters);
-            this.BookNote += `${"\t".repeat(chapter.level)}- [[${notePath}|${chapter.name}]]\n`;
-        }
-
-        await this.createMocFile(folderPath, epubName);
-    }
-
-    private mergeChaptersByGranularity() {
-        [...this.parser.chapters]
-            .filter(cpt => cpt.level > this.settings.granularity)
-            .sort((a, b) => b.level - a.level)
-            .forEach(cpt => cpt.parent.sections.push(...cpt.sections));
-    }
-
-    private async createChapterNote(chapter: Chapter, folderPath: string, index: number, allChapters: Chapter[]): Promise<string> {
-        if (chapter.name.startsWith("... ")) {
-            chapter.sections[0].name = chapter.name.replace("... ", "");
-        }
-
-        const paths = this.getChapterPaths(chapter);
-        const notePath = path.posix.join(folderPath, ...paths.map(normalize));
-
-        await this.app.vault.createFolder(path.dirname(notePath)).catch(() => {/**/ });
-
-        const content = this.generateChapterContent(chapter, index, allChapters);
-
-        try {
-            await this.app.vault.create(notePath + ".md", content);
-        } catch (error) {
-            console.warn(`Failed to create file at ${notePath}.md: ${error}`);
-            console.warn(
-                "If such errors are few in this parsing process, it could be because the epub contains some repeated or wrong navPoints. If this is the case, it will not cause any damage to the content of the book."
-            );
-        }
-
-        return notePath;
-    }
-
-    private getChapterPaths(chapter: Chapter): string[] {
-        const paths = [chapter.name];
-        const getPaths = (cpt: Chapter) => {
-            if (cpt.parent) {
-                paths.unshift(cpt.parent.name);
-                getPaths(cpt.parent);
-            }
-        };
-        getPaths(chapter);
-
-        if (chapter.level < this.settings.granularity && chapter.subItems.length != 0) {
-            paths.push(normalize(chapter.name));
-        }
-        return paths;
-    }
-
-    private generateChapterContent(chapter: Chapter, index: number, allChapters: Chapter[]): string {
-        let content = "";
-
-        if (this.settings.noteTemplate) {
-            const chapterContent = chapter.sections.map(st => this.htmlToMD(st.html)).join("\n\n");
-            content = templateWithVariables(this.settings.noteTemplate, {
-                created_time: Date.now().toString(),
-                content: chapterContent,
-                prev: index > 0 ? allChapters[index - 1].name : "",
-                next: index < allChapters.length - 1 ? allChapters[index + 1].name : "",
-                chapter_name: chapter.name,
-                chapter_level: chapter.level.toString(),
-                chapter_index: (index + 1).toString(),
-                book_name: this.parser.meta["title"] || "",
-                book_author: this.parser.meta["author"] || "",
-                book_publisher: this.parser.meta["publisher"] || "",
-                book_language: this.parser.meta["language"] || "",
-                book_rights: this.parser.meta["rights"] || "",
-                book_description: this.parser.meta["description"] || "",
-                total_chars: chapterContent.length.toString()
-            });
-        }
-
-        return content;
-    }
-
-    private async createMocFile(folderPath: string, epubName: string) {
-        const mocPath = path.posix.join(
-            folderPath,
-            templateWithVariables(this.settings.mocName, { bookName: epubName })
-        ) + ".md";
-
-        await this.app.vault.create(
-            mocPath,
-            tFrontmatter(this.properties) + "\n" + this.BookNote
-        );
-    }
-
-    private showSuccessNotice(epubName: string) {
-        console.log(`Successfully imported ${epubName}`);
-        new Notice(`Successfully imported ${epubName}`);
-    }
-
-    copyImages() {
-        const imagesPath = path.posix.join(this.vaultPath, this.assetsPath);
-        const imageFiles = jetpack.find(this.parser.tmpPath, {
-            matching: ["*.jpg", "*.jpeg", "*.png"]
-        });
-
-        imageFiles.forEach(file => {
-            const destPath = path.posix.join(imagesPath, path.basename(file));
-            jetpack.copy(file, destPath, { overwrite: true });
-        });
-
-        if (this.parser.coverPath) {
-            this.properties.cover = path.posix.join(
-                this.assetsPath,
-                path.basename(this.parser.coverPath)
-            );
-        }
-    }
-
-    htmlToMD(htmlString: string): string {
-        if (this.settings.reformatting) {
-            htmlString = beautify.html(htmlString, { indent_size: 0 });
-        }
-
-        // Remove empty tables
-        const doc = new DOMParser().parseFromString(htmlString, "text/html");
-        doc.querySelectorAll("table").forEach(table => {
-            const isEmpty = !Array.from(table.children).some(child => child.childElementCount > 0);
-            if (isEmpty) table.remove();
-        });
-
-        // Convert to markdown
-        const turndownService = create(this.assetsPath, this.settings.imageFormat);
-        let markdown = turndownService.turndown(htmlString) || htmlString.replace(/<[^>]+>/g, "");
-
-        // Normalize heading levels
-        const hasH1 = /^# [^\n]+/m.test(markdown);
-        if (!hasH1) {
-            const headingMatch = markdown.match(/^(#{1,6}) [^\n]+/m);
-            if (headingMatch) {
-                const levelDiff = headingMatch[1].length - 1;
-                markdown = markdown.replace(
-                    /^(#{1,6}) /gm,
-                    (_, hashes) => "#".repeat(Math.max(1, hashes.length - levelDiff)) + " "
-                );
-            }
-        }
-
-        return markdown;
-    }
+  private showSuccessNotice(epubName: string) {
+    const message = `Successfully imported ${epubName}`;
+    console.log(message);
+    new Notice(message);
+  }
 }

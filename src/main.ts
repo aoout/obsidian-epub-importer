@@ -1,11 +1,7 @@
-/* eslint-disable no-mixed-spaces-and-tabs */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Notice, Plugin, TFile, WorkspaceLeaf } from "obsidian";
-import { EpubImporterModal } from "./modals/EpubImporterModal";
-import { ZipExporterModal } from "./modals/ZipExporterModal";
-import { ZipImporterModal } from "./modals/ZipImporterModal";
+import { EpubImporterModal} from "./modals/EpubImporterModal";
+import { ZipImporterModal} from "./modals/ZipImporterModal";
+import { ZipExporterModal} from "./modals/ZipExporterModal";
 import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 import { getNotesWithTag } from "./utils/obsidianUtils";
@@ -16,229 +12,209 @@ import EpubProcessor from "./lib/EpubProcessor";
 import * as path from "path";
 import { resources, translationLanguage } from "./i18n/i18next";
 
-
+interface CommandConfig {
+  id: string;
+  name: string;
+  callback: () => void;
+}
 
 export default class EpubImporterPlugin extends Plugin {
-	// Class properties
-	vaultPath: string;
-	settings: EpubImporterSettings;
-	activeBook: string;
-	activeLeaf: WorkspaceLeaf;
-	detachLeaf = false;
-	private epubProcessor: EpubProcessor;
+  private settings: EpubImporterSettings = DEFAULT_SETTINGS;
+  // @ts-ignore
+  private vaultPath: string = this.app.vault.adapter.basePath;
+  private epubProcessor: EpubProcessor;
+  private activeBook = "";
+  private activeLeaf?: WorkspaceLeaf;
+  private detachLeaf = false;
 
-	// Plugin lifecycle methods
-	async onload() {
-		// Initialize i18n
-		i18next.init({
-			lng: translationLanguage,
-			fallbackLng: "en",
-			resources: resources,
-			returnNull: false,
-		});
+  async onload() {
+    await Promise.all([
+      this.initI18n(),
+      this.loadSettings().then(() => {
+        this.epubProcessor = new EpubProcessor(this.app, this.settings, this.vaultPath);
+      })
+    ]);
 
-		// Initialize plugin
-		//@ts-expect-error
-		this.vaultPath = this.app.vault.adapter.basePath;
-		await this.loadSettings();
-		this.addSettingTab(new EpubImporterSettingsTab(this.app, this));
-		this.epubProcessor = new EpubProcessor(this.app, this.settings, this.vaultPath);
+    this.addSettingTab(new EpubImporterSettingsTab(this.app, this));
+    this.registerCommands(this.getCommands());
+    this.registerEventHandlers();
+  }
 
-		// Register commands
-		this.registerCommands();
+  private async initI18n() {
+    await i18next.init({
+      lng: translationLanguage,
+      fallbackLng: "en",
+      resources,
+      returnNull: false,
+    });
+  }
 
-		// Register event handlers
-		this.registerEventHandlers();
-	}
+  private loadSettings = async () => 
+    Object.assign(this.settings, await this.loadData());
+  
+  private saveSettings = () => this.saveData(this.settings);
 
-	// Settings management
-	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
+  private getCommands(): CommandConfig[] {
+    return [
+      {
+        id: "import-epub",
+        name: i18next.t("import-epub"),
+        callback: () => this.createModal(EpubImporterModal, 
+          this.settings.libraries,
+          result => this.epubProcessor.importEpub(result)),
+      },
+      {
+        id: "sync-libraries",
+        name: i18next.t("sync-libraries"),
+        callback: () => this.syncLibraries(),
+      },
+      {
+        id: "export-zip",
+        name: "Export a book to the backup directory in .zip format",
+        callback: () => this.createModal(ZipExporterModal,
+          this.settings.tag,
+          bookName => this.exportBookToZip(bookName)),
+      },
+      {
+        id: "import-zip",
+        name: "Import a .zip book from the backup directory into the vault in .zip format",
+        callback: () => this.createModal(ZipImporterModal,
+          this.settings.backupPath,
+          zipPath => this.importBookFromZip(zipPath)),
+      }
+    ];
+  }
 
-	async saveSettings(): Promise<void> {
-		await this.saveData(this.settings);
-	}
+  private registerCommands(commands: CommandConfig[]) {
+    commands.forEach(cmd => this.addCommand(cmd));
+  }
 
-	// Command registration
-	private registerCommands() {
-		// Import epub command
-		this.addCommand({
-			id: "import-epub",
-			name: i18next.t("import-epub"),
-			callback: () => {
-				new EpubImporterModal(this.app, this.settings.libraries, async (result) => {
-					await this.epubProcessor.importEpub(result);
-				}).open();
-			},
-		});
+  private registerEventHandlers() {
+    this.registerDomEvent(document, "drop", this.handleDragAndDrop);
+    this.registerEvent(this.app.workspace.on("file-open", this.handleFileOpen));
+  }
 
-		// Sync libraries command
-		this.addCommand({
-			id: "sync-libraries",
-			name: i18next.t("sync-libraries"),
-			callback: async () => {
-				await this.syncLibraries();
-			},
-		});
+  private createModal<T>(
+    ModalClass: new (...args: any[]) => T,
+    param: any,
+    callback: (result: any) => void
+  ) {
+	// @ts-ignore
+    new ModalClass(this.app, param, callback).open();
+  }
 
-		// Export zip command
-		this.addCommand({
-			id: "export-zip",
-			name: "Export a book to the backup directory in .zip format",
-			callback: () => {
-				new ZipExporterModal(this.app, this.settings.tag, (bookName) => {
-					this.exportBookToZip(bookName);
-				}).open();
-			},
-		});
+  private async syncLibraries() {
+    const { libraries } = this.settings;
+    if (!libraries.length) return this.showNotice(i18next.t("no libraries"));
 
-		// Import zip command
-		this.addCommand({
-			id: "import-zip",
-			name: "Import a .zip book from the backup directory into the vault in .zip format",
-			callback: () => {
-				new ZipImporterModal(this.app, this.settings.backupPath, (zipPath) => {
-					this.importBookFromZip(zipPath);
-				}).open();
-			},
-		});
-	}
+    const epubs = libraries.flatMap(lib => 
+      jetpack.find(lib, { matching: "**/**.epub" }));
+    
+    await Promise.all(epubs.map(epub => 
+      this.epubProcessor.importEpub(jetpack.path(epub))));
 
-	// Event handlers registration
-	private registerEventHandlers() {
-		// Drag and drop handler
-		this.registerDomEvent(document, "drop", async (e) => {
-			await this.handleDragAndDrop(e);
-		});
+    this.showSyncResult(epubs.length);
+  }
 
-		// File open handler
-		this.registerEvent(
-			this.app.workspace.on("file-open", async (file) => {
-				await this.handleFileOpen(file);
-			})
-		);
-	}
+  private showSyncResult(count: number) {
+    const message = count === 0 
+      ? i18next.t("no book in libraries")
+      : i18next.t("translation:sync-libraries_r").replace("${n}", count.toString());
+    new Notice(message);
+    console.log(message);
+  }
 
-	private async syncLibraries() {
-		const { libraries } = this.settings;
-		if (!libraries.length) {
-			new Notice(i18next.t("no libraries"));
-			return;
-		}
+  private exportBookToZip(bookName: string) {
+    const bookPath = this.getPath(this.settings.savePath, bookName);
+    const zip = new AdmZip();
+    zip.addLocalFolder(bookPath);
+    zip.writeZip(this.getPath(this.settings.backupPath, `${bookName}.zip`));
+  }
 
-		const results = libraries
-			.map((library) => jetpack.find(library, { matching: "**/**.epub" }))
-			.flat();
+  private importBookFromZip(zipPath: string) {
+    const bookName = path.basename(zipPath, ".zip");
+    new AdmZip(zipPath).extractAllTo(
+      this.getPath(this.settings.savePath, bookName)
+    );
+  }
 
-		const bookCount = results.length;
-		for (const result of results) {
-			await this.epubProcessor.importEpub(jetpack.path(result));
-		}
+  private handleDragAndDrop = async (e: DragEvent) => {
+    if (!this.settings.byDrag || !this.isDropTarget(e)) return;
+    
+    const file = e.dataTransfer?.files[0];
+    if (file && path.extname(file.name) === ".epub") {
+		// @ts-ignore
+      await this.epubProcessor.importEpub(file.path);
+      this.cleanEpubFiles();
+    }
+  };
 
-		if (bookCount === 0) {
-			new Notice(i18next.t("no book in libraries"));
-			console.log(i18next.t("no book in libraries"));
-		} else {
-			const message = i18next
-				.t("translation:sync-libraries_r")
-				.replace("${n}", bookCount.toString());
-			new Notice(message);
-			console.log(message);
-		}
-	}
+  private handleFileOpen = async (file: TFile | null) => {
+    if (!file || !this.shouldHandleFileOpen()) return;
+    
+    const mocPath = this.getMocPath(file);
+    if (!mocPath && file.basename !== "highlights") {
+      this.activeBook = "";
+      return this.activeLeaf?.detach();
+    }
 
-	private exportBookToZip(bookName: string) {
-		const bookPath = path.posix.join(
-			this.vaultPath,
-			this.settings.savePath,
-			bookName
-		);
-		const zip = new AdmZip();
-		zip.addLocalFolder(bookPath);
-		const exportPath = path.posix.join(this.settings.backupPath, bookName + ".zip");
-		zip.writeZip(exportPath);
-	}
+    const bookName = this.app.vault.getAbstractFileByPath(mocPath)?.parent.name;
+    if (bookName && bookName !== this.activeBook) {
+      await this.updateActiveLeaf(mocPath, bookName);
+    }
+  };
 
-	private importBookFromZip(zipPath: string) {
-		const bookPath = path.posix.join(
-			this.vaultPath,
-			this.settings.savePath,
-			path.basename(zipPath).split(".zip")[0]
-		);
-		const zip = new AdmZip(zipPath);
-		zip.extractAllTo(bookPath);
-	}
+  private getPath(...segments: string[]) {
+    return path.posix.join(this.vaultPath, ...segments);
+  }
 
-	private async handleDragAndDrop(e: DragEvent) {
-		if (
-			this.settings.byDrag &&
-			//@ts-expect-error
-			e.toElement.className == "nav-files-container node-insert-event"
-		) {
-			const files = e.dataTransfer.files;
-			if (files.length == 1 && path.extname(files[0].name) == ".epub") {
-				//@ts-expect-error
-				await this.epubProcessor.importEpub(files[0].path);
-				jetpack
-					.find(this.vaultPath, {
-						matching: "**/**.epub",
-					})
-					.forEach(jetpack.remove);
-			}
-		}
-	}
+  private isDropTarget(e: DragEvent) {
+    return (e.target as HTMLElement)?.className === "nav-files-container node-insert-event";
+  }
 
-	private async handleFileOpen(file: TFile) {
-		if (this.settings.leafID && !this.detachLeaf) {
-			this.detachLeaf = true;
-			this.activeLeaf = this.app.workspace.getLeafById(this.settings.leafID);
-			return;
-		}
-		if (!this.settings.autoOpenRightPanel) return;
-		if (!this.app.workspace.getActiveFile()) return;
+  private shouldHandleFileOpen() {
+    if (this.settings.leafID && !this.detachLeaf) {
+      this.detachLeaf = true;
+      this.activeLeaf = this.app.workspace.getLeafById(this.settings.leafID);
+      return false;
+    }
+    return this.settings.autoOpenRightPanel;
+  }
 
-		const mocPath = this.getMocPath(file);
-		if (!mocPath && file.basename != "highlights") {
-			this.activeBook = "";
-			return this.activeLeaf.detach();
-		}
+  private cleanEpubFiles() {
+    jetpack.find(this.vaultPath, { matching: "**/**.epub" })
+      .forEach(jetpack.remove);
+  }
 
-		const bookName = this.app.vault.getAbstractFileByPath(mocPath).parent.name;
-		if (this.activeBook == bookName) return;
+  private async updateActiveLeaf(mocPath: string, bookName: string) {
+    this.activeLeaf?.detach();
+    this.activeBook = bookName;
+    this.activeLeaf = this.app.workspace.getRightLeaf(false);
+	// @ts-ignore
+    this.settings.leafID = this.activeLeaf.id;
+    await this.saveSettings();
 
-		await this.updateActiveLeaf(mocPath, bookName);
-	}
+    await this.activeLeaf.setViewState({
+      type: "markdown",
+      state: { file: mocPath, mode: "preview" },
+    });
+    this.activeLeaf.setPinned(true);
+    this.app.workspace.revealLeaf(this.activeLeaf);
+  }
 
-	private async updateActiveLeaf(mocPath: string, bookName: string) {
-		if (this.activeLeaf) this.activeLeaf.detach();
-		this.activeBook = bookName;
-		this.activeLeaf = this.app.workspace.getRightLeaf(false);
-		//@ts-expect-error
-		this.settings.leafID = this.activeLeaf.id;
-		await this.saveSettings();
+  private getMocPath(note: TFile): string | undefined {
+    const mocFiles = getNotesWithTag(this.app, this.settings.tag);
+    return mocFiles.includes(note) 
+      ? note.path 
+      : mocFiles.find(n => this.hasLinkTo(note, n))?.path;
+  }
 
-		this.activeLeaf.setViewState({
-			type: "markdown",
-			state: {
-				file: mocPath,
-				mode: "preview",
-				backlinks: false,
-				source: false,
-			},
-		});
-		this.activeLeaf.setPinned(true);
-		this.app.workspace.revealLeaf(this.activeLeaf);
-	}
+  private hasLinkTo(note: TFile, moc: TFile) {
+    return this.app.metadataCache.getCache(moc.path)?.links
+      .some(link => link.link + ".md" === note.path) ?? false;
+  }
 
-	getMocPath(note: TFile): string {
-		const mocFiles = getNotesWithTag(this.app, this.settings.tag);
-		if (mocFiles.includes(note)) return note.path;
-		else
-			return mocFiles.find((n) => {
-				return this.app.metadataCache
-					.getCache(n.path)
-					.links.some((link) => link.link + ".md" == note.path);
-			})?.path;
-	}
+  private showNotice(message: string) {
+    new Notice(message);
+  }
 }

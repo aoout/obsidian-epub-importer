@@ -2,140 +2,112 @@ import jetpack from "fs-jetpack";
 import * as path from "path";
 import { Section } from "./types";
 
+interface FileMetadata {
+  url: string;
+  names: (string | null)[];
+  hrefs: string[];
+  html: string;
+}
+
 export class ContentSplitter {
-    private sections: Section[];
+  constructor(private sections: Section[]) {}
 
-    constructor(sections: Section[]) {
-        this.sections = sections;
+  async extractSectionContent() {
+    const uniqueUrls = [...new Set(this.sections.map(st => st.urlPath))];
+    const files = await Promise.all(uniqueUrls.map(url => this.readHtmlFile(url)));
+
+    files.forEach(file => 
+      file.hrefs.length <= 1
+        ? this.assignHtml(file.url, file.html)
+        : this.splitContentByAnchors(file)
+    );
+  }
+
+  private async readHtmlFile(url: string): Promise<FileMetadata> {
+    const file = this.buildFileMetadata(url);
+    try {
+      const html = await jetpack.readAsync(url);
+      return { ...file, html: html ?? "" };
+    } catch (error) {
+      this.logFileReadError(url);
+      return file;
     }
+  }
 
-    async extractSectionContent() {
-        const urls = [...new Set(this.sections.map((st) => st.urlPath))];
-        const files = await this.readHtmlFiles(urls);
+  private buildFileMetadata(url: string): FileMetadata {
+    const relevantSections = this.sections.filter(st => st.urlPath === url);
+    return {
+      url,
+      names: relevantSections.map(st => st.name ? path.basename(st.name) : null),
+      hrefs: relevantSections.map(st => st.urlHref),
+      html: ""
+    };
+  }
 
-        files.forEach((file) => {
-            if (!file.hrefs.length || file.hrefs.length === 1) {
-                this.sections.find((st) => st.urlPath == file.url).html = file.html;
-            } else {
-                this.splitContentByAnchors(file);
-            }
-        });
-    }
+  private logFileReadError(url: string) {
+    console.warn(
+      `Error reading file at ${url}\n` +
+      "This might be due to invalid paths or minor epub navigation issues. " +
+      "Such errors typically don't affect the book's content."
+    );
+  }
 
-    private async readHtmlFiles(urls: string[]) {
-        const files = [];
-        urls.forEach((url) => {
-            const file = this.buildFileMetadata(url);
-            try {
-                const html = jetpack.read(url);
-                if (html) {
-                    file.html = html;
-                }
-                files.push(file);
-            } catch (error) {
-                this.logFileReadError(url);
-            }
-        });
-        return files;
-    }
+  private splitContentByAnchors(file: FileMetadata) {
+    const doc = new DOMParser().parseFromString(file.html, "text/html");
+    const htmls: string[] = [];
+    let currentHtml = "";
 
-    private buildFileMetadata(url: string) {
-        const file = {
-            url: url,
-            names: [],
-            hrefs: [],
-            html: "",
-        };
+    const serializeNode = (node: Node): string => {
+      if (node.nodeType === Node.TEXT_NODE) return node.textContent || "";
+      if (node.nodeType !== Node.ELEMENT_NODE) return "";
+      
+      const el = node as Element;
+      const tag = el.tagName.toLowerCase();
+      const attrs = Array.from(el.attributes)
+        .map(attr => ` ${attr.name}="${attr.value}"`)
+        .join("");
+      
+      const children = Array.from(node.childNodes)
+        .map(serializeNode)
+        .join("");
+      
+      return `<${tag}${attrs}>${children}</${tag}>`;
+    };
 
-        this.sections
-            .filter((st) => st.urlPath == url)
-            .forEach((st) => {
-                file.names.push(st.name ? path.basename(st.name) : null);
-                file.hrefs.push(st.urlHref);
-            });
-
-        return file;
-    }
-
-    private logFileReadError(url: string) {
-        console.warn(`Error reading file at ${url}`);
-        console.warn(
-            "The failure to read the file might be due to an invalid file path. If such errors are few in this parsing process, it could be because the epub contains some meaningless navPoints, or even advertisements. If this is the case, it will not cause any damage to the content of the book."
-        );
-    }
-
-    private splitContentByAnchors(file) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(file.html, "text/html");
-        const htmls: string[] = [];
-        let currentHtml = "";
-        let currentAnchorIndex = -1;
-
-        const processNode = (node: Node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-                const element = node as Element;
-                const id = element.getAttribute("id");
-                
-                if (id && file.hrefs.includes(id)) {
-                    if (currentHtml && currentAnchorIndex >= 0) {
-                        htmls.push(currentHtml);
-                    }
-                    currentHtml = "";
-                    currentAnchorIndex = file.hrefs.indexOf(id);
-                }
-
-                currentHtml += `<${element.tagName.toLowerCase()}${getAttributes(element)}>`;
-                
-                if (node.hasChildNodes()) {
-                    node.childNodes.forEach(child => {
-                        processNode(child);
-                    });
-                }
-
-                currentHtml += `</${element.tagName.toLowerCase()}>`;
-
-            } else if (node.nodeType === Node.TEXT_NODE) {
-                currentHtml += node.textContent;
-            }
-        };
-
-        const getAttributes = (element: Element): string => {
-            const attributes = element.attributes;
-            let result = '';
-            for (let i = 0; i < attributes.length; i++) {
-                const attr = attributes[i];
-                result += ` ${attr.name}="${attr.value}"`;
-            }
-            return result;
-        };
-
-        processNode(doc.body);
-
-        if (currentHtml) {
-            htmls.push(currentHtml);
+    Array.from(doc.body.childNodes).reduce((anchorIndex, node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const id = (node as Element).getAttribute("id");
+        if (id && file.hrefs.includes(id)) {
+          if (currentHtml) htmls.push(currentHtml);
+          currentHtml = "";
+          anchorIndex = file.hrefs.indexOf(id);
         }
+      }
+      currentHtml += serializeNode(node);
+      return anchorIndex;
+    }, -1);
 
-        const hrefs = file.hrefs.map(href => href ? "#" + href : "");
-        
-        if (htmls.length !== file.hrefs.length) {
-            file.hrefs.forEach((href, index) => {
-                const element = doc.getElementById(href);
-                if (!element) {
-                    console.warn(`锚点 ${href} (索引 ${index}) 未找到`);
-                }
-            });
-        }
+    if (currentHtml) htmls.push(currentHtml);
+    this.distributeHtml(file, htmls);
+  }
 
-        this.distributeHtmlToSections(file, htmls, hrefs);
+  private distributeHtml(file: FileMetadata, htmls: string[]) {
+    const hrefs = file.hrefs.map(href => href ? `#${href}` : "");
+    htmls.forEach((html, i) => {
+      const section = this.sections.find(s => s.url === file.url + hrefs[i]);
+      if (section) section.html = html;
+      else console.warn(`No section found for ${file.url}${hrefs[i]}`);
+    });
+
+    if (htmls.length !== file.hrefs.length) {
+      file.hrefs.forEach((href, i) => {
+        if (!htmls[i]) console.warn(`Anchor ${href} (index ${i}) not found`);
+      });
     }
+  }
 
-    private distributeHtmlToSections(file, htmls: string[], hrefs: string[]) {
-        htmls.forEach((html, i) => {
-            try {
-                this.sections.find((c) => c.url == file.url + hrefs[i]).html = html;
-            } catch (e) {
-                console.warn("Error splitting HTML file into sections");
-            }
-        });
-    }
-} 
+  private assignHtml(url: string, html: string) {
+    const section = this.sections.find(st => st.urlPath === url);
+    if (section) section.html = html;
+  }
+}

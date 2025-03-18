@@ -1,41 +1,45 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import * as path from "path";
 import jetpack from "fs-jetpack";
 import { Chapter } from "./types";
 import { findProperty } from "./utils";
 
 export class NCXParser {
-    filePath: string;
-    content: any;
-
-    constructor(filePath: string, content: any) {
-        this.filePath = filePath;
-        this.content = content;
-    }
+    constructor(private filePath: string, private content: unknown) {}
 
     getToc(): Chapter[] {
-        console.log(this.content);
         const navPoints = findProperty(this.content, ["navPoint", "navpoint"]);
+        return navPoints
+            // @ts-ignore
+            .map((pt) => this.parseNavPoint(pt, 0))
+            .filter(Boolean) as Chapter[];
+    }
 
-        const getToc = (navPoint, level) => {
-            const title = navPoint.navLabel?.[0]?.text?.[0] || (() => {
-                const filePath = path.posix.join(path.dirname(this.filePath), findProperty(navPoint,"content")[0].$["src"].replace(/%20/g, " "));
-                const html = jetpack.read(filePath);
-                return new DOMParser().parseFromString(html, "text/html").title ||
-                    path.basename(filePath, path.extname(filePath)) || "";
-            })();
+    private parseNavPoint(navPoint: any, level: number): Chapter | null {
+        const title = this.getTitle(navPoint);
+        if (!title) return null;
 
-            if (!title) return null;
+        const filePath = this.resolveFilePath(navPoint);
+        const subItems = (navPoint.navPoint || []).map((pt: any) => 
+            this.parseNavPoint(pt, level + 1)
+        ).filter(Boolean) as Chapter[];
 
-            const filePath = path.posix.join(path.dirname(this.filePath), findProperty(navPoint,"content")[0].$["src"].replace(/%20/g, " "));
-            const subItems = navPoint["navPoint"]?.map(pt => getToc(pt, level + 1)) || [];
-            const chapter = new Chapter(title, filePath, subItems, level);
-            subItems.forEach(sub => sub.parent = chapter);
+        const chapter = new Chapter(title, filePath, subItems, level);
+        subItems.forEach(sub => sub.parent = chapter);
+        return chapter;
+    }
 
-            return chapter;
-        };
+    private getTitle(navPoint: any): string {
+        return navPoint.navLabel?.[0]?.text?.[0] || (() => {
+            const filePath = this.resolveFilePath(navPoint);
+            const html = jetpack.read(filePath);
+            return new DOMParser()
+                .parseFromString(html, "text/html")
+                .title || path.basename(filePath, path.extname(filePath)) || "";
+        })();
+    }
 
-        return navPoints.map(pt => getToc(pt, 0)).filter(Boolean);
+    private resolveFilePath(navPoint: any): string {
+        const src = findProperty(navPoint, "content")[0].$["src"].replace(/%20/g, " ");
+        return path.posix.join(path.dirname(this.filePath), src);
     }
 }
