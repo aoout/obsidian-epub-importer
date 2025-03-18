@@ -1,5 +1,5 @@
 import { EpubImporterSettings } from "../settings/settings";
-import EpubParser, { Chapter } from "./EpubParser";
+import EpubParser, { Chapter } from "./parser";
 import { App, Notice, parseYaml } from "obsidian";
 import jetpack from "fs-jetpack";
 import beautify from "js-beautify";

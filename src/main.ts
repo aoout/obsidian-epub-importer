@@ -8,7 +8,7 @@ import { getNotesWithTag } from "./utils/obsidianUtils";
 import AdmZip from "adm-zip";
 import jetpack from "fs-jetpack";
 import i18next from "i18next";
-import EpubProcessor from "./lib/EpubProcessor";
+import EpubProcessor from "./core/EpubProcessor";
 import * as path from "path";
 import { resources, translationLanguage } from "./i18n/i18next";
 
