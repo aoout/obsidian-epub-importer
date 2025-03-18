@@ -52,7 +52,7 @@ export class EpubParser {
     try {
       const [ncxFile] = jetpack.find(this.tmpPath, { matching: "**/*.ncx" });
       const ncxContent = await this.parseXml(jetpack.read(ncxFile)!);
-      this.ncxParser = new NCXParser(ncxFile, ncxContent);
+      this.toc = new NCXParser(ncxFile, ncxContent).getToc();
     } catch {
       this.log("No NCX found, using OPF only");
     }
@@ -69,10 +69,10 @@ export class EpubParser {
 
   private async parseToc() {
     this.log("Parsing TOC...");
-    this.ncxParser && (this.toc = this.ncxParser.getToc());
     this.updateChapters();
     const hrefs = this.opfParser.getHtmlFiles();
     this.processUnmappedFiles(hrefs);
+    this.updateChapters();
     this.sections = this.chapters.flatMap(ch => ch.sections);
     await new ContentSplitter(this.sections).extractSectionContent();
   }
