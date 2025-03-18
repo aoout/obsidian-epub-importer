@@ -59,9 +59,9 @@ if (!dryRun) {
 	// Git 提交 & 打标签
 	execSync(`git add package.json ${lock ? "package-lock.json" : ""} ${manifest ? "manifest.json" : ""}`);
 	execSync(`git commit -m "chore: bump version to ${newVersion}"`);
-	execSync(`git tag v${newVersion}`);
+	execSync(`git tag ${newVersion}`);
 
-	console.log(`✅ 版本更新成功，已创建 Git 标签 v${newVersion}`);
+	console.log(`✅ 版本更新成功，已创建 Git 标签 ${newVersion}`);
 } else {
 	console.log("🟡 预览模式：未实际修改文件");
 }
