@@ -1,93 +1,44 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import TurndownService from "turndown";
 import * as path from "path";
 
-export function create(assetsPath: string, imageFormat: string): TurndownService {
-  const turndownService = new TurndownService({
-    headingStyle: "atx"
-  });
+export const create = (assetsPath: string, imageFormat: string): TurndownService => {
+  const turndown = new TurndownService({ headingStyle: "atx" }).remove("title");
 
-  turndownService.remove("title");
-
-  turndownService.addRule("img", {
-    filter: "img",
-    replacement: function (content, node) {
-      const alt = node.alt || "";
-      const src = node.getAttribute("src") || "";
-      if(!src.startsWith("http://") && !src.startsWith("https://")){
-        const fileName = path.basename(src);
-        const newPath = path.posix.join(assetsPath, fileName);
-        if(imageFormat === "![](imagePath)"){
-          return `![${alt}](${newPath.replaceAll(" ", "%20")})`;
-        }else if(imageFormat === "![[imagePath]]"){
-          return `![[${newPath}]]`;
+  const rules = {
+    img: {
+      filter: "img",
+      replacement: (_, node) => {
+        const alt = node.alt || "";
+        const src = node.getAttribute("src") || "";
+        if (!src.match(/^https?:\/\//)) {
+          const fileName = path.basename(src);
+          const newPath = path.posix.join(assetsPath, fileName).replaceAll(" ", "%20");
+          return imageFormat === "![](imagePath)" ? `![${alt}](${newPath})` : `![[${newPath}]]`;
         }
+        return "";
       }
-      return content;  
-    }
-  });
-
-  turndownService.addRule("footnoteLinks", {
-    filter: (node) => {
-      if (node.nodeName === "A") {
-        const text = node.textContent;
-        return /^\[?\[?\d+\]?\]?$/.test(text);
+    },
+    footnoteLinks: {
+      filter: (node) => node.nodeName === "A" && /^\[?\[?\d+\]?\]?$/.test(node.textContent),
+      replacement: (_, node) => `[^${node.textContent.replace(/[[\]]/g, "")}]`
+    },
+    footnoteReferences: {
+      filter: (node) => node.nodeName === "P" && node.getElementsByTagName("a")[0]?.textContent.match(/^\[\d+\]/),
+      replacement: (content, node) => content.replace(/^(\[\^\d+\])(.*?)$/gm, "$1: $2\n")
+    },
+    internalLinks: {
+      filter: (node) => node.nodeName === "A" && !node.getAttribute("href")?.startsWith("http") && !/^\[?\[?\d+\]?\]?$/.test(node.textContent),
+      replacement: (_, node) => {
+        const href = node.getAttribute("href");
+        return `[[${href}${href === node.textContent ? "" : `|${node.textContent}`}]]`;
       }
-      return false;
     },
-    replacement: (content, node) => {
-      const number = node.textContent.replace(/[[\]]/g, "");
-      return `[^${number}]`;
+    httpLinks: {
+      filter: (node) => node.nodeName === "A" && node.getAttribute("href")?.startsWith("http"),
+      replacement: (_, node) => `[${node.textContent}](${node.getAttribute("href")})`
     }
-  });
+  };
 
-  turndownService.addRule("footnoteReferences", {
-    filter: (node) => {
-      if (node.nodeName === "P") {
-        const aElements = node.getElementsByTagName("a");
-        if (aElements.length > 0) {
-          const text = aElements[0].textContent;
-          return /^\[\d+\]/.test(text);
-        }
-      }
-      return false;
-    },
-    replacement: (content, node) => {
-      return content.replace(/^(\[\^\d+\])(.*?)$/gm, "$1: $2\n");
-    }
-  });
-
-  turndownService.addRule("internalLinks", {
-    filter: (node, options) => {
-      return (
-        node.nodeName === "A" && 
-        !node.getAttribute("href")?.startsWith("http") &&
-        !/^\[?\[?\d+\]?\]?$/.test(node.textContent)
-      );
-    },
-    replacement: (content, node) => {
-      const href = node.getAttribute("href");
-      const text = node.textContent;
-      if (href === text) {
-        return `[[${href}]]`;
-      }
-      return `[[${href}|${text}]]`;
-    }
-  });
-
-  turndownService.addRule("httpLinks", {
-    filter: (node, options) => {
-      return (
-        node.nodeName === "A" &&
-        node.getAttribute("href")?.startsWith("http")
-      );
-    },
-    replacement: (content, node) => {
-      const href = node.getAttribute("href");
-      const text = node.textContent;
-      return `[${text}](${href})`;
-    }
-  });
-
-  return turndownService;
-}
+  Object.entries(rules).forEach(([key, rule]) => turndown.addRule(key, rule));
+  return turndown;
+};

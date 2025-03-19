@@ -19,7 +19,7 @@ interface CommandConfig {
 }
 
 export default class EpubImporterPlugin extends Plugin {
-  private settings: EpubImporterSettings = DEFAULT_SETTINGS;
+  settings: EpubImporterSettings = DEFAULT_SETTINGS;
   // @ts-ignore
   private vaultPath: string = this.app.vault.adapter.basePath;
   private epubProcessor: EpubProcessor;
@@ -52,7 +52,7 @@ export default class EpubImporterPlugin extends Plugin {
   private loadSettings = async () => 
     Object.assign(this.settings, await this.loadData());
   
-  private saveSettings = () => this.saveData(this.settings);
+  saveSettings = () => this.saveData(this.settings);
 
   private getCommands(): CommandConfig[] {
     return [
