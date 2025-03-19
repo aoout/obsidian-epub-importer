@@ -57,10 +57,11 @@ export class ContentSplitter {
     let currentHtml = "";
   
     nodes.forEach(node => {
-      currentHtml += this.serializeNode(node);
-      if (this.isAnchorNode(node, hrefs)) {
+      if (this.isAnchorNode(node, hrefs) && currentHtml) {
         htmls.push(currentHtml);
-        currentHtml = "";
+        currentHtml = this.serializeNode(node);
+      } else {
+        currentHtml += this.serializeNode(node);
       }
     });
   
