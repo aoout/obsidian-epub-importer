@@ -69,13 +69,69 @@ export default class EpubProcessor {
     const notePath = path.posix.join(folderPath, ...this.getChapterPaths(chapter));
     await this.ensureFolder(path.dirname(notePath));
 
-    const content = this.settings.noteTemplate
-      ? templateWithVariables(this.settings.noteTemplate, this.getChapterMetadata(chapter, index, chapters))
-      : this.generateContent([chapter]);
+    let content = this.settings.noteTemplate
+        ? templateWithVariables(this.settings.noteTemplate, this.getChapterMetadata(chapter, index, chapters))
+        : this.generateContent([chapter]);
+
+    content = this.processObsidianLinks(content, chapters);
 
     await this.app.vault.create(`${notePath}.md`, content);
     return notePath;
+}
+
+private processObsidianLinks(content: string, chapters: Chapter[]): string {
+  const linkPattern = /\[\[(.*?)\]\]/g;
+  
+  return content.replace(linkPattern, (match, linkText) => {
+      const [linkPart, displayText] = linkText.split('|');
+      const [baseLink, href] = linkPart.split('#');
+      
+      if ((!baseLink.includes('.html') && !baseLink.includes('.xhtml'))|| !href) {
+          return match;
+      }
+
+      const targetChapter = this.findChapterByHref(chapters, href);
+      
+      if (targetChapter) {
+          const display = displayText || targetChapter.name;
+          return `[[${normalize(targetChapter.name)}|${display}]]`;
+      }
+      
+      return match;
+  });
+}
+
+private findChapterByHref(chapters: Chapter[], href: string): Chapter | null {
+  for (const chapter of chapters) {
+      // 先检查section的urlHref
+      for (const section of chapter.sections) {
+          if (section.urlHref === href && (section.urlPath.endsWith('.html') || section.urlPath.endsWith('.xhtml'))) {
+              return chapter;
+          }
+      }
+      
+      // 如果没找到urlHref，检查HTML内容中的id
+      for (const section of chapter.sections) {
+          if (this.hasHtmlElementWithId(section.html, href)) {
+              return chapter;
+          }
+      }
+      
+      // 递归检查subItems
+      if (chapter.subItems.length > 0) {
+          const found = this.findChapterByHref(chapter.subItems, href);
+          if (found) return found;
+      }
   }
+  return null;
+}
+
+private hasHtmlElementWithId(html: string, id: string): boolean {
+  // 简单的HTML ID检查
+  // 使用正则表达式查找 id="href" 或 id='href'
+  const idPattern = new RegExp(`id=["']${id}["']`, 'i');
+  return idPattern.test(html);
+}
 
   private async createFile(filePath: string, content: string) {
     await this.app.vault.create(filePath, `${tFrontmatter(this.properties)}\n${content}`).catch(error => 
