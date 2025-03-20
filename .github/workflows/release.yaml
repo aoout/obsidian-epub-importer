@@ -42,7 +42,7 @@ jobs:
           files: |
             dist/main.js
             dist/manifest.json
-            release.zip
+            EpubImporter.zip
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
