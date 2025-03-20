@@ -11,8 +11,8 @@ import { templateWithVariables, tFrontmatter } from "../utils/obsidianUtils"
 export default class EpubProcessor {
   private parser?: EpubParser;
   private properties: Record<string, any> = {};
-  private bookNote;
-  private assetsPath;
+  private bookNote: string;
+  private assetsPath: string;
 
   constructor(
     private readonly app: App,
@@ -103,21 +103,18 @@ private processObsidianLinks(content: string, chapters: Chapter[]): string {
 
 private findChapterByHref(chapters: Chapter[], href: string): Chapter | null {
   for (const chapter of chapters) {
-      // 先检查section的urlHref
       for (const section of chapter.sections) {
           if (section.urlHref === href && (section.urlPath.endsWith('.html') || section.urlPath.endsWith('.xhtml'))) {
               return chapter;
           }
       }
       
-      // 如果没找到urlHref，检查HTML内容中的id
       for (const section of chapter.sections) {
           if (this.hasHtmlElementWithId(section.html, href)) {
               return chapter;
           }
       }
       
-      // 递归检查subItems
       if (chapter.subItems.length > 0) {
           const found = this.findChapterByHref(chapter.subItems, href);
           if (found) return found;
@@ -127,8 +124,6 @@ private findChapterByHref(chapters: Chapter[], href: string): Chapter | null {
 }
 
 private hasHtmlElementWithId(html: string, id: string): boolean {
-  // 简单的HTML ID检查
-  // 使用正则表达式查找 id="href" 或 id='href'
   const idPattern = new RegExp(`id=["']${id}["']`, 'i');
   return idPattern.test(html);
 }
@@ -190,13 +185,13 @@ private hasHtmlElementWithId(html: string, id: string): boolean {
   }
 
   private copyImages(folderPath: string) {
-    this.assetsPath = path.posix.join(this.vaultPath, templateWithVariables(this.settings.assetsPath, {
+    this.assetsPath = templateWithVariables(this.settings.assetsPath, {
       bookName: path.basename(folderPath),
       savePath: this.settings.savePath,
-    }));
+    });
 
     jetpack.find(this.parser!.tmpPath, { matching: ["*.{jpg,jpeg,png}"] })
-      .forEach(file => jetpack.copy(file, path.posix.join(this.assetsPath, path.basename(file)), { overwrite: true }));
+      .forEach(file => jetpack.copy(file, path.posix.join(this.vaultPath, this.assetsPath, path.basename(file)), { overwrite: true }));
 
     if (this.parser!.coverPath) {
       this.properties.cover = path.posix.join(this.assetsPath, path.basename(this.parser!.coverPath));
