@@ -185,13 +185,13 @@ private hasHtmlElementWithId(html: string, id: string): boolean {
   }
 
   private copyImages(folderPath: string) {
-    this.assetsPath = path.posix.join(this.vaultPath, templateWithVariables(this.settings.assetsPath, {
+    this.assetsPath = templateWithVariables(this.settings.assetsPath, {
       bookName: path.basename(folderPath),
       savePath: this.settings.savePath,
-    }));
+    });
 
     jetpack.find(this.parser!.tmpPath, { matching: ["*.{jpg,jpeg,png}"] })
-      .forEach(file => jetpack.copy(file, path.posix.join(this.assetsPath, path.basename(file)), { overwrite: true }));
+      .forEach(file => jetpack.copy(file, path.posix.join(this.vaultPath, this.assetsPath, path.basename(file)), { overwrite: true }));
 
     if (this.parser!.coverPath) {
       this.properties.cover = path.posix.join(this.assetsPath, path.basename(this.parser!.coverPath));
