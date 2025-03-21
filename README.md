@@ -71,11 +71,6 @@ Example:
 - Helps maintain organized library structure
 - See [wiki/How-to-sort-files](https://github.com/aoout/obsidian-epub-importer/wiki/How-to-sort-files%3F) and [Example Vault](https://github.com/aoout/mdReader) for setup guides
 
-## Reading Experience
-[obsidian-remember-cursor-position](https://github.com/dy-sh/obsidian-remember-cursor-position)
-- Remembers and restores cursor position between sessions
-- Note: Currently does not support remembering scroll position
-
 # Community & Support
 
 ## Share Your Experience

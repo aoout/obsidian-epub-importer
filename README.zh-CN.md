@@ -71,11 +71,6 @@ status: false
 - 帮助维护有序的 vault 结构
 - 请查看 [wiki/How-to-sort-files](https://github.com/aoout/obsidian-epub-importer/wiki/How-to-sort-files%3F) 和 [Example Vault](https://github.com/aoout/mdReader) 获取配置指南
 
-## 阅读体验
-[obsidian-remember-cursor-position](https://github.com/dy-sh/obsidian-remember-cursor-position)
-- 记录并恢复 session 间的光标位置
-- 注意：目前不支持记录滚动位置
-
 # Community & Support
 
 ## 分享体验
