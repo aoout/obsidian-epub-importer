@@ -105,8 +105,8 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 				});
 			});
 		new Setting(containerEl)
-			.setName(i18next.t("translation:Propertys template_o"))
-			.setDesc(i18next.t("translation:Propertys template"))
+			.setName(i18next.t("translation:Propertys_template_o"))
+			.setDesc(i18next.t("translation:Propertys_template"))
 			.addTextArea((text) => {
 				text.setValue(this.plugin.settings.mocPropertysTemplate).onChange(async (value) => {
 					this.plugin.settings.mocPropertysTemplate = value;
