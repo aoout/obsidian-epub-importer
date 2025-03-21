@@ -113,7 +113,7 @@ export default class EpubImporterPlugin extends Plugin {
 			},
 			{
 				id: "open-book",
-				name: "Open the book",
+				name: i18next.t("translation:open-book"),
 				callback: () =>
 					this.createModal(
 						OpenBookModal,
@@ -123,7 +123,7 @@ export default class EpubImporterPlugin extends Plugin {
 			},
 			{
 				id: "export-zip",
-				name: "Export a book to the backup directory in .zip format",
+				name: i18next.t("translation:export-zip"),
 				callback: () =>
 					this.createModal(ZipExporterModal, this.settings.tag, (bookName) =>
 						this.exportBookToZip(bookName as string)
@@ -131,7 +131,7 @@ export default class EpubImporterPlugin extends Plugin {
 			},
 			{
 				id: "import-zip",
-				name: "Import a .zip book from the backup directory into the vault in .zip format",
+				name: i18next.t("translation:import-zip"),
 				callback: () =>
 					this.createModal(ZipImporterModal, this.settings.backupPath, (zipPath) =>
 						this.importBookFromZip(zipPath as string)

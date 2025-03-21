@@ -43,5 +43,8 @@
   "backup_directory_Path_o": "备份目录路径",
   "backup_directory_Path": "插件将使用此目录以.zip格式备份书籍（绝对路径）。",
   "Enable_Read_Progress_Manager_o": "启用阅读进度管理器",
-  "Enable_Read_Progress_Manager": "启用阅读进度管理器以追踪您的阅读进度。"
+  "Enable_Read_Progress_Manager": "启用阅读进度管理器以追踪您的阅读进度。",
+  "open-book": "打开一本书",
+  "export-zip": "将一本书以.zip格式导出到备份目录",
+  "import-zip": "从备份目录导入一本.zip格式的书到库中"
 }

@@ -43,5 +43,8 @@
   "backup_directory_Path_o": "Backup directory path",
   "backup_directory_Path": "The plugin will use this directory to back up books in .zip format(absolute path).",
   "Enable_Read_Progress_Manager_o": "Enable_Read_Progress_Manager",
-  "Enable_Read_Progress_Manager": "Enable the read progress manager to track your reading progress."
+  "Enable_Read_Progress_Manager": "Enable the read progress manager to track your reading progress.",
+  "open-book": "Open a book",
+  "export-zip": "Export a book to the backup directory in .zip format",
+  "import-zip": "Import a .zip book from the backup directory into the vault in .zip format"
 }
