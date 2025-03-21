@@ -32,12 +32,13 @@ export default class EpubImporterPlugin extends Plugin {
 	private progressManager: ReadProgressManager;
 
 	async onload() {
+		await this.loadSettings();
 		await Promise.all([
 			this.initI18n(),
 			this.loadSettings().then(() => {
 				this.epubProcessor = new EpubProcessor(this.app, this.settings, this.vaultPath);
 			}),
-			this.setupReadProgressManager(),
+			this.setupReadProgressManager()
 		]);
 
 		this.addSettingTab(new EpubImporterSettingsTab(this.app, this));
@@ -46,6 +47,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	private async setupReadProgressManager() {
+		if(!this.settings.enableReadProgressManager) return;
 		this.progressManager = new ReadProgressManager(this.app);
 		await this.progressManager.initialize();
 
