@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { EpubImporterSettings } from "../settings/settings";
 import EpubParser, { Chapter } from "./parser";
 import { App, Notice, parseYaml } from "obsidian";
@@ -6,11 +8,11 @@ import beautify from "js-beautify";
 import { create } from "./TurndownService";
 import * as path from "path";
 import { normalize } from "../utils/utils";
-import { templateWithVariables, tFrontmatter } from "../utils/obsidianUtils"
+import { templateWithVariables, tFrontmatter } from "../utils/obsidianUtils";
 
 export default class EpubProcessor {
   private parser?: EpubParser;
-  private properties: Record<string, any> = {};
+  private properties: Record<string, unknown> = {};
   private bookNote: string;
   private assetsPath: string;
 
@@ -40,7 +42,7 @@ export default class EpubProcessor {
     await this.app.vault.createFolder(folderPath);
     this.parser = new EpubParser(epubPath, this.settings.moreLog);
     await this.parser.init();
-    this.properties = this.parseProperties(epubName);
+    this.properties = this.parseProperties();
     if (this.settings.moreLog) console.log("toc:", this.parser.toc);
     return folderPath;
   }
@@ -83,10 +85,10 @@ private processObsidianLinks(content: string, chapters: Chapter[]): string {
   const linkPattern = /\[\[(.*?)\]\]/g;
   
   return content.replace(linkPattern, (match, linkText) => {
-      const [linkPart, displayText] = linkText.split('|');
-      const [baseLink, href] = linkPart.split('#');
+      const [linkPart, displayText] = linkText.split("|");
+      const [baseLink, href] = linkPart.split("#");
       
-      if ((!baseLink.includes('.html') && !baseLink.includes('.xhtml'))|| !href) {
+      if ((!baseLink.includes(".html") && !baseLink.includes(".xhtml"))|| !href) {
           return match;
       }
 
@@ -104,7 +106,7 @@ private processObsidianLinks(content: string, chapters: Chapter[]): string {
 private findChapterByHref(chapters: Chapter[], href: string): Chapter | null {
   for (const chapter of chapters) {
       for (const section of chapter.sections) {
-          if (section.urlHref === href && (section.urlPath.endsWith('.html') || section.urlPath.endsWith('.xhtml'))) {
+          if (section.urlHref === href && (section.urlPath.endsWith(".html") || section.urlPath.endsWith(".xhtml"))) {
               return chapter;
           }
       }
@@ -124,7 +126,7 @@ private findChapterByHref(chapters: Chapter[], href: string): Chapter | null {
 }
 
 private hasHtmlElementWithId(html: string, id: string): boolean {
-  const idPattern = new RegExp(`id=["']${id}["']`, 'i');
+  const idPattern = new RegExp(`id=["']${id}["']`, "i");
   return idPattern.test(html);
 }
 
@@ -178,7 +180,7 @@ private hasHtmlElementWithId(html: string, id: string): boolean {
     };
   }
 
-  private parseProperties(epubName: string): Record<string, any> {
+  private parseProperties(): Record<string, unknown> {
     const props = parseYaml(templateWithVariables(this.settings.mocPropertysTemplate, this.parser!.meta));
     props.tags = [...(props.tags ?? []), this.settings.tag];
     return props;

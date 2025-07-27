@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import extract from "extract-zip";
 import jetpack from "fs-jetpack";
 import * as path from "path";

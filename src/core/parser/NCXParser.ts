@@ -14,12 +14,12 @@ export class NCXParser {
             .filter(Boolean) as Chapter[];
     }
 
-    private parseNavPoint(navPoint: any, level: number): Chapter | null {
+    private parseNavPoint(navPoint: Record<string, unknown>, level: number): Chapter | null {
         const title = this.getTitle(navPoint);
         if (!title) return null;
 
         const filePath = this.resolveFilePath(navPoint);
-        const subItems = (navPoint.navPoint || []).map((pt: any) => 
+        const subItems = (Array.isArray(navPoint.navPoint) ? navPoint.navPoint : []).map((pt: Record<string, unknown>) =>
             this.parseNavPoint(pt, level + 1)
         ).filter(Boolean) as Chapter[];
 
@@ -28,7 +28,7 @@ export class NCXParser {
         return chapter;
     }
 
-    private getTitle(navPoint: any): string {
+    private getTitle(navPoint: Record<string, unknown>): string {
         return navPoint.navLabel?.[0]?.text?.[0] || (() => {
             const filePath = this.resolveFilePath(navPoint);
             const html = jetpack.read(filePath);
@@ -38,7 +38,7 @@ export class NCXParser {
         })();
     }
 
-    private resolveFilePath(navPoint: any): string {
+    private resolveFilePath(navPoint: Record<string, unknown>): string {
         const src = findProperty(navPoint, "content")[0].$["src"].replace(/%20/g, " ");
         return path.posix.join(path.dirname(this.filePath), src);
     }

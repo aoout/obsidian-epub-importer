@@ -2,10 +2,10 @@ export const findProperty = (obj: unknown, propertyNames: string | string[]): un
   const names = [propertyNames].flat();
 
   const search = (value: unknown): unknown => {
-    if (!value || typeof value !== 'object') return null;
+    if (!value || typeof value !== "object") return null;
 
     for (const [key, val] of Object.entries(value)) {
-      if (names.includes(key) || names.some(name => key.split(':')[1] === name)) {
+      if (names.includes(key) || names.some(name => key.split(":")[1] === name)) {
         if (val) return val;
       }
     }
