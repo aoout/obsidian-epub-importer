@@ -57,7 +57,7 @@ export default class EpubProcessor {
   private async processChapters(epubName: string, folderPath: string, chapters: Chapter[]) {
     for (const [i, chapter] of chapters.entries()) {
       const notePath = await this.createChapterNote(chapter, folderPath, i, chapters);
-      this.bookNote += `${"\t".repeat(chapter.level)}- [[${notePath}|${chapter.name}]]\n`;
+      this.bookNote += `${"\t".repeat(chapter.level)}- [[${notePath}|${chapter.originalName}]]\n`;
     }
     await this.createFile(
       `${folderPath}/${templateWithVariables(this.settings.mocName, { bookName: epubName })}.md`,
@@ -93,8 +93,8 @@ private processObsidianLinks(content: string, chapters: Chapter[]): string {
       const targetChapter = this.findChapterByHref(chapters, href);
       
       if (targetChapter) {
-          const display = displayText || targetChapter.name;
-          return `[[${normalize(targetChapter.name)}|${display}]]`;
+          const display = displayText || targetChapter.originalName;
+          return `[[${targetChapter.name}|${display}]]`;
       }
       
       return match;
@@ -149,7 +149,7 @@ private hasHtmlElementWithId(html: string, id: string): boolean {
   private getChapterPaths(chapter: Chapter): string[] {
     const paths = this.buildPathArray(chapter);
     return chapter.level < this.settings.granularity && chapter.subItems.length
-      ? [...paths, normalize(chapter.name)]
+      ? [...paths, chapter.name]
       : paths;
   }
 
@@ -157,7 +157,7 @@ private hasHtmlElementWithId(html: string, id: string): boolean {
     const paths: string[] = [];
     let current: Chapter | undefined = chapter;
     while (current) {
-      paths.unshift(normalize(current.name));
+      paths.unshift(current.name);
       current = current.parent;
     }
     return paths;
@@ -170,7 +170,7 @@ private hasHtmlElementWithId(html: string, id: string): boolean {
       content,
       prev: index > 0 ? chapters[index - 1].name : "",
       next: index < chapters.length - 1 ? chapters[index + 1].name : "",
-      chapter_name: chapter.name,
+      chapter_name: chapter.originalName,
       chapter_level: chapter.level.toString(),
       chapter_index: (index + 1).toString(),
       ...this.parser!.meta,

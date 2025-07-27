@@ -125,3 +125,30 @@ EPUB 格式中最关键的两个文件是:
 ## 总结
 
 这个 EPUB 解析器采用了模块化的设计,将复杂的解析过程分解为多个独立的步骤。通过递归处理和合理的数据结构设计,很好地处理了 EPUB 格式的层级结构。同时也包含了必要的错误处理和容错机制,确保了解析过程的稳定性。
+
+## 常见问题解答 (FAQ)
+
+### 1. Chapter 和 Section 的关系是什么？
+
+在本项目中，Chapter 和 Section 是两个核心数据结构：
+- Chapter 代表书籍的一个章节，可以包含多个 Section
+- Section 代表具体的内容片段
+
+每个 Chapter 在创建时默认会有一个初始 Section，但后续可以添加更多 Section。这通常发生在处理未映射文件时，系统会将这些文件作为额外的 Section 添加到最近的前置 Chapter 中。
+
+### 2. 一个 Chapter 可以包含多个 Section 吗？
+
+是的，一个 Chapter 可以包含多个 Section。这种情况主要通过以下途径产生：
+
+- 在处理未映射文件时，如果找到了合适的父 Chapter，会将该文件作为新 Section 添加到这个 Chapter 中
+- 在合并章节时（`mergeChapters` 方法），超过指定层级的子 Chapter 的所有 Section 会被合并到父 Chapter 的 sections 数组中
+
+### 3. 创建笔记的数量与 Chapter 和 Section 有什么关系？
+
+创建笔记的数量等同于 Chapter 的数量，与 Section 的数量完全无关。具体来说：
+
+- 每个 Chapter 会生成一个笔记文件
+- 一个 Chapter 中的所有 Section 内容会被合并到同一个笔记中
+- 在生成 Markdown 内容时，会将每个 Chapter 的所有 Section 内容提取出来，转换为 Markdown，然后用空行连接起来
+
+无论一个 Chapter 包含多少个 Section，最终都只会为这个 Chapter 创建一个笔记文件。Section 只是内容的组织单位，不会影响最终创建的笔记数量。
