@@ -125,3 +125,30 @@ The parser uses two core classes to organize data:
 ## Summary
 
 This EPUB parser adopts a modular design, breaking down the complex parsing process into multiple independent steps. Through recursive processing and reasonable data structure design, it effectively handles the hierarchical structure of EPUB format. It also includes necessary error handling and fault tolerance mechanisms, ensuring the stability of the parsing process.
+
+## Frequently Asked Questions (FAQ)
+
+### 1. What is the relationship between Chapter and Section?
+
+In this project, Chapter and Section are two core data structures:
+- Chapter represents a chapter in the book and can contain multiple Sections
+- Section represents a specific content fragment
+
+Each Chapter has one initial Section when created, but more Sections can be added later. This typically happens when processing unmapped files, where the system adds these files as additional Sections to the nearest preceding Chapter.
+
+### 2. Can a Chapter contain multiple Sections?
+
+Yes, a Chapter can contain multiple Sections. This situation mainly occurs through the following paths:
+
+- When processing unmapped files, if a suitable parent Chapter is found, the file will be added as a new Section to this Chapter
+- When merging chapters (in the `mergeChapters` method), all Sections from child Chapters exceeding the specified level will be merged into the parent Chapter's sections array
+
+### 3. What is the relationship between the number of notes created and Chapters/Sections?
+
+The number of notes created equals the number of Chapters, completely independent of the number of Sections. Specifically:
+
+- Each Chapter generates one note file
+- All Section contents in a Chapter are merged into the same note
+- When generating Markdown content, all Section contents from each Chapter are extracted, converted to Markdown, and then joined with blank lines
+
+Regardless of how many Sections a Chapter contains, only one note file will be created for that Chapter. Section is just an organizational unit for content and does not affect the final number of notes created.

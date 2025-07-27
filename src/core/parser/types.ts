@@ -1,3 +1,5 @@
+import { normalize } from "../../utils/utils";
+
 export class Section {
     name: string;
     url: string;
@@ -34,7 +36,11 @@ export class Chapter {
         this.parent = parent;
     }
 
-    public get name(): string {
+    public get originalName(): string {
         return this.sections[0].name ?? "";
     }
-} 
+
+    public get name(): string {
+        return normalize(this.originalName);
+    }
+}
