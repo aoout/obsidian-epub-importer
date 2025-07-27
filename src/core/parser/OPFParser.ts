@@ -24,13 +24,12 @@ export class OPFParser {
 
   getMeta(): Record<string, string> {
     const meta = findProperty(this.content, "metadata")?.[0] ?? {};
-    const wrapQuotes = (value: string) => value ? `"${value}"` : "";
 
     return {
-      title: wrapQuotes(meta["dc:title"]?.[0]),
-      publisher: wrapQuotes(meta["dc:publisher"]?.[0]),
-      language: wrapQuotes(meta["dc:language"]?.[0]),
-      author: wrapQuotes(meta["dc:creator"]?.[0]?.["_"] ?? "")
+      title: meta["dc:title"]?.[0] ?? "",
+      publisher: meta["dc:publisher"]?.[0] ?? "",
+      language: meta["dc:language"]?.[0] ?? "",
+      author: meta["dc:creator"]?.[0]?.["_"] ?? ""
     };
   }
 }
