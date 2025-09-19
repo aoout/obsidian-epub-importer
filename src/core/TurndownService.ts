@@ -37,6 +37,38 @@ export const create = (assetsPath: string, imageFormat: string): TurndownService
     httpLinks: {
       filter: (node) => node.nodeName === "A" && node.getAttribute("href")?.startsWith("http"),
       replacement: (_, node) => `[${node.textContent}](${node.getAttribute("href")})`
+    },// 新增规则：处理ruby标签
+    ruby: {
+      filter: "ruby",
+      replacement: (content, node) => {
+        // 获取基础文本（不包括rt标签）
+        const baseText = Array.from(node.childNodes)
+          .filter(child => 
+            child.nodeType === Node.TEXT_NODE || 
+            (child.nodeType === Node.ELEMENT_NODE && (child as Element).tagName.toLowerCase() !== "rt")
+          )
+          .map(child => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              return child.textContent || "";
+            } else {
+              // 对于非rt元素节点，递归获取其文本内容
+              return (child as Element).textContent || "";
+            }
+          })
+          .join("");
+        
+        // 获取注音文本
+        const rtElement = node.querySelector("rt");
+        const rubyText = rtElement ? rtElement.textContent || "" : "";
+        
+        // 转换为 {漢字|かんじ} 格式
+        return `{${baseText}|${rubyText}}`;
+      }
+    },
+    // 新增规则：处理rt标签（使其不产生任何输出）
+    rt: {
+      filter: "rt",
+      replacement: () => ""
     }
   };
 
