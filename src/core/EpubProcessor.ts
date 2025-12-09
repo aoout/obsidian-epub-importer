@@ -188,7 +188,7 @@ private hasHtmlElementWithId(html: string, id: string): boolean {
   }
 
   private parseProperties(): Record<string, unknown> {
-    const props = parseYaml(templateWithVariables(this.settings.mocPropertysTemplate, this.parser!.meta));
+    const props = parseYaml(templateWithVariables(this.settings.mocPropertysTemplate, this.parser!.meta, true));
     props.tags = [...(props.tags ?? []), this.settings.tag];
     return props;
   }
