@@ -35,7 +35,10 @@ export class OPFParser {
       title: meta["dc:title"]?.[0] ?? "",
       publisher: meta["dc:publisher"]?.[0] ?? "",
       language: meta["dc:language"]?.[0] ?? "",
-      author: meta["dc:creator"]?.[0]?.["_"] ?? ""
+      author: (meta["dc:creator"] || [])
+        .map((c: { _: string }) => c?._)
+        .filter(Boolean)
+        .join(", ")
     };
   }
 }
