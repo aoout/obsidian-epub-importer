@@ -44,11 +44,15 @@ export const create = (assetsPath: string, imageFormat: string): TurndownService
         // 获取基础文本（不包括rt标签）
         const baseText = Array.from(node.childNodes)
           .filter(child => 
+            //@ts-ignore
             child.nodeType === Node.TEXT_NODE || 
+            //@ts-ignore
             (child.nodeType === Node.ELEMENT_NODE && (child as Element).tagName.toLowerCase() !== "rt")
           )
           .map(child => {
+            //@ts-ignore
             if (child.nodeType === Node.TEXT_NODE) {
+              //@ts-ignore
               return child.textContent || "";
             } else {
               // 对于非rt元素节点，递归获取其文本内容
