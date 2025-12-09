@@ -46,12 +46,14 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@lisandra-dev/create-obsidian-plugin": "^1.9.1",
     "@types/js-beautify": "^1.14.3",
     "adm-zip": "^0.5.16",
     "commit-and-tag-version": "^11.0.0",
     "extract-zip": "^2.0.1",
     "fs-jetpack": "^5.1.0",
+    "i18next": "^25.7.1",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-http-backend": "^3.0.2",
     "js-beautify": "^1.15.1",
     "ts-node": "^10.9.2",
     "turndown": "^7.2.0",
