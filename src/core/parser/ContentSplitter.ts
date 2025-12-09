@@ -23,18 +23,18 @@ export class ContentSplitter {
 
   private splitHtmlByAnchors(nodes: NodeListOf<ChildNode>, hrefs: string[]): string[] {
     const htmls: string[] = [];
-    let currentHtml = "";
+    let buffer = "";
   
     nodes.forEach(node => {
-      if (this.isAnchorNode(node, hrefs) && currentHtml && serializeNode(node) != "\n") {
-        htmls.push(currentHtml);
-        currentHtml = serializeNode(node);
-      } else if(serializeNode(node) != "\n") {
-        currentHtml += serializeNode(node);
+      const html = serializeNode(node);
+      if (html === "\n") return;
+      if (this.isAnchorNode(node, hrefs) && buffer) {
+        htmls.push(buffer);
       }
+      buffer += html;
     });
   
-    if (currentHtml) htmls.push(currentHtml);
+    if (buffer) htmls.push(buffer);
     return htmls;
   }
   
