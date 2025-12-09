@@ -77,8 +77,15 @@ export default class EpubProcessor {
 
     content = this.processObsidianLinks(content, chapters);
 
-    await this.app.vault.create(`${notePath}.md`, content);
-    return notePath;
+    let finalPath = `${notePath}.md`;
+    let counter = 1;
+    // 防止重名，自动加 (1)(2)…
+    while (await this.app.vault.adapter.exists(finalPath)) {
+      finalPath = `${notePath} (${counter}).md`;
+      counter++;
+    }
+    await this.app.vault.create(finalPath, content);
+    return finalPath;
 }
 
 private processObsidianLinks(content: string, chapters: Chapter[]): string {
