@@ -11,6 +11,8 @@
   "Library": "The plugin will search for .epub files from these paths (absolute path).",
   "byDrag_o": "Import by drag",
   "byDrag": "Import .epub file by drag it to obsidian vault. The .epub  file will be deleted after importing.",
+  "Sync_import_concurrency_o": "Batch import concurrency",
+  "Sync_import_concurrency": "How many books to import at once when syncing libraries. Set 1 for strict serial import.",
   "storage": "Storage",
   "Save_path_o": "Save_path",
   "Save_path": "The plugin will save the imported book to this path (relative path).",

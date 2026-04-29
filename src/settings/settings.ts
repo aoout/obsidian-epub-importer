@@ -2,6 +2,7 @@ export interface EpubImporterSettings {
 	tag: string;
 	libraries: string[];
 	byDrag: boolean;
+	syncImportConcurrency: number;
 	savePath: string;
 	assetsPath: string;
 	backupPath: string;
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS: EpubImporterSettings = {
 	tag: "book",
 	libraries: [],
 	byDrag: false,
+	syncImportConcurrency: 3,
 	savePath: "",
 	assetsPath: "{{savePath}}/{{bookName}}/images",
 	backupPath: "",

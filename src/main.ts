@@ -179,10 +179,28 @@ export default class EpubImporterPlugin extends Plugin {
 		if (!libraries.length) return this.showNotice(i18next.t("translation:no libraries"));
 
 		const epubs = libraries.flatMap((lib) => jetpack.find(lib, { matching: "**/**.epub" }));
-
-		await Promise.all(epubs.map((epub) => this.epubProcessor.importEpub(jetpack.path(epub))));
+		await this.importEpubsWithConcurrency(epubs);
 
 		this.showSyncResult(epubs.length);
+	}
+
+	private getSyncImportConcurrency() {
+		const raw = Math.floor(this.settings.syncImportConcurrency || 3);
+		return Math.max(1, raw);
+	}
+
+	private async importEpubsWithConcurrency(epubs: string[]) {
+		if (!epubs.length) return;
+		const concurrency = Math.min(this.getSyncImportConcurrency(), epubs.length);
+		let index = 0;
+		const worker = async () => {
+			while (index < epubs.length) {
+				const epub = epubs[index++];
+				const processor = new EpubProcessor(this.app, this.settings, this.vaultPath);
+				await processor.importEpub(jetpack.path(epub));
+			}
+		};
+		await Promise.all(Array.from({ length: concurrency }, worker));
 	}
 
 	private showSyncResult(count: number) {
