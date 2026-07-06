@@ -44,6 +44,19 @@ export class EpubImporterSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+		new Setting(containerEl)
+			.setName(i18next.t("translation:Sync_import_concurrency_o"))
+			.setDesc(i18next.t("translation:Sync_import_concurrency"))
+			.addSlider((slider) => {
+				slider
+					.setLimits(1, 10, 1)
+					.setDynamicTooltip()
+					.setValue(this.plugin.settings.syncImportConcurrency)
+					.onChange(async (value) => {
+						this.plugin.settings.syncImportConcurrency = value;
+						await this.plugin.saveSettings();
+					});
+			});
 		new Setting(containerEl).setName(i18next.t("translation:storage")).setHeading();
 		new Setting(containerEl)
 			.setName(i18next.t("translation:Save_path_o"))
