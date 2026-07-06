@@ -185,7 +185,7 @@ export default class EpubImporterPlugin extends Plugin {
 	}
 
 	private getSyncImportConcurrency() {
-		const raw = Math.floor(this.settings.syncImportConcurrency || 3);
+		const raw = Math.floor(this.settings.syncImportConcurrency ?? 3);
 		return Math.max(1, raw);
 	}
 
