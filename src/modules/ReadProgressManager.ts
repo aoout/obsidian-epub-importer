@@ -11,7 +11,7 @@ export class ReadProgressManager {
 	private app: App;
 	private db: scrollPositionDB = {};
 	private dbFileName = ".obsidian/plugins/epub-importer/progress.json";
-	private delayAfterFileOpening = 30;
+	private delayAfterFileOpening = 150;
 	private lastSavedDb: scrollPositionDB = {};
 
 	constructor(app: App) {
