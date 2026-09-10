@@ -1,14 +1,11 @@
-import AdmZip from "adm-zip";
 import jetpack from "fs-jetpack";
 import i18next from "i18next";
-import { Notice, Plugin, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
+import { ConfirmationModal, Notice, Plugin, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
 import * as path from "path";
-import EpubProcessor from "./core/EpubProcessor";
 import { resources, translationLanguage } from "./i18n/i18next";
 import { EpubImporterModal } from "./modals/EpubImporterModal";
-import { ZipExporterModal } from "./modals/ZipExporterModal";
-import { ZipImporterModal } from "./modals/ZipImporterModal";
-import { DEFAULT_SETTINGS, EpubImporterSettings } from "./settings/settings";
+import { runImportNext } from "./nextIntegration";
+import { DEFAULT_SETTINGS, migrateSettings, EpubImporterSettings } from "./settings/settings";
 import { EpubImporterSettingsTab } from "./settings/settingsTab";
 import { getNotesWithTag } from "./utils/obsidianUtils";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -22,24 +19,17 @@ interface CommandConfig {
 }
 
 export default class EpubImporterPlugin extends Plugin {
-	settings: EpubImporterSettings = DEFAULT_SETTINGS;
+	settings: EpubImporterSettings = { ...DEFAULT_SETTINGS };
 	// @ts-ignore
 	private vaultPath: string = this.app.vault.adapter.basePath;
-	private epubProcessor: EpubProcessor;
 	private activeBook = "";
 	private activeLeaf?: WorkspaceLeaf;
 	private detachLeaf = false;
-	private progressManager: ReadProgressManager;
+	private progressManager?: ReadProgressManager;
 
 	async onload() {
 		await this.loadSettings();
-		await Promise.all([
-			this.initI18n(),
-			this.loadSettings().then(() => {
-				this.epubProcessor = new EpubProcessor(this.app, this.settings, this.vaultPath);
-			}),
-			this.setupReadProgressManager()
-		]);
+		await Promise.all([this.initI18n(), this.setupReadProgressManager()]);
 
 		this.addSettingTab(new EpubImporterSettingsTab(this.app, this));
 		this.registerCommands(this.getCommands());
@@ -92,7 +82,16 @@ export default class EpubImporterPlugin extends Plugin {
 		});
 	}
 
-	private loadSettings = async () => Object.assign(this.settings, await this.loadData());
+	private loadSettings = async () => {
+		const raw = (await this.loadData()) as Record<string, unknown> | null;
+		this.settings = migrateSettings(raw);
+		// 迁移若改变了结构（v1 → v2），立即回写固化；键序无关比较
+		const keys = [
+			...new Set([...(raw ? Object.keys(raw) : []), ...Object.keys(this.settings)]),
+		].sort();
+		const changed = JSON.stringify(raw ?? null, keys) !== JSON.stringify(this.settings, keys);
+		if (changed) await this.saveData(this.settings);
+	};
 
 	saveSettings = () => this.saveData(this.settings);
 
@@ -103,7 +102,7 @@ export default class EpubImporterPlugin extends Plugin {
 				name: i18next.t("translation:import-epub"),
 				callback: () =>
 					this.createModal(EpubImporterModal, this.settings.libraries, (result) =>
-						this.epubProcessor.importEpub(result as string)
+						runImportNext(this.app, result as string, this.settings)
 					),
 			},
 			{
@@ -121,22 +120,6 @@ export default class EpubImporterPlugin extends Plugin {
 						this.continueBook.bind(this)
 					),
 			},
-			{
-				id: "export-zip",
-				name: i18next.t("translation:export-zip"),
-				callback: () =>
-					this.createModal(ZipExporterModal, this.settings.tag, (bookName) =>
-						this.exportBookToZip(bookName as string)
-					),
-			},
-			{
-				id: "import-zip",
-				name: i18next.t("translation:import-zip"),
-				callback: () =>
-					this.createModal(ZipImporterModal, this.settings.backupPath, (zipPath) =>
-						this.importBookFromZip(zipPath as string)
-					),
-			},
 		];
 	}
 
@@ -146,9 +129,22 @@ export default class EpubImporterPlugin extends Plugin {
 			.map((link) => this.app.vault.getAbstractFileByPath(link.link + ".md"))
 			.filter((file): file is TFile => file instanceof TFile);
 
+		// 空书（仅 MOC、无章节链接）：直接打开 MOC 本身
+		if (notes.length === 0) {
+			await this.app.workspace.openLinkText(result.path, "");
+			return;
+		}
+
+		// 阅读进度管理未开启（默认配置）：无时间戳可比对，按章节顺序打开首篇
+		const manager = this.progressManager;
+		if (!manager) {
+			await this.app.workspace.openLinkText(notes[0].path, "");
+			return;
+		}
+
 		const latestNoteByTimestamp = notes.reduce((prev, current) => {
-			const prevState = this.progressManager.getNoteState(prev.path)?.timestamp || 0;
-			const currentState = this.progressManager.getNoteState(current.path)?.timestamp || 0;
+			const prevState = manager.getNoteState(prev.path)?.timestamp || 0;
+			const currentState = manager.getNoteState(current.path)?.timestamp || 0;
 
 			return prevState >= currentState ? prev : current;
 		});
@@ -196,8 +192,8 @@ export default class EpubImporterPlugin extends Plugin {
 		const worker = async () => {
 			while (index < epubs.length) {
 				const epub = epubs[index++];
-				const processor = new EpubProcessor(this.app, this.settings, this.vaultPath);
-				await processor.importEpub(jetpack.path(epub));
+				// 批量同步：静默模式（不弹逐本 Notice、不逐个打开 MOC）
+				await runImportNext(this.app, jetpack.path(epub), this.settings, { silent: true });
 			}
 		};
 		await Promise.all(Array.from({ length: concurrency }, worker));
@@ -212,26 +208,16 @@ export default class EpubImporterPlugin extends Plugin {
 		console.log(message);
 	}
 
-	private exportBookToZip(bookName: string) {
-		const bookPath = this.getPath(this.settings.savePath, bookName);
-		const zip = new AdmZip();
-		zip.addLocalFolder(bookPath);
-		zip.writeZip(this.getPath(this.settings.backupPath, `${bookName}.zip`));
-	}
-
-	private importBookFromZip(zipPath: string) {
-		const bookName = path.basename(zipPath, ".zip");
-		new AdmZip(zipPath).extractAllTo(this.getPath(this.settings.savePath, bookName));
-	}
-
 	private handleDragAndDrop = async (e: DragEvent) => {
 		if (!this.settings.byDrag || !this.isDropTarget(e)) return;
 
 		const file = e.dataTransfer?.files[0];
 		if (file && path.extname(file.name) === ".epub") {
-			// @ts-ignore
-			await this.epubProcessor.importEpub(file.path);
-			this.cleanEpubFiles();
+			// @ts-ignore - 拖入文件的本地绝对路径，Electron 下存在
+			const epubPath = file.path as string;
+			if (!epubPath) return;
+			await runImportNext(this.app, epubPath, this.settings);
+			await this.trashSourceEpub(epubPath);
 		}
 	};
 
@@ -250,10 +236,6 @@ export default class EpubImporterPlugin extends Plugin {
 		}
 	};
 
-	private getPath(...segments: string[]) {
-		return path.posix.join(this.vaultPath, ...segments);
-	}
-
 	private isDropTarget(e: DragEvent) {
 		return (e.target as HTMLElement)?.className === "nav-files-container node-insert-event";
 	}
@@ -267,8 +249,57 @@ export default class EpubImporterPlugin extends Plugin {
 		return this.settings.autoOpenRightPanel;
 	}
 
-	private cleanEpubFiles() {
-		jetpack.find(this.vaultPath, { matching: "**/**.epub" }).forEach(jetpack.remove);
+	/**
+	 * byDrag 导入后删除「源文件」（插件既定行为）。
+	 * 关键修复：只删除本次拖入的那一个文件 —— 不再像旧版那样扫描整个 vault 删除所有 epub。
+	 *  - 源文件位于 vault 内：优先 Vault.trash（进 Obsidian 回收站，可恢复）。
+	 *  - 源文件在 vault 外（拖入的外部文件系统路径，常见情形）：无回收站可用，
+	 *    硬删除不可逆，删除前用 ConfirmationModal 二次确认。
+	 */
+	private async trashSourceEpub(epubPath: string) {
+		if (!epubPath.toLowerCase().endsWith(".epub")) return;
+
+		// 归一化分隔符再比对：Windows 上拖入路径是反斜杠，vaultPath 是正斜杠
+		const norm = (p: string) => p.replace(/\\/g, "/");
+		const inVault = norm(epubPath).startsWith(norm(this.vaultPath));
+		if (inVault) {
+			const relPath = path.relative(this.vaultPath, epubPath).split(path.sep).join("/");
+			const file = this.app.vault.getAbstractFileByPath(relPath);
+			if (file instanceof TFile) {
+				await this.app.vault.trash(file, true);
+				return;
+			}
+		}
+
+		// vault 外：硬删除不可逆，二次确认
+		if (!jetpack.exists(epubPath)) return;
+		const confirmed = await this.confirmSourceDeletion(path.basename(epubPath));
+		if (confirmed) jetpack.remove(epubPath);
+	}
+
+	/** 删除源文件前的二次确认（外部文件硬删除不可逆，必须显式确认） */
+	private confirmSourceDeletion(fileName: string): Promise<boolean> {
+		return new Promise((resolve) => {
+			let confirmed = false;
+			const modal = new ConfirmationModal(this.app);
+			modal.setTitle(i18next.t("translation:confirm_delete_source_title"));
+			modal.setContent(
+				i18next.t("translation:confirm_delete_source_desc", { file: fileName })
+			);
+			modal.addButton((btn) =>
+				btn
+					.setButtonText(i18next.t("translation:confirm_delete_source_btn"))
+					.setWarning()
+					.setCta()
+					.onClick(() => {
+						confirmed = true;
+						modal.close();
+					})
+			);
+			modal.addCancelButton(i18next.t("translation:cancel"));
+			modal.onClose = () => resolve(confirmed);
+			modal.open();
+		});
 	}
 
 	private async updateActiveLeaf(mocPath: string, bookName: string) {

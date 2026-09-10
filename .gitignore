@@ -12,3 +12,10 @@ data.json
 styles.css
 !src/styles.css
 coverage
+
+# 测试用临时 Obsidian 库（含 .obsidian 配置），不纳入版本控制
+test-vault/
+
+# CLI 构建产物
+bin/
+out/
