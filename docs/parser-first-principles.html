@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="M20KT3ZeGajWD5XoBNUqMy">
+<head data-page-node-id="uZwlx2RbWDHxia2RakUiLN">
+<meta charset="UTF-8" data-page-node-id="0f1MlcBOOQwm7GH5VEO2Mj" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="IRtM9hH93hh95vQIOTKRst" />
+<title>解析器的第一性原理 · 让「丢失」不可表达</title>
+<style>
+:root{
+  --paper:#FAF8F5; --card:#FFFDFB; --ink:#1C1A17; --muted:#6B655C;
+  --line:#E6DFD4; --teal:#1F4E5F; --teal-soft:#E8F0F2;
+  --terra:#B4531F; --terra-soft:#FBEEE6; --gold:#8A6D2F;
+  --green:#2F6B4F; --green-soft:#E7F1EB; --amber:#B8860B; --amber-soft:#FBF3E0;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:16.5px;line-height:1.9;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:0 28px 110px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;
+  background:#F2EEE8;padding:1px 6px;border-radius:3px}
+
+/* hero */
+header{padding:92px 0 54px;border-bottom:1px solid var(--line);margin-bottom:54px}
+.kicker{font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--teal);font-weight:600;margin-bottom:22px}
+h1{font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",Georgia,serif;
+  font-size:41px;line-height:1.33;margin:0 0 20px;font-weight:700}
+.sub{font-size:18px;color:var(--muted);margin:0 0 32px;line-height:1.75}
+.thesis{border-left:3px solid var(--terra);background:var(--terra-soft);padding:22px 26px;
+  font-size:19.5px;line-height:1.8;font-family:"Songti SC","Source Han Serif SC",Georgia,serif}
+.thesis strong{color:var(--terra)}
+
+/* sections */
+section{margin-bottom:66px}
+h2{font-family:"Songti SC","Source Han Serif SC",Georgia,serif;font-size:26px;margin:0 0 8px;font-weight:700;
+  display:flex;align-items:baseline;gap:14px}
+h2 .num{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--teal);font-weight:600;
+  border:1px solid var(--teal);border-radius:3px;padding:2px 7px;position:relative;top:-3px;flex:none}
+.lede{color:var(--muted);margin:0 0 24px;font-size:16px}
+h3{font-size:18px;margin:30px 0 10px;font-weight:650}
+p{margin:0 0 16px}
+ul{padding-left:20px}li{margin-bottom:9px}
+
+/* three-stage ladder */
+.ladder{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:26px 0}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:20px;position:relative;
+  transition:transform .25s,border-color .25s,box-shadow .25s}
+.stage:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.stage .lv{font-size:11.5px;letter-spacing:.14em;font-weight:700;color:#fff;padding:2px 8px;border-radius:3px;display:inline-block;margin-bottom:10px}
+.stage.s1 .lv{background:#A8A096}.stage.s2 .lv{background:var(--gold)}.stage.s3 .lv{background:var(--teal)}
+.stage h4{margin:0 0 8px;font-size:17px}
+.stage p{margin:0;font-size:14.5px;color:#3A362F}
+.stage.s3{background:var(--teal-soft);border-color:var(--teal)}
+.arrowrow{text-align:center;color:var(--muted);font-size:13px;margin:-6px 0 30px}
+
+/* axioms */
+.axioms{display:grid;gap:18px;margin-top:24px}
+.ax{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:24px 26px;position:relative}
+.ax .n{position:absolute;top:20px;right:24px;font-family:"Songti SC",Georgia,serif;font-size:40px;color:var(--line);font-weight:700;line-height:1}
+.ax .en{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);font-weight:600;margin-bottom:8px}
+.ax h3{margin:0 0 10px;font-size:19.5px;font-family:"Songti SC","Source Han Serif SC",Georgia,serif}
+.ax p{margin-bottom:10px}
+.ax .cor{border-top:1px dashed var(--line);margin-top:12px;padding-top:12px;font-size:14.5px;color:var(--teal)}
+.ax .cor b{color:var(--teal)}
+
+/* demos */
+.demo{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px 24px;margin:24px 0}
+.demo-h{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.demo-h h4{margin:0;font-size:16px}
+.demo-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{font-family:inherit;font-size:14px;padding:8px 15px;border-radius:4px;cursor:pointer;
+  border:1px solid var(--teal);background:#fff;color:var(--teal);font-weight:600;transition:all .2s}
+button:hover{background:var(--teal);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed;border-color:var(--line);color:var(--muted);background:#fff}
+button.on{background:var(--teal);color:#fff}
+button.warn{border-color:var(--terra);color:var(--terra)}
+button.warn:hover{background:var(--terra);color:#fff}
+.hint{font-size:13.5px;color:var(--muted);margin:14px 0 0}
+
+/* demo A */
+.tocrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;font-size:13px}
+.tocrow span{background:#F2EEE8;border:1px solid var(--line);border-radius:3px;padding:3px 9px}
+.tocrow span.nofrag{border-style:dashed;color:var(--muted)}
+.strip{display:flex;gap:8px;flex-wrap:wrap;min-height:56px;padding:12px;background:#FBF9F6;
+  border:1px dashed var(--line);border-radius:4px;margin-bottom:14px}
+.atom{padding:8px 12px;border:1px solid #D8D0C4;border-radius:4px;background:#fff;font-size:13.5px;
+  transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .5s,background .3s,border-color .3s}
+.atom.head{background:var(--amber-soft);border-color:#E0C97A}
+.atom.h{background:var(--teal-soft);border-color:#9FBFC7}
+.atom.in{animation:pop .5s cubic-bezier(.2,.8,.2,1) both}
+.atom.drop{opacity:.4;transform:translateY(16px) scale(.93);background:#F7E6DE;border-color:var(--terra);text-decoration:line-through}
+@keyframes pop{from{opacity:0;transform:translateY(-12px) scale(.9)}to{opacity:1;transform:none}}
+.buckets{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
+.bucket{border:1px solid var(--line);border-radius:4px;padding:12px;min-height:92px;background:#FCFAF8}
+.bucket h5{margin:0 0 10px;font-size:12.5px;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.bucket .body{display:flex;gap:8px;flex-wrap:wrap;min-height:44px;align-items:flex-start}
+.bucket.void{border-color:var(--terra);border-style:dashed;background:var(--terra-soft)}
+.bucket.void h5{color:var(--terra)}
+.grp{display:flex;flex-direction:column;gap:6px;border-left:2px solid #D8D0C4;padding-left:8px}
+.grp .gt{font-size:11.5px;color:var(--muted)}
+.status{margin-top:14px;padding:11px 14px;border-radius:4px;font-size:14.5px;background:#F2EEE8}
+.status.bad{background:var(--terra-soft);color:var(--terra);border:1px solid #EBC8B4}
+.status.good{background:var(--green-soft);color:var(--green);border:1px solid #BFD8C8}
+.pill{display:inline-block;font-size:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:1px 9px;margin-left:6px}
+
+/* demo B */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:9px 13px;border:1px solid #D8D0C4;border-radius:4px;background:#fff;cursor:pointer;
+  font-size:13.5px;user-select:none;transition:all .25s;min-width:74px;text-align:center}
+.chip:hover{transform:translateY(-2px)}
+.chip.l-正文{background:var(--green-soft);border-color:#9FC7B0}
+.chip.l-标题{background:var(--teal-soft);border-color:#9FBFC7}
+.chip.l-脚注{background:var(--amber-soft);border-color:#E0C97A}
+.chip.l-废弃{background:#F3E3DA;border-color:var(--terra);color:#8A3F14;text-decoration:line-through}
+.meter{height:12px;background:#EDE7DE;border-radius:6px;overflow:hidden;margin-bottom:8px}
+.meter .fill{height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--green));
+  transition:width .45s cubic-bezier(.2,.8,.2,1)}
+.mrow{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:14px}
+
+/* demo C */
+.grid{display:grid;grid-template-columns:96px repeat(4,1fr);gap:5px;margin:6px 0 14px}
+.cell{aspect-ratio:1.6;border:1px solid var(--line);border-radius:3px;background:#FCFAF8;
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;color:#C9C0B4;transition:all .35s}
+.cell.lbl{border:none;background:none;justify-content:flex-end;padding-right:6px;font-size:12.5px;color:var(--muted);aspect-ratio:auto}
+.cell.hd{border:none;background:none;font-size:12.5px;color:var(--muted);aspect-ratio:auto}
+.cell.hit{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600}
+.cell.hit2{background:var(--amber-soft);border-color:var(--amber);color:var(--amber);font-weight:600}
+.cell.miss{background:#F7E6DE;border-color:var(--terra);color:var(--terra)}
+.cell.pop{animation:cellpop .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cellpop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+
+/* figure */
+.figure{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:20px;margin:24px 0}
+.figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:13.5px;color:var(--muted);margin-top:12px;text-align:center}
+.flow{stroke-dasharray:6 6;animation:flow 1.1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-12}}
+
+/* table */
+table{width:100%;border-collapse:collapse;margin:20px 0;font-size:15px}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--teal-soft);color:var(--teal);font-size:13px;font-weight:650}
+td:first-child{font-weight:600;width:26%}
+
+.closing{background:var(--ink);color:#F2EDE6;border-radius:5px;padding:38px 40px;margin-top:20px}
+.closing h3{font-family:"Songti SC",Georgia,serif;font-size:22px;margin:0 0 16px;color:#fff}
+.closing p{color:#D8D1C7;margin-bottom:13px}
+.closing code{background:rgba(255,255,255,.12);color:#F5D9B8}
+footer{margin-top:48px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+@media(max-width:720px){
+  .ladder{grid-template-columns:1fr}.buckets{grid-template-columns:1fr}
+  .grid{grid-template-columns:70px repeat(4,1fr)}h1{font-size:31px}
+}
+</style>
+</head>
+<body data-page-node-id="BvX0AI6DfQUIZpEVgSVEX7">
+<div class="wrap" data-page-node-id="eMg1nuFQXyX1TeSEqggBE2">
+
+<header data-page-node-id="cy1tgAT9QSPt74FGy121Jl">
+  <div class="kicker" data-page-node-id="MjhofBz3DlfFULqESrKego">First Principles · A Deeper Cut</div>
+  <h1 data-page-node-id="NEHQzZAdFz29u2kqjvklNm">让「丢失」<br data-page-node-id="u9ol6mbbZ5lpC5R0UYV1Be"/>不可表达</h1>
+  <p class="sub" data-page-node-id="gecZTPqp9iFkhvzdD4ermG">上一版提议是「加一个审计器去检查丢失」——那仍是<strong data-page-node-id="6yOdPeOM6zmc1yWIJcolUd">侦测</strong>，不是杜绝。<br data-page-node-id="Hf58pPo32mRu3ELgkXEHl2"/>
+  这一版再往下挖一层：重新 formulation，使「丢弃内容」在这个框架里<strong data-page-node-id="LmLNGGpEDuNpiTaObS2BFf">写不出来</strong>。</p>
+  <div class="thesis" data-page-node-id="gUrN9KduFr84OOGdyINnP7">
+    不要去<strong data-page-node-id="Q93c1SYijHutnmvGlVIyeZ">检查</strong>丢失。<br data-page-node-id="SWfZj0BXeLyS1xhoqIXgyP"/>
+    要重新 formulation，让丢失<strong data-page-node-id="6NXuu27Sing5ovADsEWxsd">不可表达</strong>。
+  </div>
+</header>
+
+<!-- 00 -->
+<section data-page-node-id="Ggu1TOEk1m0dIEVN7npSYq">
+  <h2 data-page-node-id="Ra3SvNhwXGgYIivpVRmR4s"><span class="num" data-page-node-id="FxB3k8zL2etCcdEnXarKni">00</span>安全的三个阶</h2>
+  <p class="lede" data-page-node-id="qvRAeYtwAolKdR3GZJMMcu">先把「安全」这件事本身分层。同一个 bug，在三个阶上的命运完全不同。</p>
+  <div class="ladder" data-page-node-id="EFPbFTaH3EYCwWbIt0Yhyc">
+    <div class="stage s1" data-page-node-id="ODmml4FC4jpDA4uHSq5jDh">
+      <span class="lv" data-page-node-id="LK5hEOatcOOM2rL59xARrT">阶一 · 劝告</span>
+      <h4 data-page-node-id="VEWvlBjTl7fG4QyzN3BEgZ">约定并上报</h4>
+      <p data-page-node-id="s0E3UmoGsGr6zySzEDXXeG">「每个丢弃的分支都要记得 <code data-page-node-id="OLkVPV25dIUhj700wHznXG">pushDiag</code>。」<br data-page-node-id="97CZoLBOpzz2MnRMlVxPnp"/><b data-page-node-id="C9LJN8S309i8TXqCwnywN0">后果</b>：内容被<b data-page-node-id="gfpQpkqF6U2pXF0G8yVFNL">算法结构</b>吃掉时，没有任何分支觉得自己丢了东西 → 诊断数为 0。</p>
+    </div>
+    <div class="stage s2" data-page-node-id="HI5p76ru6Tco5HDWtGaXed">
+      <span class="lv" data-page-node-id="vBY74bFsLZWuHnZkc0aXLr">阶二 · 侦测</span>
+      <h4 data-page-node-id="Ofusppbyos5PjVn9WVfnbf">事后校验覆盖率</h4>
+      <p data-page-node-id="KU5dZPDWYIlrpTBrkchY18">「流水线末端加审计器，不平账就报。」<br data-page-node-id="2k5oYSiAxVMx1vEFu9G3ky"/><b data-page-node-id="qzHmDKMxrRoEHtFMAPmWCz">后果</b>：能抓住 bug，但审计器是<b data-page-node-id="u0GnWXQECyfDhTvX4lvxUH">独立组件</b>，理论上可与流水线漂移；且是<b data-page-node-id="roxiaKIxBAW7R1rgokCKol">事后</b>。</p>
+    </div>
+    <div class="stage s3" data-page-node-id="Qp0sLGGac1CtbVxkdgkyEe">
+      <span class="lv" data-page-node-id="WGiYiTZnWCwFe29RxjrQPL">阶三 · 不可表达</span>
+      <h4 data-page-node-id="xfX1gLE8HFEAWhqLrO6VDz">让不安全的操作不存在</h4>
+      <p data-page-node-id="6EKqtNbrMmhhVhGF37Vzmg">「语言里没有 <code data-page-node-id="Z6EbDweOrPjT40bG2ZofOA">filter</code>，只有 <code data-page-node-id="1j4HiH3vHACyh12dvfUOkf">partition</code>。」<br data-page-node-id="CGrVd3PFkxGNGT1ZcxAYj8"/><b data-page-node-id="gIGHz4K5hJBpIqdmGcP2uP">后果</b>：不是「会被抓到」，而是<b data-page-node-id="SiEnyOUPZB7VkojJL7Z6xS">根本构造不出</b>一个丢内容的覆盖。</p>
+    </div>
+  </div>
+  <div class="arrowrow" data-page-node-id="ZShiCacLFQIukJZnPksRbX">↑ 我们目前停在<b data-page-node-id="Zd5gpFdAal7ivKDrHQloQl">阶一</b>；上一版提议到了<b data-page-node-id="gUpQPhFhAGRuG0DkmZJTCB">阶二</b>；本报告主张直接到<b data-page-node-id="baZY0edHKyA5chftoME4kB">阶三</b>。</div>
+  <p data-page-node-id="E2oeFq6SxAylQLEjWE7us6">类比最清楚：<b data-page-node-id="wcg2BmN8KbtnErIFi1Gz8Q">类型系统不会去「检查」null</b>——它让 null 不成为合法值。我们要的是同一次跃迁：<b data-page-node-id="qhaHAT5HfdSNyyfPPgXtkJ">从运行时检查，到构造期禁止。</b></p>
+</section>
+
+<!-- 01 -->
+<section data-page-node-id="ZivSi9nyBkmVxP9u5xzdoG">
+  <h2 data-page-node-id="EefDFv05vsDIlAMJcgglHw"><span class="num" data-page-node-id="PWvBbFQ8Gq7AaoB10SHPQ3">01</span>五条公理</h2>
+  <p class="lede" data-page-node-id="NwJh5iM3X2xHl5DnBTPfIA">不是五个模块，是五条不可违背的公理。架构是从它们<b data-page-node-id="7qcuvwji1Lc9RQSyZLyCpC">推导</b>出来的，而不是拼出来的。</p>
+
+  <div class="axioms" data-page-node-id="APCOyy1r8s1N3nZzEPw859">
+    <div class="ax" data-page-node-id="U5rQuJfuDLg3cM5xXHfh81">
+      <div class="n" data-page-node-id="ttxTYchLJ5LGZqDpAJ0Lxp">0</div>
+      <div class="en" data-page-node-id="ANyDO5qc14LFGCjacAN2fH">Invariant Substrate</div>
+      <h3 data-page-node-id="esKWnIZRtkL9RrtEI8gUwo">不可变基底</h3>
+      <p data-page-node-id="YhMxRXvc5DUUbCMhGNgVGb">源文档<b data-page-node-id="q7lsGSSCkQnN0iQDMDqIRi">永不改变、永不被消费、永不被切碎</b>。所有解析产物都是对它的<b data-page-node-id="ZtEJ7czKLaZ5MRWV8KdCFa">指涉（reference）</b>，而非拷贝。</p>
+      <div class="cor" data-page-node-id="3Vxqm45io2dW16o1vFvkki"><b data-page-node-id="w6SZrE0OYFZOjegzEJOijK">推论：</b>不存在「拷贝环节」，因此内容<b data-page-node-id="qzTGVYG87qifYb2X7mt6hd">不可能在拷贝时丢失</b>。你只能「没有指到它」——而那是可测量的覆盖问题。</div>
+    </div>
+
+    <div class="ax" data-page-node-id="uEks5HoXJIXaho8DwzcQTI">
+      <div class="n" data-page-node-id="1oI42aSyBTV9GJie1ZWKIj">1</div>
+      <div class="en" data-page-node-id="KSQKqQD2GOPHy49ehwmMVL">The Covering Law · 全域律</div>
+      <h3 data-page-node-id="h3abQMGuGkmzOkekSgaoaj">解析的产物是一个「覆盖」</h3>
+      <p data-page-node-id="UQQlFUILKTLqXzwxTP2VaU">解析不产出「提取出的内容」，而产出一个 <b data-page-node-id="NDrAbe5s0AvQHE02cKBwvb">Covering（覆盖）</b>：一组带标签的区域，其<b data-page-node-id="kjVx82sfJLDTTkO2ECJA1a">并集 ≡ 全文</b>。</p>
+      <p data-page-node-id="PFAk633feKIE7Okwwh3lfh">这是<b data-page-node-id="EjgQCjd8sASdIKDUBxsDxE">构造约束</b>，不是运行时检查：唯一的构造方式是<b data-page-node-id="fEmHDyS3rZVumcwne1DhIo">全域分区（total partition）</b>——每个输入原子必须落入恰好一个桶。语言里<b data-page-node-id="K0UMXNspFn9Jk9ZwZqt53i">没有 <code data-page-node-id="j17gB9JBDjlL5MHey2ft9P">filter</code>，只有 <code data-page-node-id="XH7EH3wyGPHI7OF4do9DzU">partition</code></b>。</p>
+      <div class="cor" data-page-node-id="Xt5CrNunLUKD9bzbAATzgd"><b data-page-node-id="F4iQz9Ag6NtXlKmgwduduC">推论：</b>「丢弃」不是删除，而是把区域标记为 <code data-page-node-id="qjoxogRRcNXSsls77NXHYe">waste(reason)</code>——它<b data-page-node-id="xGV1vznIcHFifT7BD1S3YA">仍在覆盖中</b>，只是不被投影。于是「内容消失」在代数上<b data-page-node-id="uHT7rIDpWsZ4k75aZRVbqS">不可表达</b>。</div>
+    </div>
+
+    <div class="ax" data-page-node-id="nUO8O1hXcfgfvkci3LXGT0">
+      <div class="n" data-page-node-id="px8uhk0TG2Mq0hVE8LevbF">2</div>
+      <div class="en" data-page-node-id="BbMLZz4VZK3lZ0l9ZH4RSi">Dual Projection</div>
+      <h3 data-page-node-id="QqmjBYikSGtA5KEylhGw7S">输出与审计是同一对象的两次投影</h3>
+      <p data-page-node-id="6ruRthhZ9RmF58GhvHlo7I">「笔记输出」与「审计报告／覆盖率」都是<b data-page-node-id="K8oRwrKjXeUBUYCEdaMKpW">同一个 Covering 的投影</b>。</p>
+      <div class="cor" data-page-node-id="ynyNA3AiFY5eU3DzXOtf2O"><b data-page-node-id="uasTirJQNYEE2zYCnhrtuc">推论：</b>二者<b data-page-node-id="zhrM46WhffVK6fBjKuKPIr">不可能互相说谎</b>。这直接消灭了上一版里「审计器可能与流水线漂移」的隐患——不是靠纪律，是靠同源。</div>
+    </div>
+
+    <div class="ax" data-page-node-id="sAwzeJwBW0LDDAr474rMjy">
+      <div class="n" data-page-node-id="6GTOgFo3Jnl3lhl7T3qA6r">3</div>
+      <div class="en" data-page-node-id="XGQh7oBQ6GldIjdwTvDIkr">Alignment as Sequence Alignment</div>
+      <h3 data-page-node-id="Awbz96AAvAVxqoUsNvwrNu">对齐是序列对齐，不是 id 查找</h3>
+      <p data-page-node-id="W1KhzyHdcYmgxapsk3bH55">目录与正文是<b data-page-node-id="ActgL2XbUPPLeyKzMLnlbk">两条序列</b>。对齐应当是<b data-page-node-id="vOzazIVHngUZPwxGQPaSi9">保序的全局最优匹配</b>（Needleman-Wunsch 式动态规划），而非「逐个 id 查表、查不到就放弃」。</p>
+      <p data-page-node-id="miUZUrgNce6zOFgvc8uKFj">评分可由多重证据合成：<code data-page-node-id="q3zD1h4FegcbGKoLSCBhFs">精确id</code> ＞ <code data-page-node-id="xbzTLAPYs1B0CPcXHYiSa1">归一化id</code> ＞ <code data-page-node-id="GeCdDcAHNDfRfGuCohZGb0">标题文本相似</code> ＞ <code data-page-node-id="h0uWr5rNbpjGD6fl2H4gHD">位置先验</code>。</p>
+      <div class="cor" data-page-node-id="uhDBgxDnGWPWrZoAOUdhZg"><b data-page-node-id="FDTfadKvvZRapj6taYXfmF">推论：</b>即使 id <b data-page-node-id="emlQxyhBnUYHnXNe6PzNXW">全部缺失</b>（资治通鉴 290 章一个 id 都没有），<b data-page-node-id="G1uihvlFNc8zb3Rqzj3dDC">标题文本 + 顺序</b>仍是极强的信号——结构依然可恢复，而不是塌成一个整文件。</div>
+    </div>
+
+    <div class="ax" data-page-node-id="47UWNcYpmhIN384Zsd7eLc">
+      <div class="n" data-page-node-id="P9wUYDYEbyWLHBUN1dVvzo">4</div>
+      <div class="en" data-page-node-id="L8yasANAgyLAqJiZ5DBPlr">Confidence Algebra</div>
+      <h3 data-page-node-id="fV7kjyn7FyIKeqd5pmhv2s">置信度是一等公民且可组合</h3>
+      <p data-page-node-id="YhIudkqv9pGHIbwNMlX0Pl">每个断言携带置信度，且在组合下封闭（合取取 min，串行相乘）。</p>
+      <div class="cor" data-page-node-id="VSDf0tH8CBBclNTrxU1AXS"><b data-page-node-id="FbGiGUVBVWWQb7BYKnb2aU">推论：</b>系统<b data-page-node-id="ooMsTYhYR6GCqt2qSSGvGI">永不把猜测呈现为事实</b>。L2/L3 这类「猜」出来的对齐，天生带着较低的置信度，无法伪装成精确命中。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 -->
+<section data-page-node-id="pTtYg3Crb747Rv6XmbYU7C">
+  <h2 data-page-node-id="zWJUqVBbLEmHNDzUHG2R1D"><span class="num" data-page-node-id="jg896mrNkl7x58Kks3mCJE">02</span>演示一：同一个 bug，两种模型</h2>
+  <p class="lede" data-page-node-id="Wy5w8Gm8HIIhldAhCpvDIw">这是真实发生在《自控力》上的那个洞。点击按钮，看两种模型如何处理<b data-page-node-id="z0pAaLw5G5BZbgLNrwfdsB">同一份输入</b>。</p>
+
+  <div class="demo" data-page-node-id="kLtxPGb6AZ6FM3yiAt9GVw">
+    <div class="demo-h" data-page-node-id="q1kOrENr9SpyHH4lN4qTYo">
+      <h4 data-page-node-id="ciXetnIY1XzFr2l1EqFtAm">目录（第一条没有锚点，正是现实中的情况）</h4>
+    </div>
+    <div class="tocrow" data-page-node-id="dUucii5sVuHpBGT1hvi3Xv">
+      <span class="nofrag" data-page-node-id="gaHOAr0yKuaNvmdgXg5kpy">第一章（无锚点）</span>
+      <span data-page-node-id="83uieoF6yiruFlK8zOieWA">第一节 #sec1</span>
+      <span data-page-node-id="uEuRS3zyNYcgRH5SKuEyCb">第二节 #sec2</span>
+    </div>
+    <div class="demo-h" data-page-node-id="Mcn4VqJs9XAAj1sWOAvK5r">
+      <h4 data-page-node-id="6hb4AwxN7CslUaTqFPpC9R">正文原子（不可变基底）</h4>
+      <div class="demo-bar" data-page-node-id="iTMioDFLsHp1iAXAAdSwy1">
+        <button class="warn" id="btnOld" data-page-node-id="FDhzhqBW2iK30BNd6zdqLV">运行：旧模型（filter）</button>
+        <button id="btnNew" data-page-node-id="qJQGx9Xc6RcCLmYn5TuUjE">运行：新模型（partition）</button>
+      </div>
+    </div>
+    <div class="strip" id="stripA" data-page-node-id="09g72GmlFzAX96ZIQoSbkn"></div>
+    <div class="buckets" data-page-node-id="zru6JnwVyQp7JFQHp1cQEH">
+      <div class="bucket" data-page-node-id="0CbwSfOUSlCvNAMy24mOLP"><h5 data-page-node-id="NoICv3byAx8xij5V9NJy3l">产出（投影）</h5><div class="body" id="bOut" data-page-node-id="yQ4PWKL1KVCXAkXTdjW5GN"></div></div>
+      <div class="bucket void" data-page-node-id="P476wDRDuf1PcIFNbO5N5f"><h5 data-page-node-id="OHpjH7duCgqnzN73pNiTqH">无人认领</h5><div class="body" id="bVoid" data-page-node-id="2mbjzGt4aoy0HqPEeYHE0C"></div></div>
+    </div>
+    <div class="status" id="stA" data-page-node-id="8Zn0xu7jUbh9CI0lTmOpSB">点击上方按钮运行 →</div>
+    <p class="hint" data-page-node-id="RCyXiyGVElNoTpxZuwhmRx">注意观察：旧模型下「导语」掉进虚线框，而<b data-page-node-id="mfda72yi4BAZD8JS1mF8b3">诊断计数始终是 0</b>——没有任何分支认为自己丢弃了东西。</p>
+  </div>
+</section>
+
+<!-- 03 -->
+<section data-page-node-id="RlteLuDyAdf35VNktN8BA2">
+  <h2 data-page-node-id="tOEkPxnpBhCDKwMEUVnLlG"><span class="num" data-page-node-id="Kmx423AtozISD9yNVoX5OW">03</span>演示二：亲手体验全域律</h2>
+  <p class="lede" data-page-node-id="QtJLzyHWCeQWeRGreUGYu9">逐个点击原子，给它一个归宿。<b data-page-node-id="OGb460THt1uSFYTdtJL1iy">只要还有一个未被归类，你就无法产出笔记。</b>——这就是「不可表达」的手感。</p>
+
+  <div class="demo" data-page-node-id="QQEuyU2gQwkt51jmjssKC3">
+    <div class="chips" id="chips" data-page-node-id="9DVHi1znztJ58jcTrFcw24"></div>
+    <div class="meter" data-page-node-id="eD2wtNAtoBNANUFwXvPUIN"><div class="fill" id="fill" data-page-node-id="L5rrYWMGq031JwLpOygXIR"></div></div>
+    <div class="mrow" data-page-node-id="3ljepZisxzRGM7nZSdYBYO">
+      <span data-page-node-id="yhbBvGbbi6sANxTjdKPaeN">覆盖率 <b id="pct" data-page-node-id="AC410Ez7gyqWN3VEQJKM2k">0%</b> · 已归类 <b id="cnt" data-page-node-id="XDvrRVD8bDd5wKe0ybFYTr">0</b>/10</span>
+      <button id="gen" disabled data-page-node-id="dfKLTF0MQjCB9u4sEzU4jz">生成笔记</button>
+    </div>
+    <div class="status" id="stB" data-page-node-id="WmLlZA322LJmxhGDeP4g6t">点击方块循环切换归类：未分配 → 正文 → 标题 → 脚注 → 废弃(附理由)</div>
+    <p class="hint" data-page-node-id="AVTNH0jDbcINxDMQLPWP8N">关键点：<b data-page-node-id="X7P5nrhDEZGPvLSsID0hGX">「废弃」也算已归类</b>。全域律不要求保留一切，只要求<b data-page-node-id="JwYFNcjHrxLGihPeyTqXbO">一切都有归宿且理由明确</b>。删除是分类，不是消失。</p>
+  </div>
+</section>
+
+<!-- 04 -->
+<section data-page-node-id="lVbGpNBHXFVCdGNtzLeaCL">
+  <h2 data-page-node-id="WZ3cF9pQ80CT7ucqtasgDK"><span class="num" data-page-node-id="uopNanIPkp9wTfXyRMMg6R">04</span>演示三：对齐是序列对齐</h2>
+  <p class="lede" data-page-node-id="bCn094aC9Ppemkflibo91M">《资治通鉴》290 个文件里<b data-page-node-id="Yk2xlVva5aAC6ljAz2ZIE7">一个 id 都没有</b>。旧模型全线塌成整文件；新模型用「标题文本 + 保序」依然能恢复结构。</p>
+
+  <div class="demo" data-page-node-id="WRzigJx4olVrq79BjFt3oF">
+    <div class="demo-h" data-page-node-id="8GbGIkZwFHxQh9Bum2zUOI">
+      <h4 data-page-node-id="RS9xjd3u0APevB5Qag5DQ1">目录序列 × 正文标题序列（动态规划矩阵）</h4>
+      <div class="demo-bar" data-page-node-id="ypvQ8hW8oPyfqNbyG1klTY">
+        <button id="scIds" class="on" data-page-node-id="BltfP6Sc7A5YHRr9S4HbYL">场景：锚点存在</button>
+        <button id="scNoIds" data-page-node-id="XjR9tAYNqe8b9mQYWAokQV">场景：锚点全缺失</button>
+      </div>
+    </div>
+    <div class="grid" id="grid" data-page-node-id="3Atd15Y5aMBG0OPEwqzdMX"></div>
+    <div class="status" id="stC" data-page-node-id="w59lfHThAHO0wpy0HDZTJm"></div>
+    <p class="hint" data-page-node-id="mFdFEf3Oo1pRDYDXUXoi73">横轴是正文中的标题，纵轴是目录条目。高亮路径即<b data-page-node-id="NLGuJqiYqBHjzPvHAHEK4d">保序最优匹配</b>——即使没有 id，标题文本与先后顺序仍构成强信号。</p>
+  </div>
+</section>
+
+<!-- 05 -->
+<section data-page-node-id="5Q8mlG5HdQuRqWg6wEAuFD">
+  <h2 data-page-node-id="deeQdy2bZbG1samZyt7KBz"><span class="num" data-page-node-id="KI5GkCPUm1LGe3KENIwWqj">05</span>框架全貌</h2>
+  <p class="lede" data-page-node-id="qiEKQUpBqGwKZ7AATFEOaE">五条公理落到形状上。注意：这里<b data-page-node-id="hwIFnrPuyr35WAtOUdwjma">没有独立的审计组件</b>——审计就是右侧那条投影。</p>
+  <div class="figure" data-page-node-id="8F232lvoXaA6YDzhEpr6zn">
+    <svg viewBox="0 0 900 470" role="img" aria-label="提议框架架构图" data-page-node-id="wSqCZ8vGTSkz74vezOrcOq">
+      <defs data-page-node-id="sP3DrRaxml3zg3wy03eU2W">
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="VS7Pwa5L8SiaiuSY1oQ0Lc">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1F4E5F" data-page-node-id="qSJNKiujtjqtqCSXNM6wT9"/></marker>
+      </defs>
+      <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" data-page-node-id="lj77r2iBSB3GTEGhc7VBPD">
+        <!-- substrate -->
+        <rect x="60" y="20" width="330" height="80" rx="5" fill="#F2EEE8" stroke="#A8A096" stroke-dasharray="6 4" data-page-node-id="HV6fXQocjnapsPbHi3pF7B"/>
+        <text x="225" y="48" text-anchor="middle" font-size="15" fill="#1C1A17" font-weight="700" data-page-node-id="BEsW7EMu7wTFDPzngIqhci">不可变基底 · Immutable Substrate</text>
+        <text x="225" y="70" text-anchor="middle" font-size="12.5" fill="#6B655C" data-page-node-id="MpcWctEFncAsWWt8F1prJC">源文档永不改变、永不消费、永不切碎</text>
+        <text x="225" y="88" text-anchor="middle" font-size="12.5" fill="#6B655C" data-page-node-id="sEJRpCpgKrEOAHedS9PvAQ">所有产物都是对它的指涉，而非拷贝</text>
+
+        <!-- alignment -->
+        <rect x="60" y="150" width="330" height="66" rx="5" fill="#FFFDFB" stroke="#E6DFD4" data-page-node-id="C2t2sIj4t2QOxfG3tpkJUf"/>
+        <text x="225" y="176" text-anchor="middle" font-size="15" fill="#1C1A17" font-weight="700" data-page-node-id="Zs2u8icGD5of5sRz9OxQEV">对齐器 · 保序全局最优匹配</text>
+        <text x="225" y="197" text-anchor="middle" font-size="12.5" fill="#6B655C" data-page-node-id="zg8oitNGJrE4otPDI1odAh">证据合成：精确id › 归一化 › 文本相似 › 位置</text>
+        <text x="225" y="214" text-anchor="middle" font-size="12" fill="#B8860B" data-page-node-id="yHM3S7OBUJ9Kwi0UaYETFg">每条匹配携带置信度（公理 4）</text>
+
+        <!-- covering -->
+        <rect x="60" y="266" width="330" height="96" rx="5" fill="#E8F0F2" stroke="#1F4E5F" stroke-width="1.6" data-page-node-id="S2xN6roBEtbzCMXSmY5iUo"/>
+        <text x="225" y="292" text-anchor="middle" font-size="15" fill="#1F4E5F" font-weight="700" data-page-node-id="Z3yJJKGAb4UYxdk7Mch7ic">覆盖 Covering · 全域分区</text>
+        <text x="225" y="313" text-anchor="middle" font-size="12.5" fill="#2C4A55" data-page-node-id="Oa55QPF8zqIcXFqCW2Un4A">并集 ≡ 全文（构造约束，非检查）</text>
+        <text x="225" y="332" text-anchor="middle" font-size="12.5" fill="#2C4A55" data-page-node-id="7z3uXUH2vS7tApwgB1XNsL">waste(reason) 仍在覆盖内 —— 分类，不是删除</text>
+        <text x="225" y="352" text-anchor="middle" font-size="12" fill="#1F4E5F" font-weight="600" data-page-node-id="5kiizUKz1cw62QHcmN3R9Q">filter 不存在，只有 partition</text>
+
+        <!-- projections -->
+        <rect x="560" y="200" width="290" height="66" rx="5" fill="#E7F1EB" stroke="#2F6B4F" data-page-node-id="DAWQCC51XTvlRiyfAHlUQp"/>
+        <text x="705" y="228" text-anchor="middle" font-size="15" fill="#2F6B4F" font-weight="700" data-page-node-id="kdEsqev1zkROKFFi1FIPzU">投影一 · 笔记输出</text>
+        <text x="705" y="249" text-anchor="middle" font-size="12.5" fill="#3A5D4C" data-page-node-id="9KAPZPFQzpJ1IdaPINW2eJ">按选区渲染，携带来源坐标</text>
+
+        <rect x="560" y="300" width="290" height="66" rx="5" fill="#FBF3E0" stroke="#B8860B" data-page-node-id="81VlZjV0oA6UOY70bWDzWM"/>
+        <text x="705" y="328" text-anchor="middle" font-size="15" fill="#8A6D2F" font-weight="700" data-page-node-id="7GrWJSKDFqWFyEEZQCwBIh">投影二 · 覆盖率 / 置信度报告</text>
+        <text x="705" y="349" text-anchor="middle" font-size="12.5" fill="#7A6030" data-page-node-id="CxlF8sqXz8ixCIlOkzXBCN">同源，故不可能与输出矛盾</text>
+
+        <!-- arrows -->
+        <g stroke="#1F4E5F" stroke-width="1.7" fill="none" marker-end="url(#a1)" data-page-node-id="POiIez0H97FNGxJJtrr7Hf">
+          <path d="M225,100 L225,148" data-page-node-id="UmbDverp34odoq1SR4K3t0"/><path d="M225,216 L225,264" data-page-node-id="YIkoDzI8YChnpFd60vG3tr"/>
+        </g>
+        <g stroke="#1F4E5F" stroke-width="1.7" fill="none" marker-end="url(#a1)" class="flow" data-page-node-id="f7XDMahwQVxRaerwG3l3Ae">
+          <path d="M390,300 C470,300 500,240 556,238" data-page-node-id="GQClFa9l4kPmgcAm381c1a"/>
+          <path d="M390,330 C470,330 500,340 556,332" data-page-node-id="gMfFVgaSp4UPKHjV72cAFn"/>
+        </g>
+        <text x="470" y="290" font-size="12" fill="#6B655C" text-anchor="middle" data-page-node-id="AkXORcWQtCjuzRbS2WcN33">双投影</text>
+
+        <text x="60" y="420" font-size="13" fill="#6B655C" data-page-node-id="uGLMzgTHgsFK4IJu782E8A">入口端口 FileProvider ／ 出口端口 WriteTarget —— 沿用现有设计（那是当前架构里真正优雅的部分）</text>
+        <text x="60" y="444" font-size="13" fill="#B4531F" font-weight="600" data-page-node-id="4Z8jdTA8PGbfBxeSqnsJmO">审计不是组件，而是投影。这就是「阶三」与「阶二」的分界。</text>
+      </g>
+    </svg>
+    <figcaption data-page-node-id="bjln64Ucd5fIVsi8255Skz">五个概念：基底 · 覆盖 · 双投影 · 序列对齐 · 置信度。架构由公理推导，而非拼接。</figcaption>
+  </div>
+</section>
+
+<!-- 06 -->
+<section data-page-node-id="VZqOUoNRQvDPXHTgcDbMg3">
+  <h2 data-page-node-id="k4xXG5cWSAOPTqKbNuO3ZH"><span class="num" data-page-node-id="tpVeZ7cRRBPDERXJlKGTeY">06</span>为什么这次是彻底的</h2>
+  <p class="lede" data-page-node-id="auBCCoCByHtax4EYxvwh8z">上一版的三条原则（守恒／协商／溯源）曾是我的主张；在这一版里，它们<b data-page-node-id="q3JH2FFxonQXmxrpqYNgEm">降格为推论</b>——这正是「更根本」的标志。</p>
+  <table data-page-node-id="2h41ZaFbCSJnPtHhgIkXBt">
+    <thead data-page-node-id="HnYPTapIKdihnihgzPIs4r"><tr data-page-node-id="RYnRZmH5gtnXhquphw7LJI"><th data-page-node-id="7zTUiMwM3sqLG5BVAiyIrH">上一版（主张）</th><th data-page-node-id="X5DuEkrDF8UHg09cC0o2Uf">本版（地位）</th><th data-page-node-id="nJTUd2BgvyrvVuXgODJNod">由何推导</th></tr></thead>
+    <tbody data-page-node-id="rEaKSy5qCOtb1o35V8U3EK">
+      <tr data-page-node-id="H8oWNvu7FwvxdlHeNnXzQd"><td data-page-node-id="OzVT8p2KXkkEbDGuUFuNwL">守恒：加审计器校验覆盖率</td><td data-page-node-id="LsGWDBxVE8aCjS35efmA2S">推论，且更强</td><td data-page-node-id="GgEY8Ee9XgfB15EKJDT0ha">公理 1 全域律 + 公理 2 双投影（审计=投影，非组件）</td></tr>
+      <tr data-page-node-id="RUwllWLdcccFC72LMdnbBM"><td data-page-node-id="vnt0Q4QRpp3814hKHln2af">协商：L0–L4 降级阶梯</td><td data-page-node-id="DEeHRcVVv5Yprtc2pvVvTv">推论，且更优</td><td data-page-node-id="xGa4ng27HVZFBSPKSbIruV">公理 3：阶梯是<b data-page-node-id="F1JcFqsOq2nDAXkbwUHm7E">逐步试探</b>；序列对齐是<b data-page-node-id="gHMPNCTBMa0Fc7TkSbEu4F">全局最优</b>，且 id 缺失时仍能恢复</td></tr>
+      <tr data-page-node-id="mhg0nz3GLuXqVBus4G8Quc"><td data-page-node-id="aAbQci7YB8JAu0saD7MpNv">溯源：每单元携带来源坐标</td><td data-page-node-id="np5AA2rvqhoeFDl4rvPQ7i">推论，且免费</td><td data-page-node-id="WXpAFaDMTyelAPF59K1Ffe">公理 0：产物本就是「指涉」，坐标是<b data-page-node-id="oHfOgglcbrqlBnHnPB1BOO">指涉自带的</b>，无需额外机制</td></tr>
+      <tr data-page-node-id="lWFBgQBdJAG2TSjYe8FEDx"><td data-page-node-id="Om1souO0LM6H1JQJpVXySo">（无）</td><td data-page-node-id="xT45CinHb9DHcUm3VgRns0">置信度代数</td><td data-page-node-id="01TbW31VrWxzRZhFFxMARw">公理 4：新增——让「猜」无法伪装成「知」</td></tr>
+    </tbody>
+  </table>
+  <p data-page-node-id="zRXk9ZtpnLMMrbkzt765xt">判断标准很简单：<b data-page-node-id="XXwDsLR2jXX99AqpseRSID">如果一个原则需要单独的组件去实现，它就还不够根本；如果它从公理里自然长出来，它才是根本的。</b></p>
+</section>
+
+<!-- 07 -->
+<section data-page-node-id="BCHEea3WBC0S3fLRDwGOd2">
+  <h2 data-page-node-id="EYXMilTLBNB3gbAO7ZzBo1"><span class="num" data-page-node-id="WcxpIiPTJ25KodJ7mP1Zb9">07</span>代价、风险与可证伪判据</h2>
+  <p class="lede" data-page-node-id="pJMXi90htKaqsrQYE8effY">诚实标价。这套框架不是免费的。</p>
+  <ul data-page-node-id="5XuD3ijP1pqOC7Eb4ZhvjF">
+    <li data-page-node-id="gSQLWtLIvToW6K9wInawme"><b data-page-node-id="cBIapnp409p8rb6oykWQTe">概念成本最高</b>：从「提取」转向「覆盖 + 投影」，是一次<br data-page-node-id="Edr6CCx51NqEAaFmLOTLXH"/>心智模型更换，团队需要重新训练直觉。</li>
+    <li data-page-node-id="zoyiOEh3guk7atG9he0vcd"><b data-page-node-id="O7mzFUZWLszUxiUufiP35m">内存</b>：基底需常驻到覆盖构造完成，超大书有峰值压力（可按文件作用域释放缓解）。</li>
+    <li data-page-node-id="gLHqaRH7966AuTzJF1y2L9"><b data-page-node-id="a105s4oc0arkhU8aegq8O0">序列对齐是启发式的</b>：文本相似 + 保序<b data-page-node-id="0zdZ6BV1pUDyfconCALzMm">可能错配</b>。缓解不是消除——而是公理 4 强制它<b data-page-node-id="lLC23TywtRFwTCmf2A2FKR">带着低置信度呈现</b>，绝不冒充精确。</li>
+    <li data-page-node-id="ZG4G7AWwXMf1HTClv8TMCT"><b data-page-node-id="9i0EuDYBH508QWFVF81vXI">收益仍不均</b>：规整的书（TheEconomist，0 受影响文件）几乎零收益；价值集中在<b data-page-node-id="rzl8dHCaQkclG0mIklf8Ts">畸形／古老／工具生成</b>的 EPUB——而那正是最需要安全的场景。</li>
+    <li data-page-node-id="62vfufC1xnQYBHNH1WJ78v"><b data-page-node-id="ORIiDpGuM3xtgRdZym0ckn">性能不是障碍</b>：11MB / 290 章实测 2.1 秒，DP 对齐与覆盖构造完全放得下。</li>
+  </ul>
+
+  <div class="closing" data-page-node-id="fy5nvUKxL1n0mRGlWyiHmm">
+    <h3 data-page-node-id="rl5tlC3aW0MenlnxdaEBBq">可证伪判据</h3>
+    <p data-page-node-id="Y3zEti9TDg1bpZVJbkrSHA">对任意输入：<b data-page-node-id="yxgtJKDIXa6aW2IdAHXIMD">覆盖的并集 ≡ 全文</b>（覆盖率 100%，或给出带理由的 waste 清单）；</p>
+    <p data-page-node-id="AN7h4PBJHZ8qruLEIUg6Jk">每个目录条目在对齐矩阵中<b data-page-node-id="VZLG6DnPW7cjVvoKN3VBrx">有且仅有一个匹配</b>（含显式 unmatched + 原因）；</p>
+    <p data-page-node-id="6cRFAIJivG2Cr56zvUAA5j">每个断言<b data-page-node-id="yHhBBJ9CHaYAOTLy0FHVtl">必须携带置信度</b>，缺失置信度视为类型错误；</p>
+    <p data-page-node-id="8sVtgwuGsaS59CjSLerbJP">输出与报告由<b data-page-node-id="TDeGWgrRVcclHp5uBsFEBp">同一个覆盖</b>投影而来——若二者可能不一致，则实现违背了公理 2。</p>
+    <p style="margin-top:16px" data-page-node-id="LKJnVanDQucN88xgj9Hq4s">这四条可机器校验。任何一条不成立，框架即被证伪。</p>
+  </div>
+</section>
+
+<footer data-page-node-id="Ryfd5uPbGxHqaPE2sgeQZk">
+  基于 <b data-page-node-id="ucGNQxydzWpIY4PxuIelbB">epub-importer · src-next</b> 真实实测：《自控力》14 文件 / 68 目录项 / 10 个受影响文件 / 10 条目静默丢弃 / 诊断数 0；《资治通鉴》290 文件 / 0 个 id / 290 次整文件兜底；《TheEconomist》0 受影响。性能 2.1s / 0.6s / 0.38s。
+</footer>
+
+</div>
+
+<script>
+/* ================= 演示一：filter vs partition ================= */
+var ATOMS = [
+  {t:'导语…', c:'head'},
+  {t:'H1 #sec1', c:'h'},
+  {t:'第一节正文', c:''},
+  {t:'H1 #sec2', c:'h'},
+  {t:'第二节正文', c:''},
+  {t:'结尾', c:''}
+];
+var stripA = document.getElementById('stripA');
+var bOut = document.getElementById('bOut');
+var bVoid = document.getElementById('bVoid');
+var stA = document.getElementById('stA');
+var elsA = [];
+
+function buildA(){
+  stripA.innerHTML=''; bOut.innerHTML=''; bVoid.innerHTML=''; elsA=[];
+  ATOMS.forEach(function(a){
+    var d=document.createElement('div');
+    d.className='atom '+a.c; d.textContent=a.t;
+    stripA.appendChild(d); elsA.push(d);
+  });
+}
+function place(el, box, cls){
+  box.appendChild(el);
+  el.classList.remove('in','drop');
+  void el.offsetWidth;
+  el.classList.add(cls||'in');
+}
+function runA(mode){
+  buildA();
+  var outGroups=[
+    {label:'第一节', idx:[1,2]},
+    {label:'第二节', idx:[3,4,5]}
+  ];
+  if(mode==='old'){
+    outGroups.forEach(function(g,gi){
+      var wrap=document.createElement('div'); wrap.className='grp';
+      var lb=document.createElement('div'); lb.className='gt'; lb.textContent=g.label;
+      wrap.appendChild(lb); bOut.appendChild(wrap);
+      g.idx.forEach(function(i,k){
+        setTimeout(function(){ place(elsA[i], wrap); }, 120+gi*260+k*110);
+      });
+    });
+    setTimeout(function(){ place(elsA[0], bVoid, 'drop'); }, 120+2*260+240);
+    setTimeout(function(){
+      stA.className='status bad';
+      stA.innerHTML='产出 <b>2</b> 篇 · 覆盖率 <b>83%</b> · 诊断 <b>0</b> 条'
+        +'<span class="pill">「第一章」条目消失</span><span class="pill">「导语」正文消失</span>'
+        +'<br/>旧模型没有任何一个分支「决定丢弃」，所以没有任何地方应该上报 —— 静默丢失。';
+    }, 1200);
+  } else {
+    var groups=[
+      {label:'第一章（L3 保序）', idx:[0]},
+      {label:'第一节（L0）', idx:[1,2]},
+      {label:'第二节（L0）', idx:[3,4,5]}
+    ];
+    groups.forEach(function(g,gi){
+      var wrap=document.createElement('div'); wrap.className='grp';
+      var lb=document.createElement('div'); lb.className='gt'; lb.textContent=g.label;
+      wrap.appendChild(lb); bOut.appendChild(wrap);
+      g.idx.forEach(function(i,k){
+        setTimeout(function(){ place(elsA[i], wrap); }, 120+gi*230+k*110);
+      });
+    });
+    setTimeout(function(){
+      stA.className='status good';
+      stA.innerHTML='产出 <b>3</b> 篇 · 覆盖率 <b>100%</b> · 诊断 <b>1</b> 条（信息级：第一章采用保序匹配）'
+        +'<br/>全域分区要求每个原子都有归宿 —— 「丢弃」在结构上不可表达。';
+    }, 1250);
+  }
+}
+document.getElementById('btnOld').onclick=function(){runA('old')};
+document.getElementById('btnNew').onclick=function(){runA('new')};
+buildA();
+
+/* ================= 演示二：覆盖构建器 ================= */
+var LABELS=['未分配','正文','标题','脚注','废弃'];
+var chips=document.getElementById('chips');
+var fill=document.getElementById('fill'), pct=document.getElementById('pct'),
+    cnt=document.getElementById('cnt'), gen=document.getElementById('gen'), stB=document.getElementById('stB');
+var state=new Array(10).fill(0);
+var chipEls=[];
+for(var i=0;i<10;i++){
+  (function(i){
+    var c=document.createElement('div');
+    c.className='chip'; c.textContent='原子 '+(i+1);
+    c.onclick=function(){
+      state[i]=(state[i]+1)%LABELS.length;
+      updateB(i);
+    };
+    chips.appendChild(c); chipEls.push(c);
+  })(i);
+}
+function updateB(pop){
+  var n=0;
+  chipEls.forEach(function(c,i){
+    var lb=LABELS[state[i]];
+    c.className='chip'+(state[i]?' l-'+lb:'');
+    c.textContent=state[i]?lb:'原子 '+(i+1);
+    if(state[i]) n++;
+    if(i===pop){ c.classList.remove('in'); void c.offsetWidth; c.classList.add('in'); }
+  });
+  fill.style.width=(n*10)+'%';
+  pct.textContent=(n*10)+'%';
+  cnt.textContent=n;
+  gen.disabled=(n<10);
+  if(n<10){
+    stB.className='status';
+    stB.innerHTML='还有 <b>'+(10-n)+'</b> 个原子没有归宿 —— 「生成笔记」被禁用。这就是全域律的手感。';
+  }else{
+    stB.className='status good';
+    var waste=state.filter(function(s){return s===4}).length;
+    stB.innerHTML='覆盖率 100% → 可以投影了。'
+      +'<span class="pill">正文/标题/脚注 '+(10-waste)+'</span>'
+      +'<span class="pill">废弃(附理由) '+waste+'</span>'
+      +'<br/>注意：废弃项<b>仍在覆盖中</b>，只是不被投影 —— 分类不是删除。';
+  }
+}
+gen.onclick=function(){
+  stB.className='status good';
+  stB.innerHTML='✓ 已投影。<b>输出</b>与<b>覆盖率报告</b>来自同一个覆盖，因此二者不可能互相矛盾。';
+};
+updateB(-1);
+
+/* ================= 演示三：序列对齐 ================= */
+var TOC=['卷一','卷二','卷三','卷四'];
+var HD=['卷一','卷二','卷三','卷四'];
+var grid=document.getElementById('grid'), stC=document.getElementById('stC');
+var btnIds=document.getElementById('scIds'), btnNo=document.getElementById('scNoIds');
+
+function buildGrid(){
+  grid.innerHTML='';
+  var corner=document.createElement('div'); corner.className='cell lbl'; corner.textContent='';
+  grid.appendChild(corner);
+  HD.forEach(function(h){
+    var d=document.createElement('div'); d.className='cell hd'; d.textContent=h; grid.appendChild(d);
+  });
+  TOC.forEach(function(t,r){
+    var lb=document.createElement('div'); lb.className='cell lbl'; lb.textContent=t; grid.appendChild(lb);
+    for(var c=0;c<4;c++){
+      var cell=document.createElement('div'); cell.className='cell';
+      cell.dataset.r=r; cell.dataset.c=c; cell.textContent='·';
+      grid.appendChild(cell);
+    }
+  });
+}
+function cellAt(r,c){ return grid.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]'); }
+function runAlign(mode){
+  buildGrid();
+  var cells=grid.querySelectorAll('.cell[data-r]');
+  for(var i=0;i<cells.length;i++){ cells[i].className='cell'; cells[i].textContent='·'; }
+  if(mode==='ids'){
+    for(var k=0;k<4;k++){
+      (function(k){
+        setTimeout(function(){
+          var c=cellAt(k,k);
+          c.className='cell hit pop'; c.textContent='L0';
+        }, 160+k*180);
+      })(k);
+    }
+    setTimeout(function(){
+      stC.className='status good';
+      stC.innerHTML='<b>锚点存在</b>：对角线精确命中 ×4 → 恢复 <b>4</b> 篇，置信度<b>高</b>。'
+        +'<span class="pill">覆盖率 100%</span>';
+    }, 160+4*180+220);
+  } else {
+    for(var k2=0;k2<4;k2++){
+      (function(k2){
+        setTimeout(function(){
+          for(var c2=0;c2<4;c2++){
+            var cc=cellAt(k2,c2);
+            if(c2<=k2){ cc.className='cell miss'; cc.textContent='✕'; }
+          }
+          var hit=cellAt(k2,k2);
+          hit.className='cell hit2 pop'; hit.textContent='L2';
+        }, 160+k2*180);
+      })(k2);
+    }
+    setTimeout(function(){
+      stC.className='status bad';
+      stC.innerHTML='<b>锚点全缺失</b>（资治通鉴实况）：'
+        +'<br/>· <b>旧模型</b>：逐个 id 查表全失败 → <b>290 章塌成整文件</b>，粒度无声蒸发，只有 1 条 warning。'
+        +'<br/>· <b>新模型</b>：标题文本 + 保序 DP 仍能沿对角线恢复 <b>4</b> 篇，置信度<b>中</b>（L2，明确标注为推测）。'
+        +'<span class="pill">覆盖率同为 100%</span><span class="pill">差别只在结构还原度</span>';
+    }, 160+4*180+260);
+  }
+}
+btnIds.onclick=function(){ btnIds.classList.add('on'); btnNo.classList.remove('on'); runAlign('ids'); };
+btnNo.onclick=function(){ btnNo.classList.add('on'); btnIds.classList.remove('on'); runAlign('noids'); };
+buildGrid(); runAlign('ids');
+</script>
+</body>
+</html>

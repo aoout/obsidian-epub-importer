@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="uR0QSaqnM0V9M6MGODUFqt">
+<head data-page-node-id="aHiqxSGZuVFtdA9A90gGAE">
+<meta charset="UTF-8" data-page-node-id="V46iktzgRjYAsiYTGennK9" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="fenGn54QwI7eNLuLNatPSd" />
+<title>解析器架构哲学 · 从「尽力解析」到「守恒、协商、溯源」</title>
+<style>
+  :root{
+    --paper:#FAF8F5;
+    --card:#FFFDFB;
+    --ink:#1C1A17;
+    --muted:#6B655C;
+    --line:#E6DFD4;
+    --teal:#1F4E5F;
+    --teal-soft:#E8F0F2;
+    --terra:#B4531F;
+    --terra-soft:#FBEEE6;
+    --gold:#8A6D2F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:16.5px;
+    line-height:1.9;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:0 28px 100px;}
+
+  /* ---------- Hero ---------- */
+  header{
+    padding:88px 0 56px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:56px;
+  }
+  .kicker{
+    font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--teal);font-weight:600;margin-bottom:22px;
+  }
+  h1{
+    font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC",Georgia,serif;
+    font-size:40px;line-height:1.35;margin:0 0 20px;font-weight:700;letter-spacing:.01em;
+  }
+  .sub{font-size:18px;color:var(--muted);margin:0 0 34px;line-height:1.75;}
+  .thesis{
+    border-left:3px solid var(--terra);
+    background:var(--terra-soft);
+    padding:20px 24px;font-size:19px;line-height:1.8;
+    font-family:"Songti SC","Source Han Serif SC",Georgia,serif;
+  }
+  .thesis strong{color:var(--terra);}
+
+  /* ---------- Sections ---------- */
+  section{margin-bottom:64px;}
+  h2{
+    font-family:"Songti SC","Source Han Serif SC",Georgia,serif;
+    font-size:26px;margin:0 0 8px;font-weight:700;
+    display:flex;align-items:baseline;gap:14px;
+  }
+  h2 .num{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:13px;color:var(--teal);font-weight:600;
+    border:1px solid var(--teal);border-radius:3px;padding:2px 7px;
+    position:relative;top:-3px;flex:none;
+  }
+  .lede{color:var(--muted);margin:0 0 26px;font-size:16px;}
+  h3{font-size:18px;margin:32px 0 12px;font-weight:650;}
+  p{margin:0 0 16px;}
+
+  /* ---------- Evidence ---------- */
+  .evidence{
+    background:var(--card);border:1px solid var(--line);
+    border-top:3px solid var(--terra);
+    border-radius:4px;padding:24px 26px;margin:22px 0;
+  }
+  .evidence h4{margin:0 0 14px;font-size:15px;letter-spacing:.06em;color:var(--terra);}
+  .evidence ul{margin:0;padding-left:20px;}
+  .evidence li{margin-bottom:9px;}
+  .evidence code{
+    background:var(--terra-soft);padding:1px 6px;border-radius:3px;font-size:14px;
+  }
+  .big-num{display:flex;gap:26px;flex-wrap:wrap;margin:20px 0 6px;}
+  .big-num div{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 18px;}
+  .big-num .v{font-size:27px;font-weight:700;color:var(--terra);line-height:1.2;font-variant-numeric:tabular-nums;}
+  .big-num .l{font-size:13px;color:var(--muted);margin-top:4px;}
+
+  /* ---------- Principle cards ---------- */
+  .principles{display:grid;gap:20px;margin-top:26px;}
+  .p-card{
+    background:var(--card);border:1px solid var(--line);border-radius:5px;
+    padding:26px 28px;position:relative;
+  }
+  .p-card .idx{
+    position:absolute;top:22px;right:26px;
+    font-family:"Songti SC",Georgia,serif;font-size:44px;
+    color:var(--line);font-weight:700;line-height:1;
+  }
+  .p-card h3{margin:0 0 10px;font-size:20px;font-family:"Songti SC","Source Han Serif SC",Georgia,serif;}
+  .p-card .en{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);margin-bottom:12px;font-weight:600;}
+  .p-card p{margin-bottom:12px;}
+  .p-card p:last-child{margin-bottom:0;}
+  .analogy{
+    margin-top:14px;padding:12px 16px;background:var(--teal-soft);
+    border-radius:3px;font-size:14.5px;color:#2C4A55;
+  }
+  .analogy b{color:var(--teal);}
+
+  /* ---------- Diagram ---------- */
+  .figure{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:22px;margin:26px 0;}
+  .figure svg{width:100%;height:auto;display:block;}
+  figcaption{font-size:13.5px;color:var(--muted);margin-top:14px;text-align:center;}
+
+  /* ---------- Table ---------- */
+  table{width:100%;border-collapse:collapse;margin:22px 0;font-size:15px;}
+  th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:var(--teal-soft);color:var(--teal);font-size:13px;letter-spacing:.05em;font-weight:650;}
+  td:first-child{font-weight:600;width:22%;}
+  .new{color:var(--teal);font-weight:600;}
+  .old{color:var(--muted);}
+
+  /* ---------- Phases ---------- */
+  .phases{border-left:2px solid var(--line);margin-left:8px;padding-left:0;}
+  .phase{position:relative;padding:0 0 28px 30px;}
+  .phase::before{
+    content:"";position:absolute;left:-8px;top:9px;width:14px;height:14px;
+    border-radius:50%;background:var(--paper);border:2.5px solid var(--teal);
+  }
+  .phase .tag{
+    display:inline-block;font-size:11.5px;letter-spacing:.1em;font-weight:700;
+    color:#fff;background:var(--teal);padding:2px 9px;border-radius:3px;margin-bottom:8px;
+  }
+  .phase.d .tag{background:var(--gold);}
+  .phase h4{margin:0 0 6px;font-size:17px;}
+  .phase p{margin:0 0 8px;font-size:15.5px;color:#3A362F;}
+  .phase .gain{font-size:14px;color:var(--teal);font-weight:600;}
+
+  /* ---------- Quote / closing ---------- */
+  .closing{
+    background:var(--ink);color:#F2EDE6;border-radius:5px;
+    padding:38px 40px;margin-top:60px;
+  }
+  .closing h3{
+    font-family:"Songti SC",Georgia,serif;font-size:22px;margin:0 0 16px;color:#fff;
+  }
+  .closing p{color:#D8D1C7;margin-bottom:14px;}
+  .closing p:last-child{margin-bottom:0;}
+  .closing code{background:rgba(255,255,255,.1);padding:2px 7px;border-radius:3px;font-size:14px;color:#F5D9B8;}
+
+  footer{margin-top:48px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);}
+</style>
+</head>
+<body data-page-node-id="PC4Wh44hx9AobUrNOwtCCp">
+<div class="wrap" data-page-node-id="iOu7iQe7lYgOcs9AkRr8YW">
+
+<header data-page-node-id="oEpduDEwrq5hojVoxBqkpb">
+  <div class="kicker" data-page-node-id="btTVFGYBXuPBQdIlIACzlR">Architecture Philosophy · EPUB Parser</div>
+  <h1 data-page-node-id="8wuNxzl0E3y8Jk1SrweyW9">从「尽力解析」到<br data-page-node-id="Dbnr3Gv6Yv5NAFYftGNLoH"/>「守恒、协商、溯源」</h1>
+  <p class="sub" data-page-node-id="8WuVZu3FZwHfZlNhLF89FX">一次关于解析器底层哲学的提案：如何让「丢内容」从<br data-page-node-id="BnmkhSWa7hY4G77ml4RdOR"/>「可能发生且无人知晓」变成「结构上不可能」。</p>
+  <div class="thesis" data-page-node-id="BxmKnXGD3wFEgy9ouQaNGZ">
+    解析器的安全性，不应来自<strong data-page-node-id="0xai1CjACcdBwaNUtGDyac">每个分支都记得上报</strong>，<br data-page-node-id="1DDXxA4hsWCZntquEEXrCK"/>
+    而应来自<strong data-page-node-id="xDBlOKgpCFsAm5FOtsIAf3">结构上不允许不上报</strong>。
+  </div>
+</header>
+
+<!-- ============ 0 ============ -->
+<section data-page-node-id="4KorjoEmlGiLZ0qmuvhlce">
+  <h2 data-page-node-id="0qdzrvYkncvNGVSJ7VGb1F"><span class="num" data-page-node-id="y2AWm8DjOeS9mvJ5IAkPqS">00</span>缘起：一个静默的洞</h2>
+  <p class="lede" data-page-node-id="auuwVcsiEGzYhJp8JUdDTT">在给建议之前，我们先回到证据。现有架构已经有一条明确信条——<b data-page-node-id="k2H9U3uyn3L8o5ybgGGbyI">绝不静默丢内容</b>，并且用 <code data-page-node-id="v7W4kcKRGjjo3IG0ewBASz">diags</code> 分级来承载它。但在真实数据里，这个信条被绕过了。</p>
+
+  <div class="evidence" data-page-node-id="hQXuebjnG7gGNNPLZNYfnQ">
+    <h4 data-page-node-id="dWZIOEiFTxq1On3xFmw2ot">实测证据 · 自控力.epub</h4>
+    <ul data-page-node-id="XGY1RX2TVivrIvLgYUm4la">
+      <li data-page-node-id="SQP2XNQ6fttHN8yb4kCx7i">目录有 <code data-page-node-id="7u5QKClVq8IbfXW26ciM3B">68</code> 个条目，最终只产出 <code data-page-node-id="JNiqc1a61geNY0ixWht740">57</code> 个章节。</li>
+      <li data-page-node-id="P87rYUzHFpePKom4bsHP2G">其中 <code data-page-node-id="M9NMmygoPB8GQ3UIKYGVkx">10</code> 个文件<b data-page-node-id="A5AACClSFfEamkuJ1GUgxp">同时存在</b>「带锚点」与「不带锚点」的目录条目。</li>
+      <li data-page-node-id="mtjZxau1dIPN1SsZB8Ycrk">切分器只保留带锚点的条目工作，那 <code data-page-node-id="QQC9rSDWBMymKI2RbBqTDN">10</code> 个无锚点条目被<b data-page-node-id="Ry8aggCFJhV40P47c5jpTO">静默丢弃</b>。</li>
+      <li data-page-node-id="Nd2xWvSs6YOTnDDqk3lrcY">它们所代表的「锚点之前的正文」——例如
+        <code data-page-node-id="ATC4xr3aV58BcIJJXv0hhA">每当我提到自己在讲授一门关于意志力的课程时……</code>——<b data-page-node-id="UPcJL7R21k9cJOne3FDmGX">没有出现在任何产出中</b>。</li>
+      <li data-page-node-id="5IbZxnT9Oh2O0HWiUa90GV">而这一整本书跑完，<b data-page-node-id="I8paDcZCgf7qSNGlfHATtW">诊断数为 0</b>。</li>
+    </ul>
+  </div>
+
+  <p data-page-node-id="cQPCXkJJaRgql3SB2sxwD7">请注意这件事的性质：这不是「忘了写一行 <code data-page-node-id="N88YR1I9w5AHLF1MSNaZGB">pushDiag</code>」。代码里没有任何一个「决定丢弃内容」的分支，因此也就没有任何地方「应当」上报。内容是被<b data-page-node-id="otdB6h9tD7mDRG1NvouAF5">算法的结构</b>吃掉的——一次看起来毫无恶意的 <code data-page-node-id="ocLCuFPitGqc9DuLQVvYCa">entries.filter(e =&gt; e.fragment)</code> 窄化了工作集，副作用就是丢弃。</p>
+
+  <p data-page-node-id="KDzKvwaqILDIKVm0LMLsoR"><b data-page-node-id="DG8C0MxOnijtCDkjxEK0Q3">这就是哲学层面的破洞</b>：<code data-page-node-id="YKIidldWfbpTByAMmK8UPq">diags</code> 是一套<b data-page-node-id="W2fEl1yeX5hnbxSxNWPgjz">劝告式</b>（advisory）机制——它依赖每个分支自觉上报；而真正危险的丢失，恰恰发生在「没有人觉得自己丢了东西」的地方。</p>
+
+  <div class="big-num" data-page-node-id="bgh7qsi2DCyx1a5DSTY1GS">
+    <div data-page-node-id="rBASxhj7F8QAG9xe3A9Rxg"><div class="v" data-page-node-id="IWDNm96c26uM5gVDcUU4eA">0</div><div class="l" data-page-node-id="LTxaw3rwUn1ghAPZdSYDxz">本次丢失触发的诊断数</div></div>
+    <div data-page-node-id="lKgV07FmdmjxV4rGdE7p8s"><div class="v" data-page-node-id="szSDNKnJxz6oSwpgg7TIMg">10</div><div class="l" data-page-node-id="y5JwE4M9NsmaibRYMORtMc">被静默丢弃的目录条目</div></div>
+    <div data-page-node-id="5dKFT3Ha2Jut6eY27yBlfU"><div class="v" data-page-node-id="U9BHfAuZv8GXGanHPwNCIF">14</div><div class="l" data-page-node-id="DDukwon6NHHC94aADkjVcB">全书文件数（10 个受影响）</div></div>
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section data-page-node-id="hBD2SAgp3xg5xGiLxlMKXH">
+  <h2 data-page-node-id="FcdtxrMJewSYUrXlFCuY4x"><span class="num" data-page-node-id="hpXO4eVe6sQB68Rq8Yt6D1">01</span>根本矛盾：两种不完整的投影</h2>
+  <p class="lede" data-page-node-id="BePto36cMfjUatYrDn93D9">要设计更安全的架构，先要看清我们到底在做什么。</p>
+
+  <p data-page-node-id="L41nUVtkhIWP8Ca3yTyi4S">一本 EPUB 给我们的是<b data-page-node-id="GQ10abZcvyYot9tWb8zvFN">同一本书的两种不完整投影</b>：</p>
+  <ul data-page-node-id="BkB0gsw7veHtwCP2nTiI08">
+    <li data-page-node-id="o5lgu85f7IA2IPbgawteko"><b data-page-node-id="zMjqncLTJoBHIbYWrthrob">目录（nav / NCX）</b>：表达了「作者认为的结构」，但只有标题和一个<b data-page-node-id="LGkCWB41ZOhnS9MJ7PGfAB">地址</b>，本身没有内容。</li>
+    <li data-page-node-id="9PXnpafBxxlcdkid0uE6po"><b data-page-node-id="KzyEIMjHAoTEQUxwTwhxDD">正文（spine XHTML）</b>：有全部内容，但结构与目录<b data-page-node-id="M5gbsLGiVzHsKbVqYyfgdV">并不保证对齐</b>——锚点 <code data-page-node-id="QJveozRge16f65lPrdaLL3">id</code> 可能根本不存在。</li>
+  </ul>
+
+  <p data-page-node-id="gujuaUMsnvBP6ITS75GxB6">解析的本质，是<b data-page-node-id="pJnevyPrDKlCw9D95gEmVz">在这两种投影之间做对齐</b>。而现实是：<code data-page-node-id="Xd7ssxgMpAVGSNm8mWyvCA">资治通鉴</code> 的 290 个文件里<b data-page-node-id="ORm0BPMkLqyBIZt7qo3dTb">一个 <code data-page-node-id="R9MxBtFjxYUIxQZ0s5y1aS">id</code> 都没有</b>，目录里写的 <code data-page-node-id="9fOWmQ17GtTblTMC9db8Uk">chapter_1</code> 在正文中根本不存在——对齐彻底失败，290 章全部退化为「整文件」。</p>
+
+  <p data-page-node-id="1ouQr5lcsAcPcU9CJCrNOB">于是两个目标在此正面冲突：</p>
+  <div class="evidence" data-page-node-id="8YphqLN6o14OZbfvY48iBd">
+    <h4 data-page-node-id="6EXmVGFtq5GQRsjLkx29uA">冲突</h4>
+    <p style="margin:0" data-page-node-id="ZXPw18ISbGKQ2SmMZsnfso">「<b data-page-node-id="IbGrYSKC0XkEHHc5iEM3yx">尽量还原目录结构</b>」（要求按锚点精细切分） 与 「<b data-page-node-id="koPeIo8EqF2OgxaGaDXQn4">绝不丢内容</b>」（锚点不可靠时只能整文件兜底）。<br data-page-node-id="9n4ShzMH7l0xWG4CVU4wPU"/>
+    当前架构用<b data-page-node-id="4VZ2UWf4RwCrFhlo3vIv5P">二分法</b>处理：命中精确切分，否则整文件。它<b data-page-node-id="HQlo5nTrznJnefAjYNW58d">保住了内容，却丢掉了结构</b>，而且两者都没有被度量、没有被上报。</p>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section data-page-node-id="kwXLNCYxe6f6PUjfmG0kV7">
+  <h2 data-page-node-id="8OJTSCJSzpsZy32jDbKhmU"><span class="num" data-page-node-id="JmUEpEVb8s3P5PgMyyjclU">02</span>三条第一原则</h2>
+  <p class="lede" data-page-node-id="RWtZDEX4dWsHLX9hQCIrtL">不是加更多日志，而是换一套不变量。我提议三条原则，它们共同把「安全」从约定变成结构。</p>
+
+  <div class="principles" data-page-node-id="n43PlwmReLr4YwcgIcnrBL">
+    <div class="p-card" data-page-node-id="kMUXc5HGGC5bAFA0WYrEs4">
+      <div class="idx" data-page-node-id="YBabdWWxBmzcnDgrtOTODD">壹</div>
+      <div class="en" data-page-node-id="pEuGZYjCW8nbAGPuk01L68">Conservation</div>
+      <h3 data-page-node-id="sbM21fGnmBmE2grWylwjle">守恒：解析即记账</h3>
+      <p data-page-node-id="NSesDrksyoUB1o1kla1xui">输入是可数的，输出就必须能<b data-page-node-id="KVjtknPrmBLwCtUMAPFMUG">平账</b>。每一个输入单元（一个目录条目、一个顶层 DOM 节点）在流程结束时，必须拥有<b data-page-node-id="jsnS7sBlDULHBxSdqziezl">且仅有一个</b>去向（disposition）：</p>
+      <p data-page-node-id="PuuCmXXJCtyatwzHHLMOLX"><b data-page-node-id="eCL7jLIgVddbjUS6x45336">已产出</b> ／ <b data-page-node-id="yuFiZI8zyvLfm14zmO4ktQ">已合并进某产出</b> ／ <b data-page-node-id="Yx0hwoBq4njGaN3JwKMDRz">按规则豁免</b>（如 <code data-page-node-id="iNCTTXSiyyv7i0x3DYTadU">&lt;script&gt;</code>、远程图片，附理由）。</p>
+      <p data-page-node-id="e4QDh2IVCIHWnbxGUvZ8nK">关键不在于「记录」，而在于：由系统在终局<b data-page-node-id="DouXHc7ZgdQtmpIHe8jzhw">校验覆盖率</b>，不平账就失败。<b data-page-node-id="gml9T5Apn7uNIPmPayWK0g">不允许存在未登记的去向。</b></p>
+      <div class="analogy" data-page-node-id="hpwCbrQkst1aCCEpiCxqkv"><b data-page-node-id="a9CByZuumqQeUC53tQ0zlj">类比：</b>复式记账。每一笔内容的流转都要有对应分录，期末必须试算平衡——余额对不上就是 bug，而不是「可能忘了记」。</div>
+    </div>
+
+    <div class="p-card" data-page-node-id="WD1lF3YrDd3MApk9cgfwtp">
+      <div class="idx" data-page-node-id="RYMQJMgLCVJU7kLExLyAzs">贰</div>
+      <div class="en" data-page-node-id="8H8aZgPdE3YAGkzSFEKYYD">Negotiated Alignment</div>
+      <h3 data-page-node-id="X7geNGcFFrqDw8Iik9LeQw">协商：用降级阶梯替代成败二分</h3>
+      <p data-page-node-id="MCvXyL8GPWLjrHt2uucYgV">不要用「命中 / 未命中」这种二分。对齐是一场<b data-page-node-id="pigqCsMysbKVcuH5DATDVZ">协商</b>，应当有一条显式的、逐级让步的阶梯：</p>
+      <p data-page-node-id="io6o62kBKNZFDECF71yx1f"><b data-page-node-id="kdLEQNIMzGWh3yUUKaetKt">L0</b> 精确 <code data-page-node-id="do8A44QsJqNwjHYD8dMHZb">id</code> 命中 → <b data-page-node-id="TEagiCCCAjYh7F6lF4bzEI">L1</b> 归一化后命中（大小写／空白／URL 解码）→ <b data-page-node-id="9wBUSLcH7iZmhWODwcBLdL">L2</b> 标题文本语义匹配（目录标题 ≈ 正文中某个标题）→ <b data-page-node-id="wwZw1EhmGJA7IAJ53UhIO5">L3</b> 位置序号匹配（目录顺序 ≈ 标题出现顺序）→ <b data-page-node-id="3TPndFEa9LAwwnzlevEEhD">L4</b> 整文件兜底。</p>
+      <p data-page-node-id="ZCmd1V5H19jYrEc2kKoTxf">更重要的是：<b data-page-node-id="fU17PGRfQKUAiGWbD21gcy">「实际达成第几层」必须是一等输出</b>，随结果上报。我们现在是 L0 直接跳 L4，290 章的粒度在无人知晓的情况下蒸发。</p>
+      <div class="analogy" data-page-node-id="vcGYGExUwflQROrFEPnIbU"><b data-page-node-id="7nWtOhNj4go6NM4eHxrhV7">类比：</b>不是「地址找到了／没找到」，而是「我们用哪种方式找到了它，可信度多少」——诚实地报告<b data-page-node-id="dBa6FtY4t0KpnngVeAACau">对齐质量</b>，而非成败。</div>
+    </div>
+
+    <div class="p-card" data-page-node-id="wl89sMuF9pN9oEEt0cpKI4">
+      <div class="idx" data-page-node-id="QA6HOzjCbIsep6zuFoE05b">叁</div>
+      <div class="en" data-page-node-id="UGymkq4Gk8Ie1MWrM3wIrh">Provenance</div>
+      <h3 data-page-node-id="5EuwH6oGKTVdekenng0qWu">溯源：每个产出都携带来源坐标</h3>
+      <p data-page-node-id="FiHryCYAht50E2tClLkccq">每个产出单元都应携带不可变的来源坐标：<code data-page-node-id="qyR204bCiv9j1SmFlnWVMw">{ 文件, 跨度, 来源目录项, 对齐层级 }</code>。</p>
+      <p data-page-node-id="2lyKEuasvXtTvwrVGA235D">有了它，「有没有丢内容」从一次<b data-page-node-id="5rM2PaLtiff6xNWtArrdBR">代码审计</b>变成一次<b data-page-node-id="HKXtRVFDIEhnxiDo1Xrfib">查询</b>；定位问题从<b data-page-node-id="7FMnvJs0fZNSt2bNvYLXZH">猜测</b>变成<b data-page-node-id="etUfJbKH2cD4jqvquu0rFa">直达</b>；用户甚至可以看到「这一章是按标题猜出来的，可信度中等」。</p>
+      <div class="analogy" data-page-node-id="fQD4xsbREi3RiaFcF2xeQF"><b data-page-node-id="WzdBIiNeiq6WIiy4TKog68">类比：</b>学术引用的出处标注。没有出处的结论不可信；没有来源的内容单元不可审计。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section data-page-node-id="mRI7A8JSTVWfLj2M4RD0pT">
+  <h2 data-page-node-id="BONIJyglVxwonDflkmhzdj"><span class="num" data-page-node-id="43UOePgI9xDu8DHk3VEZBr">03</span>架构形态</h2>
+  <p class="lede" data-page-node-id="w52WilRwfFpVCfLOYEXOlb">把三条原则落成具体的形状。核心的一句话：<b data-page-node-id="Y72nOmpmFkEsq4ZsmPp7lX">用「选区」替代「切片字符串」</b>。</p>
+
+  <p data-page-node-id="hH31u5v2GQESjR7WFmCgk1">当前各层之间传递的是<b data-page-node-id="xjhvdRtlqSwfxFf4WQeIXU">序列化后的 HTML 字符串</b>——每跨一次边界，就要重新解析一次，且原文档的上下文（相邻的兄弟节点）永久丢失。若改为传递<b data-page-node-id="Jyb80ymghuDXwWRUv9eRlU">针对同一份不可变文档的选区（range）</b>，则：只解析一次、没有有损序列化、随时可以回看上下文、覆盖率天然可算。</p>
+
+  <div class="figure" data-page-node-id="PHEBpblzTPfMXYRhhzuUIq">
+    <svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="提议的解析器架构图" data-page-node-id="W2OGuouLTCvPScotQ3sBP8">
+      <defs data-page-node-id="9Bol5zUWBrBmXE5Hvibt0v">
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="7k0Nwlq6Uj8KHtox2SWDk4">
+          <path d="M0,0 L10,5 L0,10 z" fill="#1F4E5F" data-page-node-id="grbATNw1W54dCJqKZ7bnL3"/>
+        </marker>
+        <marker id="ard" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" data-page-node-id="H8Gq9roQ1dkm23FvR5MEEY">
+          <path d="M0,0 L10,5 L0,10 z" fill="#B4531F" data-page-node-id="jYYQWmMgUfMiph0g2K3btL"/>
+        </marker>
+      </defs>
+
+      <!-- main flow -->
+      <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" data-page-node-id="dKuHdDI7GHPdM1xG1Lgihw">
+        <rect x="120" y="16" width="390" height="46" rx="4" fill="#E8F0F2" stroke="#1F4E5F" data-page-node-id="rzqWp9jWgLcGyJXSYYOdIo"/>
+        <text x="315" y="44" text-anchor="middle" font-size="15" fill="#1F4E5F" font-weight="600" data-page-node-id="PG0kZ5lJVsD6ErPTeOJMSh">输入端口 · FileProvider</text>
+
+        <rect x="120" y="92" width="390" height="52" rx="4" fill="#FFFDFB" stroke="#E6DFD4" data-page-node-id="nx9QxfWaA75wqh5AxnBty1"/>
+        <text x="315" y="114" text-anchor="middle" font-size="15" fill="#1C1A17" font-weight="600" data-page-node-id="RVW5OJr2EZhlvNMFYiXnIN">不可变文档 Immutable Document</text>
+        <text x="315" y="133" text-anchor="middle" font-size="12.5" fill="#6B655C" data-page-node-id="Nigvgl19QK5Gj93cqQ8Ry0">每个文件仅解析一次，全程只读</text>
+
+        <rect x="120" y="176" width="390" height="46" rx="4" fill="#FFFDFB" stroke="#E6DFD4" data-page-node-id="wcWBm9RpMjx5RCF71d2o3i"/>
+        <text x="315" y="204" text-anchor="middle" font-size="15" fill="#1C1A17" font-weight="600" data-page-node-id="e3oxkZuECYIAqnFtADRsj8">对齐协商器 · 降级阶梯</text>
+
+        <g font-size="11.5" data-page-node-id="1ET5HE12WsLP0gPKxHKuh9">
+          <rect x="128" y="232" width="68" height="26" rx="3" fill="#E8F0F2" stroke="#1F4E5F" data-page-node-id="lVCHNVdCRhAt4TRfIbzYwh"/>
+          <text x="162" y="249" text-anchor="middle" fill="#1F4E5F" data-page-node-id="vUCQ9OUYIGIEWYN8pks1pq">L0 精确id</text>
+          <rect x="202" y="232" width="68" height="26" rx="3" fill="#F1EEEA" stroke="#C9C0B4" data-page-node-id="LpTaEi9ffDcvYrwaALsUkU"/>
+          <text x="236" y="249" text-anchor="middle" fill="#5A544B" data-page-node-id="BtgQfU4DUR2q4fopkeXSgP">L1 归一化</text>
+          <rect x="276" y="232" width="68" height="26" rx="3" fill="#F1EEEA" stroke="#C9C0B4" data-page-node-id="MKXSt0STTn6xtd14u8O05c"/>
+          <text x="310" y="249" text-anchor="middle" fill="#5A544B" data-page-node-id="cqeOYASdhTAELiRXrW1FjS">L2 标题文本</text>
+          <rect x="350" y="232" width="68" height="26" rx="3" fill="#F1EEEA" stroke="#C9C0B4" data-page-node-id="ewpPar7LWQohN6iHieVTNw"/>
+          <text x="384" y="249" text-anchor="middle" fill="#5A544B" data-page-node-id="G10QpUpzOgGVSNA5LhATeK">L3 位置序号</text>
+          <rect x="424" y="232" width="78" height="26" rx="3" fill="#FBEEE6" stroke="#B4531F" data-page-node-id="3cbjK7mL3dt40AE0FGV9Mh"/>
+          <text x="463" y="249" text-anchor="middle" fill="#B4531F" data-page-node-id="RNsqNCTN1gPwTlrEAYo2q0">L4 整文件</text>
+        </g>
+
+        <rect x="120" y="278" width="390" height="52" rx="4" fill="#FFFDFB" stroke="#E6DFD4" data-page-node-id="AFisLVazwcep31aNGCj46D"/>
+        <text x="315" y="300" text-anchor="middle" font-size="15" fill="#1C1A17" font-weight="600" data-page-node-id="xcgB0tX0lUP5QyISF80wxY">选区 Selection</text>
+        <text x="315" y="320" text-anchor="middle" font-size="12.5" fill="#6B655C" font-family="ui-monospace,Menlo,monospace" data-page-node-id="hsQBDfGHkRsyuFJgYkwFhI">{ file, range, level, provenance }</text>
+
+        <rect x="120" y="360" width="390" height="52" rx="4" fill="#FFFDFB" stroke="#E6DFD4" data-page-node-id="XUckcDXmu0xXYUtGPyOUcW"/>
+        <text x="315" y="382" text-anchor="middle" font-size="15" fill="#1C1A17" font-weight="600" data-page-node-id="mvhrGxVJChF6dsJxmpZj2I">转换器 Transformer</text>
+        <text x="315" y="401" text-anchor="middle" font-size="12.5" fill="#6B655C" data-page-node-id="IEIaSizs6WVYpGsItt9Bxe">在同一文档上按选区工作（不再二次解析）</text>
+
+        <rect x="120" y="442" width="390" height="46" rx="4" fill="#E8F0F2" stroke="#1F4E5F" data-page-node-id="J6mMrGPtC9NCn5mXLvMVov"/>
+        <text x="315" y="470" text-anchor="middle" font-size="15" fill="#1F4E5F" font-weight="600" data-page-node-id="MCLg0XSGtxyZ7zmY51nO9n">输出端口 · WriteTarget</text>
+
+        <!-- arrows -->
+        <g stroke="#1F4E5F" stroke-width="1.6" fill="none" marker-end="url(#ar)" data-page-node-id="Vm7ulHoe6Whhw4dcYz7JgU">
+          <path d="M315,62 L315,90" data-page-node-id="vvg2VtBv8cGr1bLiUxBpqg"/><path d="M315,144 L315,174" data-page-node-id="Ryon5JTRCBGQHp1E23IDJI"/>
+          <path d="M315,222 L315,276" data-page-node-id="BwhDwifnK94z9SiSZUliCH"/><path d="M315,330 L315,358" data-page-node-id="hGMPiuFCFzF6h02HHfUHXx"/>
+          <path d="M315,412 L315,440" data-page-node-id="35oCNiKRbAQCLDmP2R2NFT"/>
+        </g>
+
+        <!-- ledger -->
+        <rect x="580" y="92" width="290" height="320" rx="5" fill="#FFFDFB" stroke="#B4531F" stroke-width="1.6" stroke-dasharray="7 4" data-page-node-id="IWPp5E0BLsxmIm9gyDeoZo"/>
+        <text x="725" y="120" text-anchor="middle" font-size="15" fill="#B4531F" font-weight="700" data-page-node-id="2ICYL18BH9QXFWij72u133">账本 + 审计器</text>
+        <text x="725" y="144" text-anchor="middle" font-size="12.5" fill="#6B655C" data-page-node-id="sWBW6eyUgTg8DAc5DRBU6Z">守恒校验（不变量，非建议）</text>
+        <g font-size="12.5" fill="#3A362F" data-page-node-id="FSb7WbXdHWA48lFuyw8DEn">
+          <text x="600" y="180" data-page-node-id="YvZ7PjHlCNwHTsmkceFSug">· 登记每个输入单元的 disposition</text>
+          <text x="600" y="206" data-page-node-id="JDTPG5ToV7KOejtpYCbLSD">· 已产出 / 已合并 / 已豁免(附理由)</text>
+          <text x="600" y="232" data-page-node-id="PK3aq215uxqarHSu5DD7QS">· 终局校验内容覆盖率 = 100%</text>
+          <text x="600" y="258" data-page-node-id="WGTF3J6hpx7kGkuDDKm2EG">· 不平账 → fatal（而非 warning）</text>
+          <text x="600" y="284" data-page-node-id="oOlmkmB2g53KB2DEKyZ14z">· 上报对齐层级分布</text>
+        </g>
+        <line x1="600" y1="306" x2="850" y2="306" stroke="#E6DFD4" data-page-node-id="YedGFZm2MgARWg9rLQNxCN"/>
+        <text x="600" y="330" font-size="12.5" fill="#B4531F" font-weight="600" data-page-node-id="dV9KyZY9jy6OPNsESzrWCp">审计器不信任任何上游，</text>
+        <text x="600" y="350" font-size="12.5" fill="#B4531F" font-weight="600" data-page-node-id="RaMQRxBnkrfTjL0Zpsw5qo">它只相信自己的测量。</text>
+        <text x="600" y="380" font-size="12" fill="#6B655C" data-page-node-id="z99DGjzjzxAszhPvuTo12J">这是「不允许不上报」的</text>
+        <text x="600" y="398" font-size="12" fill="#6B655C" data-page-node-id="0y9LlNGQdQaTJb4OjK7lm0">结构保证。</text>
+
+        <!-- dashed arrows to ledger -->
+        <g stroke="#B4531F" stroke-width="1.3" fill="none" stroke-dasharray="5 4" marker-end="url(#ard)" data-page-node-id="Huj90QnMmiKYJJERqcVEc7">
+          <path d="M510,196 L576,196" data-page-node-id="9TGQ7JHn5hNNLEIqCjxdf8"/><path d="M510,304 L576,304" data-page-node-id="8Av5GKVwPtNeb5by1cW79F"/>
+          <path d="M510,386 L576,386" data-page-node-id="Hb8Qv4NAVwQa2DqPvRjHU7"/>
+        </g>
+      </g>
+    </svg>
+    <figcaption data-page-node-id="b5sduOLabtFeIkAdsyJsQH">提议架构：不可变文档 + 选区 + 对齐阶梯 + 守恒审计；两端端口（FileProvider / WriteTarget）沿用现有设计——那是当前架构里真正优雅的部分，应当保留。</figcaption>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section data-page-node-id="WT0RaucLp2xvA4IPTVgCsk">
+  <h2 data-page-node-id="oQm6uWCZh4i0qw4SOH49dG"><span class="num" data-page-node-id="k1HCvSpqv3SpDtkfxCVHyN">04</span>对照</h2>
+  <table data-page-node-id="UiOaQJ2dWgbHNlNqSJ1FVW">
+    <thead data-page-node-id="KU7vVj74wINEYxqZHZ9P6n"><tr data-page-node-id="Ns1q8hzH0GBgCPRLfwoulU"><th data-page-node-id="9GthVVzL9WI4vl5oVfJnJd">维度</th><th data-page-node-id="HKvYxoYn8YxlECIMF7ddu1">现状</th><th data-page-node-id="u14kAQAsqG7sDMw0XiD1Xv">提议</th></tr></thead>
+    <tbody data-page-node-id="xp2Ctm7C2XAc9JWLh4goy8">
+      <tr data-page-node-id="Qfh9MiRKcSLlW4va8TvcL1"><td data-page-node-id="QnAcdh1G9BTjYcs88kfj62">安全模型</td><td class="old" data-page-node-id="J1lZ8EvKgVorRv2JDmfjAD">劝告式：各分支自觉上报</td><td class="new" data-page-node-id="sn4rVZG3tHxTC4NkVl2Ckr">结构式：守恒审计，不平账即失败</td></tr>
+      <tr data-page-node-id="eLNw2K4estVNs4rLbeAaAC"><td data-page-node-id="B6OqdqZDmpPvT7flYHGHJW">对齐失败</td><td class="old" data-page-node-id="GBTGtwDQZ2cehGXOZlTMrN">二分：命中 / 整文件兜底</td><td class="new" data-page-node-id="q9a8CWexrk3Aem6u687hKd">L0–L4 显式阶梯，逐级让步</td></tr>
+      <tr data-page-node-id="EEABWVLYimX0KrTAQcMbKm"><td data-page-node-id="AaDbdxfxRK7Iq5JHSyuWdb">失败可见性</td><td class="old" data-page-node-id="Mq5rz9Gn0T5WXj3tUblFlb">依赖分支写日志（本次为 0 条）</td><td class="new" data-page-node-id="6XTZgZwltFIW7dU5jvHtut">覆盖率可测量，缺失必然暴露</td></tr>
+      <tr data-page-node-id="H6oTFrjutZHXJ0xOws54bK"><td data-page-node-id="GaYLRvJWfntH0DtOIr9kwD">层间传递</td><td class="old" data-page-node-id="MD2Tq5HFOpWjjmohrxO1wT">HTML 字符串切片（有损、重复解析）</td><td class="new" data-page-node-id="8DYznzyW5RrKJjBR6xXTOL">文档选区（无损、只解析一次）</td></tr>
+      <tr data-page-node-id="renNlSWF0dKTipOV8bpdKZ"><td data-page-node-id="wkuPmCSMSOVCE6Oah0NLRN">溯源</td><td class="old" data-page-node-id="pi5CYMmsVIYtONh2WHzm6w">无：产出无法回指来源</td><td class="new" data-page-node-id="klmWm1ZEEDtA1n6Zce3dKG">每单元携带来源坐标与对齐层级</td></tr>
+      <tr data-page-node-id="j5kqPgGh8VFgjZP2S7B1yD"><td data-page-node-id="Hv2Aeg7JC09H9WsGAFwwA2">结果语义</td><td class="old" data-page-node-id="nk6kACHPG0EP3KmqkJmDA9">成功 / 失败</td><td class="new" data-page-node-id="Rteem92desNA6XrTHGF8lg">成功 + 「对齐质量」分布</td></tr>
+      <tr data-page-node-id="CJEc1KvLB5XyBqElW4FD0R"><td data-page-node-id="egmGm7akMVxIZ6QimOe11C">端口抽象</td><td class="old" data-page-node-id="LJXMmNgTiXCQzLxFonOUq8">FileProvider / WriteTarget（优秀）</td><td class="new" data-page-node-id="oQKeREtU9BvuG4JR4eGpV4">保留不变</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 5 ============ -->
+<section data-page-node-id="Qxt64iDsjBFK9vaMmIXmor">
+  <h2 data-page-node-id="Idx7OJWA7iaDBwdwHVBGJY"><span class="num" data-page-node-id="3FhbUkFfgvVStbebZogQpv">05</span>它如何消灭那个洞</h2>
+  <p class="lede" data-page-node-id="WK6qbSMrMvzwL9vpHIWSCr">把原则放回那个真实的 bug 上检验。</p>
+  <p data-page-node-id="ev5OGPGChRGzCTiggPpoOq">在新架构下，<code data-page-node-id="TMlDzNYiOA7jOn4mIiveju">entries.filter(e =&gt; e.fragment)</code> 这种窄化操作不会「静默生效」：那 10 个无锚点条目会在账本里变成<b data-page-node-id="x0OIcAlvPu4chU1HhNkS64">没有 disposition 的输入单元</b>，锚点之前的正文变成<b data-page-node-id="mMTLfVH4Z49hBhx1Lq14WB">未被任何选区覆盖的文档区间</b>。</p>
+  <p data-page-node-id="LfdN9xyvKm93XIZplrnKod">审计器在终局测量覆盖率时立即发现 <code data-page-node-id="ETuFF2ztGpxNlnVr9eUmSS">&lt; 100%</code>，报 <b data-page-node-id="rax52BPBAUC0DQHNydJ8cd">fatal</b> 而非 warning。于是：</p>
+  <div class="evidence" data-page-node-id="oSUA8u5pUTgEBBMA8C4ng5">
+    <h4 data-page-node-id="djlQR1EZGaCgzV4JJjGjkx">性质变化</h4>
+    <p style="margin:0" data-page-node-id="Kxm9SRJdogSL8isdD8V5It">「丢内容」从 <b data-page-node-id="IPhe76C6BG8H13nCsOfEvA">可能发生且无人知晓</b>，变成 <b data-page-node-id="83jGXC2AdygMCpk9KrFe7a">一旦发生必然被拦截</b>。<br data-page-node-id="SE0GHYer53Dv6El2jK7Vgk"/>修复它的压力不再是「开发者的细心」，而是「系统的不变量」。</p>
+  </div>
+  <p data-page-node-id="5as69GZCV0y2wCBz4FFcIo">同理，<code data-page-node-id="nr4hK94B4OY9ywoRZoUAhm">资治通鉴</code> 的 290 次退化为整文件，也不再是一条被压扁的 warning，而是上报为<b data-page-node-id="0GAsV8ubQSjzbpiopwN1d7">对齐层级分布：L4 占 100%</b>——这本身就是对用户最有价值的信息：「这本书结构还原度低，但内容 100% 保留」。</p>
+</section>
+
+<!-- ============ 6 ============ -->
+<section data-page-node-id="IgPP1DuNFVCkK4OAHIqjog">
+  <h2 data-page-node-id="FBfYejpryzN7xbWE0ZiBev"><span class="num" data-page-node-id="O46AQHUrzqS5HJztTrTP7q">06</span>代价与权衡</h2>
+  <p class="lede" data-page-node-id="aVyHoD4mYDfDxsbsBtfKPo">任何架构提案都必须诚实标价。以下是真实的成本。</p>
+  <ul data-page-node-id="r0qmZn6cGd6kuFRqm6zr0w">
+    <li data-page-node-id="Zy8qu9FUlFEALhKIMDRJuh"><b data-page-node-id="JIoU45AtfU46aYPGZmsEKf">内存</b>：选区模型要把 DOM 保留到审计完成。可通过「按文件作用域释放 + 引用计数」缓解，但对超大书仍有峰值压力。</li>
+    <li data-page-node-id="H74loB4gsEo32CN0bXc6yJ"><b data-page-node-id="5EQt7gegObOS2tGCsVw3KY">复杂度</b>：新增账本与审计器两个组件；选区要处理跨节点边界（选区起点在某个文本节点中间）。</li>
+    <li data-page-node-id="L2dJjHi64brucpWli8jh7D"><b data-page-node-id="oDgO0BCSsGNsOCxdK5XwHf">收益不均</b>：对本来就很规整的书（如 <code data-page-node-id="7c7lzmyxzzAnvSvAOr5Pr2">TheEconomist</code>，0 个受影响文件）几乎零收益。收益高度集中在<b data-page-node-id="DCwvB4uxXie6bR7l7TKfGd">畸形／古老／工具生成</b>的 EPUB——<b data-page-node-id="NiJtQVAFNfkDASQ0P7KjG9">而那恰恰是最需要安全的场景</b>。</li>
+    <li data-page-node-id="PrJWlvRv2BMwWOSyA9uPYv"><b data-page-node-id="HPXTRyzg71dmqK2OG2AcHg">性能不是问题</b>：实测 11MB / 290 章的 <code data-page-node-id="IGEgrtRCv5ezgDBfDw6m4p">资治通鉴</code> 全流水线仅 <b data-page-node-id="ts8wQ5rB4378ccrObJ5gnL">2.1 秒</b>，完全负担得起额外的对齐尝试与审计开销。<b data-page-node-id="c07TyMoFvY8HulaU7Qln3q">所以</b>：消除二次解析属于「顺带的优雅」，不应作为本提案的主要理由。</li>
+    <li data-page-node-id="l7OIYdSqq5E0ncrnSHpDsb"><b data-page-node-id="Kg1qCdekvsmMBozPugJTsi">语义难题</b>：L2/L3（按标题文本或位置猜测）可能<b data-page-node-id="BX9vQ4H5oS3cGsUkBiKHZA">猜错</b>。因此必须把「猜」的结果显式标注为低置信度，而不是伪装成精确命中——这正是「协商」原则的要求。</li>
+  </ul>
+</section>
+
+<!-- ============ 7 ============ -->
+<section data-page-node-id="p4AGjpamed3Tu6HzztxZCD">
+  <h2 data-page-node-id="FECzsC8Q6ZA6YYvPt0HdYQ"><span class="num" data-page-node-id="OFXz9zlqpSDy98aAnmxnwt">07</span>落地路径</h2>
+  <p class="lede" data-page-node-id="53jfIoZHZQHI0DOWk7i4UH">不必推倒重来。四个阶段，每一步都独立交付价值，且可随时停下。</p>
+  <div class="phases" data-page-node-id="0XlGEhwJog5DLR67sAiCcK">
+    <div class="phase" data-page-node-id="H6M6nWSBu6x36jEnhUHSAr">
+      <span class="tag" data-page-node-id="d6Sm7be7aWrbgr2YZIhNFF">阶段 A</span>
+      <h4 data-page-node-id="AnyAw2lQy54cKiHRrw46dS">加审计器（不动任何结构）</h4>
+      <p data-page-node-id="IOcW23xaCxgNGcxZCcohdw">在流水线末端统计「目录条目 → 产出章节」的映射覆盖与「文档区间」覆盖，不平账即报。<b data-page-node-id="ME6nBc0MmFruZSfLFEg1Gz">这一步就能抓住今天这个 bug。</b></p>
+      <div class="gain" data-page-node-id="DMZ8Z09yZxHcTfrXuETtIu">收益：立刻获得安全网 · 风险：极低</div>
+    </div>
+    <div class="phase" data-page-node-id="fkSM33ghFZ56lJa5p7kznE">
+      <span class="tag" data-page-node-id="FpiPQo0csvvWAT6tFENfsr">阶段 B</span>
+      <h4 data-page-node-id="F5D7EsxtFLskScjwCYlJJm">引入对齐阶梯 L0–L4</h4>
+      <p data-page-node-id="lldHJEqQgDAvYFfyhyHviX">不改变层间边界，只在切分器内逐级尝试，并把「达成层级」写入 diags 与结果上报。</p>
+      <div class="gain" data-page-node-id="dc3EXuFBNMBeYKyRHSvMZU">收益：粒度不再无声蒸发 · 风险：低</div>
+    </div>
+    <div class="phase" data-page-node-id="rRGr9lduFRLHOtGGGzCncm">
+      <span class="tag" data-page-node-id="elX8u92QIhUQnYhxF6vTBR">阶段 C</span>
+      <h4 data-page-node-id="ld2ihOeZChvBu3AxSjkCFO">选区模型</h4>
+      <p data-page-node-id="3PXEeHCIEvGKdrsB3RXR5G">切分器产出 <code data-page-node-id="IyIZYVcZzazwAlcgRG5mU1">{file, range}</code> 而非字符串；转换器接受「文档 + 选区」。消除二次解析，让上下文不再丢失。</p>
+      <div class="gain" data-page-node-id="8Xh6Aygp8n6qq6CXDb3bQB">收益：无损 + 只解析一次 · 风险：中（要重构层间契约）</div>
+    </div>
+    <div class="phase d" data-page-node-id="Qy6SbNXXv8ja6RAXkFP7Bw">
+      <span class="tag" data-page-node-id="hRQCFyIPGtY7foBDCK28mp">阶段 D</span>
+      <h4 data-page-node-id="tS6TTpljFBxfWPXnRqS2ln">溯源进入产出</h4>
+      <p data-page-node-id="DeLLOo2vc2FcwTF4T3ErSB">每篇笔记携带来源坐标与对齐层级，可在 frontmatter 或报告中可见：「本章由标题文本匹配得出，置信度中」。</p>
+      <div class="gain" data-page-node-id="qECF3uS9ReSf30sKv9veOa">收益：用户可判断可信度 · 风险：低</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section data-page-node-id="AcYQEadFNYsySuYp3zua7b">
+  <h2 data-page-node-id="77Pj7x0TKn07JbrYknBXsW"><span class="num" data-page-node-id="gvsBFTz2FGEfBRUeIUHvAC">08</span>可验证的判据</h2>
+  <p class="lede" data-page-node-id="mwb6wxIBaKVcGxuVkQRRFj">一个哲学提案若不可证伪，就只是修辞。这条判据可以机器校验：</p>
+  <div class="closing" data-page-node-id="HhFFbBLFbwNoz83XtDWb1q">
+    <h3 data-page-node-id="L2SCtYf1tp5kD74pxLGIy8">守恒判据</h3>
+    <p data-page-node-id="ONMuAjEJbxGXUWrkrOuFHo">对任意输入 EPUB：<b data-page-node-id="IHCgd588SPn1yJLwstPwCM">正文覆盖率必须 = 100%</b>，否则必须给出<b data-page-node-id="ItjU9KSkkS0YtRvAOGXrzD">带理由的豁免清单</b>（如 <code data-page-node-id="Fwlt2pmpFLwU9DdlVdFbmb">&lt;script&gt;</code>、远程图片）；</p>
+    <p data-page-node-id="xotUDpZaGp0bygCw8pBKO7"><b data-page-node-id="GNovUgZK1edd3Fcc8rDwAR">每个目录条目必须映射到一个产出单元</b>，未映射者必须显式登记原因；</p>
+    <p data-page-node-id="yLlkIat4j5FRABQUjSFpsq">且全书必须上报一份<b data-page-node-id="clPxJx59fPd2RwLYumZtBE">对齐层级分布</b>（L0–L4 各占多少）。</p>
+    <p style="margin-top:18px" data-page-node-id="7eT9i0hrQJeGiXQ597fkZS">三条中任意一条不满足 → <code data-page-node-id="ED2KWlRdLTi8ZIHAHtYA1Q">fatal</code>，而不是 warning。</p>
+  </div>
+</section>
+
+<footer data-page-node-id="bLlSBZdeGsPczp4RveQ1Jf">
+  报告基于 <b data-page-node-id="6TYbeuHV4bw9Cbl11FmGA2">epub-importer · src-next</b> 的真实实测数据生成：<code data-page-node-id="qDJsI3skB9xPdEU6qFy0a3">自控力</code>（14 文件 / 68 目录项 / 10 受影响）、<code data-page-node-id="S1jmbUo4XSk99FOUR7EmgJ">TheEconomist</code>（78 文件 / 0 受影响）、<code data-page-node-id="CekUWOVfXa4czNRyU2Ozmr">资治通鉴全译本</code>（290 文件 / 290 次整文件兜底）；性能实测 2.1s / 0.6s / 0.38s。
+</footer>
+
+</div>
+</body>
+</html>
